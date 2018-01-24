@@ -16,34 +16,32 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"log"
 )
 
-// clusterKubeconfigCmd represents the clusterKubeconfig command
-var clusterKubeconfigCmd = &cobra.Command{
-	Use:   "kubeconfig",
-	Short: "setups the kubeconfig for the local machine",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+// sshKeyCmd represents the sshKey command
+var sshKeyCmd = &cobra.Command{
+	Use:   "ssh-key",
+	Short: "view and manage SSH keys",
+	Long: `This sub-command handles both, the public key entry in Hetzner Cloud and private key location of your machine.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Note, that the private key never gets uploaded anywhere. The path is used to connect to the servers`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Fatalln("not implemented!")
+		cmd.Usage()
 	},
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterKubeconfigCmd)
+	rootCmd.AddCommand(sshKeyCmd)
+	sshKeyCmd.Flags().StringP("name", "n", "", "")
+
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// clusterKubeconfigCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// sshKeyCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// clusterKubeconfigCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// sshKeyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

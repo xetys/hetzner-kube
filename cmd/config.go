@@ -18,9 +18,16 @@ type HetznerContext struct {
 	Name  string `json:"name"`
 }
 
+type SSHKey struct {
+	Name           string `json:"name"`
+	PrivateKeyPath string `json:"private_key_path"`
+	PublicKeyPath  string `json:"public_key_path"`
+}
+
 type HetznerConfig struct {
 	ActiveContextName string           `json:"active_context_name"`
 	Contexts          []HetznerContext `json:"contexts"`
+	SSHKeys           []SSHKey         `json:"ssh_keys"`
 }
 
 type AppConfig struct {
@@ -55,6 +62,33 @@ func (config *HetznerConfig) AddContext(context HetznerContext) {
 	config.Contexts = append(config.Contexts, context)
 }
 
+func (config *HetznerConfig) AddSSHKey(key SSHKey) {
+	config.SSHKeys = append(config.SSHKeys, key)
+}
+
+func (config *HetznerConfig) DeleteSSHKey(name string) error {
+
+	index, _ := config.FindSSHKeyByName(name)
+
+	if index == -1 {
+		return errors.New("ssh key not found")
+	}
+
+	config.SSHKeys = append(config.SSHKeys[:index], config.SSHKeys[index+1:]...)
+
+	return nil
+}
+func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *SSHKey) {
+	index := -1
+	for i, v := range config.SSHKeys {
+		if v.Name == name {
+			index = i
+			return index, &v
+		}
+	}
+	return index, nil
+}
+
 func (app *AppConfig) SwitchContextByName(name string) error {
 	ctx, err := app.FindContextByName(name)
 
@@ -64,6 +98,13 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 
 	app.CurrentContext = ctx
 	app.Config.ActiveContextName = ctx.Name
+
+
+	opts := []hcloud.ClientOption{
+		hcloud.WithToken(ctx.Token),
+	}
+
+	AppConf.Client = hcloud.NewClient(opts...)
 
 	return nil
 }
@@ -78,6 +119,13 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 	}
 
 	return nil, errors.New(fmt.Sprintf("context '%s' not found", name))
+}
+
+func (app *AppConfig) assertActiveContext() error {
+	if app.CurrentContext == nil {
+		return errors.New("no context selected")
+	}
+	return nil
 }
 
 func init() {
@@ -121,5 +169,8 @@ func makeConfigIfNotExists() {
 		}
 
 		json.Unmarshal(configFileContent, &AppConf.Config)
+		if err := AppConf.SwitchContextByName(AppConf.Config.ActiveContextName); err != nil {
+			log.Fatal(err)
+		}
 	}
 }

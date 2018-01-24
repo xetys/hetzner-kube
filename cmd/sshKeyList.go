@@ -15,14 +15,18 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
-	"log"
+	"text/tabwriter"
+	"os"
 )
 
-// clusterKubeconfigCmd represents the clusterKubeconfig command
-var clusterKubeconfigCmd = &cobra.Command{
-	Use:   "kubeconfig",
-	Short: "setups the kubeconfig for the local machine",
+// sshKeyListCmd represents the sshKeyList command
+var sshKeyListCmd = &cobra.Command{
+	Use:   "list",
+	Aliases: []string{"ls"},
+	Short: "lists all saved SSH keys",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -30,20 +34,29 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Fatalln("not implemented!")
+		tw := new(tabwriter.Writer)
+		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		fmt.Fprintln(tw, "NAME\t")
+
+		for _, key := range AppConf.Config.SSHKeys {
+			fmt.Fprintf(tw, "%s", key.Name)
+			fmt.Fprintln(tw)
+		}
+
+		tw.Flush()
 	},
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterKubeconfigCmd)
+	sshKeyCmd.AddCommand(sshKeyListCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// clusterKubeconfigCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// sshKeyListCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// clusterKubeconfigCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// sshKeyListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
