@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"os/user"
-	"path/filepath"
-	"os"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"encoding/json"
-	"io/ioutil"
-	"log"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/user"
+	"path/filepath"
 )
 
 type HetznerContext struct {
@@ -19,21 +19,20 @@ type HetznerContext struct {
 }
 
 type HetznerConfig struct {
-	ActiveContextName string `json:"active_context_name"`
-	Contexts []HetznerContext `json:"contexts"`
+	ActiveContextName string           `json:"active_context_name"`
+	Contexts          []HetznerContext `json:"contexts"`
 }
 
 type AppConfig struct {
-	Client *hcloud.Client
-	Context context.Context
+	Client         *hcloud.Client
+	Context        context.Context
 	CurrentContext *HetznerContext
-	Config *HetznerConfig
+	Config         *HetznerConfig
 }
 
 var DefaultConfigPath string
 var Config HetznerConfig
 var AppConf AppConfig = AppConfig{}
-
 
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
@@ -90,7 +89,6 @@ func init() {
 		DefaultConfigPath = filepath.Join(usr.HomeDir, ".hetzner-kube")
 	}
 
-
 	AppConf = AppConfig{
 		Context: context.Background(),
 	}
@@ -122,6 +120,6 @@ func makeConfigIfNotExists() {
 			log.Fatal(err)
 		}
 
-		json.Unmarshal(configFileContent, AppConf.Config)
+		json.Unmarshal(configFileContent, &AppConf.Config)
 	}
 }

@@ -15,25 +15,24 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"fmt"
-	"strings"
 	"bufio"
-	"os"
-	"log"
+	"fmt"
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"strings"
 )
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add <NAME>",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "adds a new context",
+	Long: `This command adds a new context for communication with the Hetzner Cloud API.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Before the context is actually saved, hetzner-kube ensures it can access the API using the token.
+	On success, the newly added context is automatically used. Use the "context use" command, to switch contexts.
+	`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name, token := args[0], ""
@@ -66,9 +65,9 @@ to quickly create a Cobra application.`,
 		}
 
 		context := &HetznerContext{Name: name, Token: token}
-		Config.AddContext(*context)
-		Config.ActiveContextName = name
-		Config.WriteCurrentConfig()
+		AppConf.Config.AddContext(*context)
+		AppConf.Config.ActiveContextName = name
+		AppConf.Config.WriteCurrentConfig()
 		AppConf.CurrentContext = context
 		fmt.Printf("added context '%s'", name)
 	},

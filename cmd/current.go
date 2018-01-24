@@ -18,40 +18,27 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"os"
-	"text/tabwriter"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:     "list",
-	Aliases: []string{"ls"},
-	Short:   "lists all contexts",
-	Long:    `A context is defined by a name and an API token to access the public Hetzner Cloud API.`,
+// currentCmd represents the current command
+var currentCmd = &cobra.Command{
+	Use:   "current",
+	Short: "prints the current used context",
 	Run: func(cmd *cobra.Command, args []string) {
-		tw := new(tabwriter.Writer)
-		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)
-		fmt.Fprintln(tw, "NAME\tTOKEN")
-
-		for _, context := range AppConf.Config.Contexts {
-			fmt.Fprintf(tw, "%s\t%s\t", context.Name, context.Token)
-			fmt.Fprintln(tw)
-		}
-
-		tw.Flush()
+		fmt.Println(AppConf.Config.ActiveContextName)
 	},
 }
 
 func init() {
-	contextCmd.AddCommand(listCmd)
+	contextCmd.AddCommand(currentCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// currentCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// currentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
