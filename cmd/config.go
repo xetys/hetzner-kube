@@ -11,34 +11,12 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"github.com/go-kit/kit/log/term"
+	"github.com/thcyron/uiprogress"
 )
 
-type HetznerContext struct {
-	Token string `json:"token"`
-	Name  string `json:"name"`
-}
-
-type SSHKey struct {
-	Name           string `json:"name"`
-	PrivateKeyPath string `json:"private_key_path"`
-	PublicKeyPath  string `json:"public_key_path"`
-}
-
-type HetznerConfig struct {
-	ActiveContextName string           `json:"active_context_name"`
-	Contexts          []HetznerContext `json:"contexts"`
-	SSHKeys           []SSHKey         `json:"ssh_keys"`
-}
-
-type AppConfig struct {
-	Client         *hcloud.Client
-	Context        context.Context
-	CurrentContext *HetznerContext
-	Config         *HetznerConfig
-}
 
 var DefaultConfigPath string
-var Config HetznerConfig
 var AppConf AppConfig = AppConfig{}
 
 func (config HetznerConfig) WriteCurrentConfig() {
@@ -54,8 +32,6 @@ func (config HetznerConfig) WriteCurrentConfig() {
 	} else {
 		log.Fatal(err)
 	}
-
-	Config = config
 }
 
 func (config *HetznerConfig) AddContext(context HetznerContext) {
@@ -89,6 +65,17 @@ func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *SSHKey) {
 	return index, nil
 }
 
+func (config *HetznerConfig) AddCluster(cluster Cluster) {
+	for i, v := range config.Clusters {
+		if v.Name == cluster.Name {
+			config.Clusters[i] = cluster
+			return
+		}
+	}
+
+	config.Clusters = append(config.Clusters, cluster)
+}
+
 func (app *AppConfig) SwitchContextByName(name string) error {
 	ctx, err := app.FindContextByName(name)
 
@@ -119,6 +106,33 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 	}
 
 	return nil, errors.New(fmt.Sprintf("context '%s' not found", name))
+}
+
+func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
+	errCh, progressCh := waitAction(ctx, app.Client, action)
+
+	if term.IsTerminal(os.Stdout){
+		progress := uiprogress.New()
+
+		progress.Start()
+		bar := progress.AddBar(100).AppendCompleted().PrependElapsed()
+		bar.Empty = ' '
+
+		for {
+			select {
+			case err := <-errCh:
+				if err == nil {
+					bar.Set(100)
+				}
+				progress.Stop()
+				return err
+			case p := <-progressCh:
+				bar.Set(p)
+			}
+		}
+	} else {
+		return <-errCh
+	}
 }
 
 func (app *AppConfig) assertActiveContext() error {
