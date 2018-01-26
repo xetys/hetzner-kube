@@ -183,8 +183,10 @@ func makeConfigIfNotExists() {
 		}
 
 		json.Unmarshal(configFileContent, &AppConf.Config)
-		if err := AppConf.SwitchContextByName(AppConf.Config.ActiveContextName); err != nil {
-			log.Fatal(err)
+		if AppConf.Config.ActiveContextName > "" {
+			if err := AppConf.SwitchContextByName(AppConf.Config.ActiveContextName); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
