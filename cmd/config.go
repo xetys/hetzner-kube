@@ -54,6 +54,7 @@ func (config *HetznerConfig) DeleteSSHKey(name string) error {
 
 	return nil
 }
+
 func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *SSHKey) {
 	index := -1
 	for i, v := range config.SSHKeys {
@@ -74,6 +75,30 @@ func (config *HetznerConfig) AddCluster(cluster Cluster) {
 	}
 
 	config.Clusters = append(config.Clusters, cluster)
+}
+
+
+func (config *HetznerConfig) DeleteCluster(name string) error {
+
+	index, _ := config.FindClusterByName(name)
+
+	if index == -1 {
+		return errors.New("cluster not found")
+	}
+
+	config.Clusters = append(config.Clusters[:index], config.Clusters[index+1:]...)
+
+	return nil
+}
+
+func (config *HetznerConfig) FindClusterByName(name string) (int, *Cluster) {
+	for i, cluster := range config.Clusters {
+		if cluster.Name == name {
+			return i, &cluster
+		}
+	}
+
+	return -1, nil
 }
 
 func (app *AppConfig) SwitchContextByName(name string) error {

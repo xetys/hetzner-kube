@@ -164,7 +164,7 @@ func (cluster *Cluster) CreateWorkerNodes(template Node, count int) error {
 func (cluster *Cluster) ProvisionNodes() error {
 	for _, node := range cluster.Nodes {
 		log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
-		_, err := runCmd(node, "wget -cO- https://gist.githubusercontent.com/xetys/0ecfa01790debb2345c0883418dcc7c4/raw/403b6cdea6b78bc5b7209acfa3dfa810dd5f89ba/ubuntu16-kubeadm | bash -")
+		_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
 
 		if err != nil {
 			return err
