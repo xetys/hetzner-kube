@@ -24,3 +24,14 @@ deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
+
+# prepare for hetzners cloud controller manager
+mkdir -p /etc/systemd/system/kubelet.service.d
+cat > /etc/systemd/system/kubelet.service.d/20-hcloud.conf << EOM
+[Service]
+Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
+EOM
+
+systemctl daemon-reload
+
+
