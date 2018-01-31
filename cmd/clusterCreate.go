@@ -59,8 +59,14 @@ to quickly create a Cobra application.`,
 		time.Sleep(10 * time.Second)
 
 		// provision nodes
-		if err := cluster.ProvisionNodes(); err != nil {
-			log.Fatal(err)
+		tries := 0
+		for err := cluster.ProvisionNodes(); err != nil; {
+			if tries < 3 {
+				fmt.Print(err)
+				tries++
+			} else {
+				log.Fatal(err)
+			}
 		}
 
 		// install master
@@ -176,11 +182,14 @@ func (cluster *Cluster) ProvisionNodes() error {
 func (cluster *Cluster) InstallMaster() error {
 	commands := []string{
 		"swapoff -a",
+		"echo '[Service]' > /etc/systemd/system/kubelet.service.d/20-hcloud.conf && echo 'Environment=\"KUBELET_EXTRA_ARGS=--cloud-provider=external\"' >> /etc/systemd/system/kubelet.service.d/20-hcloud.conf",
 		"kubeadm init --pod-network-cidr=192.168.0.0/16",
 		"mkdir -p $HOME/.kube",
 		"cp -i /etc/kubernetes/admin.conf $HOME/.kube/config",
 		"chown $(id -u):$(id -g) $HOME/.kube/config",
 		"kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml",
+		fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token),
+		"kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml",
 	}
 	for _, node := range cluster.Nodes {
 		if node.IsMaster {
