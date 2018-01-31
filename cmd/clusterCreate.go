@@ -49,14 +49,17 @@ to quickly create a Cobra application.`,
 			log.Println(err)
 		}
 
+		saveCluster(&cluster)
+
 		if workerCount > 0 {
 			if err := cluster.CreateWorkerNodes(Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}, workerCount); err != nil {
 				log.Fatal(err)
 			}
 		}
+		saveCluster(&cluster)
 
-		log.Println("sleep for 10s...")
-		time.Sleep(10 * time.Second)
+		log.Println("sleep for 30s...")
+		time.Sleep(30 * time.Second)
 
 		// provision nodes
 		tries := 0
@@ -74,6 +77,8 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		saveCluster(&cluster)
+
 		// install worker
 		if err := cluster.InstallWorkers(); err != nil {
 			log.Fatal(err)
@@ -81,9 +86,13 @@ to quickly create a Cobra application.`,
 
 		log.Println("Cluster successfully created!")
 
-		AppConf.Config.AddCluster(cluster)
-		AppConf.Config.WriteCurrentConfig()
+		saveCluster(&cluster)
 	},
+}
+
+func saveCluster(cluster *Cluster) {
+	AppConf.Config.AddCluster(*cluster)
+	AppConf.Config.WriteCurrentConfig()
 }
 
 func (cluster *Cluster) CreateNodes(suffix string, template Node, count int) error {
@@ -182,12 +191,13 @@ func (cluster *Cluster) ProvisionNodes() error {
 func (cluster *Cluster) InstallMaster() error {
 	commands := []string{
 		"swapoff -a",
-		"echo '[Service]' > /etc/systemd/system/kubelet.service.d/20-hcloud.conf && echo 'Environment=\"KUBELET_EXTRA_ARGS=--cloud-provider=external\"' >> /etc/systemd/system/kubelet.service.d/20-hcloud.conf",
-		"kubeadm init --pod-network-cidr=192.168.0.0/16",
+		"kubeadm init --pod-network-cidr=10.244.0.0/16",
 		"mkdir -p $HOME/.kube",
 		"cp -i /etc/kubernetes/admin.conf $HOME/.kube/config",
 		"chown $(id -u):$(id -g) $HOME/.kube/config",
-		"kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml",
+		// "kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml",
+		"kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml",
+		"kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'",
 		fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token),
 		"kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml",
 	}
@@ -197,7 +207,8 @@ func (cluster *Cluster) InstallMaster() error {
 				commands = append(commands, "kubectl taint nodes --all node-role.kubernetes.io/master-")
 			}
 
-			for _, command := range commands {
+			for i, command := range commands {
+				log.Printf("running command %d/%d on %s", i, len(commands), node.Name)
 				_, err := runCmd(node, command)
 				if err != nil {
 					return err
