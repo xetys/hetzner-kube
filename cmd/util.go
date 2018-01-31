@@ -20,11 +20,11 @@ func runCmd(node Node, command string) (output string, err error) {
 
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
-		log.Fatalf("parse key failed:%v", err)
+		return "", errors.New(fmt.Sprintf("parse key failed:%v",err))
 	}
 	config := &ssh.ClientConfig{
 		User:            "root",
@@ -45,7 +45,7 @@ func runCmd(node Node, command string) (output string, err error) {
 		time.Sleep(1 * time.Second)
 	}
 	defer connection.Close()
-	log.Println("Connected succeeded!")
+	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
 	if err != nil {
 		log.Fatalf("session failed:%v", err)
@@ -58,9 +58,10 @@ func runCmd(node Node, command string) (output string, err error) {
 	err = session.Run(command)
 	if err != nil {
 		log.Println(stderrBuf.String())
-		log.Fatalf("Run failed:%v", err)
+		log.Printf(">%s", stdoutBuf.String())
+		return "", errors.New(fmt.Sprintf("Run failed:%v",err))
 	}
-	log.Printf(">%s", stdoutBuf.String())
+	// log.Println("Command execution succeeded!")
 	session.Close()
 	return stdoutBuf.String(), nil
 }
