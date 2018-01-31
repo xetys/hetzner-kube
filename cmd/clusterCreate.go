@@ -208,7 +208,7 @@ func (cluster *Cluster) InstallMaster() error {
 			}
 
 			for i, command := range commands {
-				log.Printf("running command %d/%d on %s", i, len(commands), node.Name)
+				log.Printf("running command %d/%d on %s", i + 1, len(commands), node.Name)
 				_, err := runCmd(node, command)
 				if err != nil {
 					return err
@@ -228,6 +228,7 @@ func (cluster *Cluster) InstallWorkers() error {
 	for _, node := range cluster.Nodes {
 		if node.IsMaster {
 			output, err := runCmd(node, "kubeadm token create --print-join-command")
+			log.Printf("Registering node %s", node.Name)
 			if err != nil {
 				return err
 			}

@@ -9,7 +9,7 @@ This is my very first tool written in Go.
 
 Get the linux binary from releases page.
 
-[Download version 0.0.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.0.1/hetzner-kube)
+[Download version 0.0.2 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.0.2/hetzner-kube)
 
 
 or get it from source:
@@ -45,4 +45,7 @@ $ hetzner-kube cluster create --name my-cluster --nodes 3 --ssh-key my-key
 This will provision a brand new kubernetes cluster in latest version!
 
 
-More info will come as more development happens here...
+## Full tutorial
+
+[This article](http://stytex.de/blog/2018/01/29/deploy-kubernetes-hetzner-cloud-openebs/) guides through a full
+cluster setup.
