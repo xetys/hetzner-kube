@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"context"
+	"github.com/xetys/hetzner-kube/pkg"
 )
 
 type HetznerContext struct {
@@ -25,11 +26,17 @@ type Node struct {
 }
 
 type Cluster struct {
-	Name       string `json:"name"`
-	Nodes      []Node `json:"nodes"`
-	SelfHosted bool   `json:"self_hosted"`
+	Name        string                   `json:"name"`
+	Nodes       []Node                   `json:"nodes"`
+	SelfHosted  bool                     `json:"self_hosted"`
+	coordinator *pkg.ProgressCoordinator `json:"-"`
+	wait        bool                     `json:"-"`
 }
 
+type SSHCommand struct {
+	eventName string
+	command   string
+}
 
 type ClusterManager interface {
 	CreateMasterNodes(template Node, count int) error
@@ -38,7 +45,6 @@ type ClusterManager interface {
 	InstallMaster()
 	InstallWorkers()
 	GetKubeconfig()
-
 }
 
 type SSHClient interface {

@@ -22,6 +22,8 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"strings"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/Pallinder/go-randomdata"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -39,11 +41,17 @@ to quickly create a Cobra application.`,
 
 		nodeCount, _ := cmd.Flags().GetInt("nodes")
 		workerCount := nodeCount - 1
-		clusterName, _ := cmd.Flags().GetString("name")
+
+		clusterName := randomName()
+		if name, _ := cmd.Flags().GetString("name"); name != "" {
+			clusterName = name
+		}
+
 		sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 		masterServerType, _ := cmd.Flags().GetString("master-server-type")
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
-		cluster := Cluster{Name: clusterName}
+
+		cluster := Cluster{Name: clusterName, wait: false}
 
 		if err := cluster.CreateMasterNodes(Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType}, 1); err != nil {
 			log.Println(err)
@@ -58,8 +66,12 @@ to quickly create a Cobra application.`,
 		}
 		saveCluster(&cluster)
 
-		log.Println("sleep for 30s...")
-		time.Sleep(30 * time.Second)
+		if cluster.wait {
+			log.Println("sleep for 30s...")
+			time.Sleep(30 * time.Second)
+		}
+		cluster.coordinator = pkg.NewProgressCoordinator()
+		cluster.RenderProgressBars()
 
 		// provision nodes
 		tries := 0
@@ -84,6 +96,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		cluster.coordinator.Wait()
 		log.Println("Cluster successfully created!")
 
 		saveCluster(&cluster)
@@ -121,7 +134,7 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int) err
 		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i), 1)
 
 		// create
-		server, err := runCreateServer(&serverOpts)
+		server, err := cluster.runCreateServer(&serverOpts)
 
 		if err != nil {
 			return err
@@ -141,7 +154,7 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int) err
 	return nil
 }
 
-func runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
+func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
 
 	log.Printf("creating server '%s'...", opts.Name)
 	result, _, err := AppConf.Client.Server.Create(AppConf.Context, *opts)
@@ -164,6 +177,8 @@ func runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult,
 		return nil, err
 	}
 
+	cluster.wait = true
+
 	return &result, nil
 }
 
@@ -176,45 +191,93 @@ func (cluster *Cluster) CreateWorkerNodes(template Node, count int) error {
 	return cluster.CreateNodes("worker", template, count)
 }
 
-func (cluster *Cluster) ProvisionNodes() error {
+func (cluster *Cluster) RenderProgressBars() {
 	for _, node := range cluster.Nodes {
-		log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
+		steps := 0
+		if node.IsMaster {
+			// the InstallMaster routine has 9 events
+			steps += 9
+
+			// and one more, it's got tainted
+			if len(cluster.Nodes) == 1 {
+				steps += 1
+			}
+		} else {
+			steps = 4
+		}
+
+		cluster.coordinator.StartProgress(node.Name, steps)
+	}
+}
+
+func (cluster *Cluster) ProvisionNodes() error {
+	processes := 0
+	//c := make(chan int)
+	//ce := make(chan error)
+	for _, node := range cluster.Nodes {
+		// log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
+		processes++
+		// go func() {
+		// node := node
+		cluster.coordinator.AddEvent(node.Name, fmt.Sprintf("install packages on %s", node.IPAddress))
 		_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+
+		//if err != nil {
+		//	ce <- err
+		//} else {
+		//	c <- 1
+		//}
 
 		if err != nil {
 			return err
 		}
+
+		if node.IsMaster {
+			cluster.coordinator.AddEvent(node.Name, "packages installed")
+		} else {
+			cluster.coordinator.AddEvent(node.Name, "waiting for master")
+		}
+
+
+		//}()
 	}
+
+	//for processes > 0 {
+	//	select {
+	//	case err := <-ce:
+	//		return err
+	//	case <-c:
+	//		processes--
+	//	}
+	//}
 
 	return nil
 }
 func (cluster *Cluster) InstallMaster() error {
-	commands := []string{
-		"swapoff -a",
-		"kubeadm init --pod-network-cidr=10.244.0.0/16",
-		"mkdir -p $HOME/.kube",
-		"cp -i /etc/kubernetes/admin.conf $HOME/.kube/config",
-		"chown $(id -u):$(id -g) $HOME/.kube/config",
-		// "kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml",
-		"kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml",
-		"kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'",
-		fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token),
-		"kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml",
+	commands := []SSHCommand{
+		{"disable swap", "swapoff -a"},
+		{"kubeadm init", "kubeadm reset && kubeadm init --pod-network-cidr=10.244.0.0/16"},
+		{"configure kubectl", "mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
+		{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"},
+		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
+		{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
+		{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
 	for _, node := range cluster.Nodes {
 		if node.IsMaster {
 			if len(cluster.Nodes) == 1 {
-				commands = append(commands, "kubectl taint nodes --all node-role.kubernetes.io/master-")
+				commands = append(commands, SSHCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
 
-			for i, command := range commands {
-				log.Printf("running command %d/%d on %s", i + 1, len(commands), node.Name)
-				_, err := runCmd(node, command)
+			for _, command := range commands {
+				cluster.coordinator.AddEvent(node.Name, command.eventName)
+				_, err := runCmd(node, command.command)
 				if err != nil {
 					return err
 				}
 			}
 
+			cluster.coordinator.AddEvent(node.Name, "complete!")
 			break
 		}
 	}
@@ -228,7 +291,6 @@ func (cluster *Cluster) InstallWorkers() error {
 	for _, node := range cluster.Nodes {
 		if node.IsMaster {
 			output, err := runCmd(node, "kubeadm token create --print-join-command")
-			log.Printf("Registering node %s", node.Name)
 			if err != nil {
 				return err
 			}
@@ -241,24 +303,28 @@ func (cluster *Cluster) InstallWorkers() error {
 
 	for _, node := range cluster.Nodes {
 		if !node.IsMaster {
+			cluster.coordinator.AddEvent(node.Name, "registering node")
 			_, err := runCmd(node, "swapoff -a && "+joinCommand)
 			if err != nil {
 				return err
 			}
+
+			cluster.coordinator.AddEvent(node.Name, "complete!")
 		}
 	}
 
 	return nil
 }
 
+func randomName() string {
+	return fmt.Sprintf("%s-%s%s", randomdata.Adjective(), randomdata.Noun(), randomdata.Adjective())
+}
+
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 
 	var (
-		name, ssh_key, master_server_type, worker_server_type string
+		ssh_key, master_server_type, worker_server_type string
 	)
-	if name, _ = cmd.Flags().GetString("name"); name == "" {
-		return errors.New("flag --name is required")
-	}
 
 	if ssh_key, _ = cmd.Flags().GetString("ssh-key"); ssh_key == "" {
 		return errors.New("flag --ssh-key is required")

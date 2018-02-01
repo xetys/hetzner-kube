@@ -21,6 +21,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/xetys/hetzner-kube/pkg"
 )
 
 var cfgFile string
@@ -41,6 +42,12 @@ Attention: the tool is of ALPHA quality! Don't use it for production setups, yet
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	if debug, err := rootCmd.PersistentFlags().GetBool("debug"); err != nil && debug {
+		pkg.RenderProgressBars = false
+	} else {
+		pkg.RenderProgressBars = true
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -58,6 +65,7 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "debug mode")
 }
 
 // initConfig reads in config file and ENV variables if set.

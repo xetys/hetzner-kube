@@ -58,7 +58,9 @@ func runCmd(node Node, command string) (output string, err error) {
 	err = session.Run(command)
 	if err != nil {
 		log.Println(stderrBuf.String())
-		log.Printf(">%s", stdoutBuf.String())
+		log.Printf("> %s", command)
+		log.Println()
+		log.Printf("%s", stdoutBuf.String())
 		return "", errors.New(fmt.Sprintf("Run failed:%v",err))
 	}
 	// log.Println("Command execution succeeded!")
