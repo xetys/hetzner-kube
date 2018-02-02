@@ -24,6 +24,7 @@ import (
 	"time"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/Pallinder/go-randomdata"
+	"sync"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -211,46 +212,37 @@ func (cluster *Cluster) RenderProgressBars() {
 }
 
 func (cluster *Cluster) ProvisionNodes() error {
-	processes := 0
-	//c := make(chan int)
-	//ce := make(chan error)
+	var wg sync.WaitGroup
 	for _, node := range cluster.Nodes {
 		// log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
-		processes++
-		// go func() {
-		// node := node
-		cluster.coordinator.AddEvent(node.Name, fmt.Sprintf("install packages on %s", node.IPAddress))
-		_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
-
-		//if err != nil {
-		//	ce <- err
-		//} else {
-		//	c <- 1
-		//}
-
-		if err != nil {
-			return err
-		}
-
-		if node.IsMaster {
-			cluster.coordinator.AddEvent(node.Name, "packages installed")
-		} else {
-			cluster.coordinator.AddEvent(node.Name, "waiting for master")
-		}
+		wg.Add(1)
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "install packages")
+			_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+			//
+			if err != nil {
+				log.Fatalln(err)
+			}
 
 
-		//}()
+			//if err != nil {
+			//	return err
+			//}
+
+			if node.IsMaster {
+				cluster.coordinator.AddEvent(node.Name, "packages installed")
+			} else {
+				cluster.coordinator.AddEvent(node.Name, "waiting for master")
+			}
+
+			wg.Done()
+
+		}(node)
 	}
 
-	//for processes > 0 {
-	//	select {
-	//	case err := <-ce:
-	//		return err
-	//	case <-c:
-	//		processes--
-	//	}
-	//}
+	wg.Wait()
 
+	// return errors.New("stop")
 	return nil
 }
 func (cluster *Cluster) InstallMaster() error {
