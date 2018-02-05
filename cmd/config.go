@@ -5,16 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-kit/kit/log/term"
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/thcyron/uiprogress"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
-	"github.com/go-kit/kit/log/term"
-	"github.com/thcyron/uiprogress"
 )
-
 
 var DefaultConfigPath string
 var AppConf AppConfig = AppConfig{}
@@ -77,7 +76,6 @@ func (config *HetznerConfig) AddCluster(cluster Cluster) {
 	config.Clusters = append(config.Clusters, cluster)
 }
 
-
 func (config *HetznerConfig) DeleteCluster(name string) error {
 
 	index, _ := config.FindClusterByName(name)
@@ -111,7 +109,6 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 	app.CurrentContext = ctx
 	app.Config.ActiveContextName = ctx.Name
 
-
 	opts := []hcloud.ClientOption{
 		hcloud.WithToken(ctx.Token),
 	}
@@ -136,7 +133,7 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
 	errCh, progressCh := waitAction(ctx, app.Client, action)
 
-	if term.IsTerminal(os.Stdout){
+	if term.IsTerminal(os.Stdout) {
 		progress := uiprogress.New()
 
 		progress.Start()

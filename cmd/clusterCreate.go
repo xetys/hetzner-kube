@@ -15,16 +15,16 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"log"
 	"errors"
 	"fmt"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"strings"
-	"time"
-	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/Pallinder/go-randomdata"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
+	"log"
+	"strings"
 	"sync"
+	"time"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -224,7 +224,6 @@ func (cluster *Cluster) ProvisionNodes() error {
 				log.Fatalln(err)
 			}
 
-
 			//if err != nil {
 			//	return err
 			//}
@@ -245,6 +244,7 @@ func (cluster *Cluster) ProvisionNodes() error {
 	// return errors.New("stop")
 	return nil
 }
+
 func (cluster *Cluster) InstallMaster() error {
 	commands := []SSHCommand{
 		{"disable swap", "swapoff -a"},

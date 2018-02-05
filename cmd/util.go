@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"time"
-	"io/ioutil"
 	"bytes"
-	"log"
-	"golang.org/x/crypto/ssh"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"golang.org/x/crypto/ssh"
+	"io/ioutil"
+	"log"
+	"time"
 )
 
 func runCmd(node Node, command string) (output string, err error) {
@@ -24,7 +24,7 @@ func runCmd(node Node, command string) (output string, err error) {
 	}
 	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("parse key failed:%v",err))
+		return "", errors.New(fmt.Sprintf("parse key failed:%v", err))
 	}
 	config := &ssh.ClientConfig{
 		User:            "root",
@@ -61,7 +61,7 @@ func runCmd(node Node, command string) (output string, err error) {
 		log.Printf("> %s", command)
 		log.Println()
 		log.Printf("%s", stdoutBuf.String())
-		return "", errors.New(fmt.Sprintf("Run failed:%v",err))
+		return "", errors.New(fmt.Sprintf("Run failed:%v", err))
 	}
 	// log.Println("Command execution succeeded!")
 	session.Close()

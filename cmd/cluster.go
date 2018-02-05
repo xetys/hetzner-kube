@@ -22,7 +22,7 @@ import (
 var clusterCmd = &cobra.Command{
 	Use:   "cluster",
 	Short: "view and manage kubernetes clusters",
-	Long:  `This command bundles several sub-commands to handle with kubernetes clusters, running on Hetzner Cloud.
+	Long: `This command bundles several sub-commands to handle with kubernetes clusters, running on Hetzner Cloud.
 
 Currently it's only supposed to create simple clusters. Upcoming features like separate etcd nodes, multiple masters, upgrades etc.
 are hopefully coming soon.'`,
