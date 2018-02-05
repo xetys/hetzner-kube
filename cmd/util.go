@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"time"
+	"github.com/Pallinder/go-randomdata"
 )
 
 func runCmd(node Node, command string) (output string, err error) {
@@ -118,4 +119,8 @@ func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Actio
 	}()
 
 	return errCh, progressCh
+}
+
+func randomName() string {
+	return fmt.Sprintf("%s-%s%s", randomdata.Adjective(), randomdata.Noun(), randomdata.Adjective())
 }
