@@ -67,11 +67,9 @@ to quickly create a Cobra application.`,
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 		var sshKeyName string
-		//var nodeNames string
 
 		for _, node := range cluster.Nodes {
 			if node.IsMaster {
-				//nodeNames, _ := runCmd(node, "kubectl get node -o jsonpath='{.items[*].metadata.name}'")
 				sshKeyName = node.SSHKeyName
 			}
 		}
@@ -79,8 +77,6 @@ to quickly create a Cobra application.`,
 		if sshKeyName == "" {
 			log.Fatal("master not found")
 		}
-
-		//existingNodeNames := strings.Split(nodeNames, " ")
 
 		maxNo := 0
 		for _, node := range cluster.Nodes {
@@ -109,29 +105,6 @@ to quickly create a Cobra application.`,
 
 		cluster.InstallWorkers(nodes)
 		saveCluster(cluster)
-
-
-
-			//
-			//server, _, err := AppConf.Client.Server.Get(AppConf.Context, node.Name)
-			//
-			//if err != nil {
-			//	log.Fatal(err)
-			//}
-			//
-			//if server != nil {
-			//	_, err = AppConf.Client.Server.Delete(AppConf.Context, server)
-			//
-			//	if err != nil {
-			//		log.Fatal(err)
-			//	}
-			//
-			//	log.Printf("server '%s' deleted", node.Name)
-			//} else {
-			//	log.Printf("server '%s' was already deleted", node.Name)
-			//}
-		//}
-
 	},
 }
 
@@ -140,14 +113,4 @@ func init() {
 	clusterAddworkerCmd.Flags().StringP("name", "", "", "Name of the cluster to delete")
 	clusterAddworkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddworkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// clusterAddworkerCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// clusterAddworkerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
