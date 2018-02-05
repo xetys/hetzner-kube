@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func (cluster *Cluster) InstallWorkers() error {
+func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 	var joinCommand string
 	// find master
 	for _, node := range cluster.Nodes {
@@ -24,7 +24,7 @@ func (cluster *Cluster) InstallWorkers() error {
 
 	// now let the nodes join
 
-	for _, node := range cluster.Nodes {
+	for _, node := range nodes {
 		if !node.IsMaster {
 			cluster.coordinator.AddEvent(node.Name, "registering node")
 			_, err := runCmd(node, "swapoff -a && "+joinCommand)
@@ -39,11 +39,11 @@ func (cluster *Cluster) InstallWorkers() error {
 	return nil
 }
 
-func (cluster *Cluster) CreateNodes(suffix string, template Node, count int) error {
+func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, offset int) ([]Node, error) {
 	sshKey, _, err := AppConf.Client.SSHKey.Get(AppConf.Context, template.SSHKeyName)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	serverNameTemplate := fmt.Sprintf("%s-%s-@idx", cluster.Name, suffix)
@@ -59,38 +59,41 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int) err
 
 	serverOptsTemplate.SSHKeys = append(serverOptsTemplate.SSHKeys, sshKey)
 
+	var nodes []Node
 	for i := 1; i <= count; i++ {
 		var serverOpts hcloud.ServerCreateOpts
 		serverOpts = serverOptsTemplate
-		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i), 1)
+		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i + offset), 1)
 
 		// create
 		server, err := cluster.runCreateServer(&serverOpts)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		ipAddress := server.Server.PublicNet.IPv4.IP.String()
 		log.Printf("Created node '%s' with IP %s", server.Server.Name, ipAddress)
-		cluster.Nodes = append(cluster.Nodes, Node{
+		node := Node{
 			Name:       serverOpts.Name,
 			Type:       serverOpts.ServerType.Name,
 			IsMaster:   template.IsMaster,
 			IPAddress:  ipAddress,
 			SSHKeyName: template.SSHKeyName,
-		})
+		}
+		nodes = append(nodes, node)
+		cluster.Nodes = append(cluster.Nodes, node)
 	}
 
-	return nil
+	return nodes, nil
 }
 
-func (cluster *Cluster) ProvisionNodes() error {
+func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 	var wg sync.WaitGroup
-	for _, node := range cluster.Nodes {
+	for _, node := range nodes {
 		// log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
 		wg.Add(1)
-		go cluster.ProvisionNode(wg, node)
+		go cluster.ProvisionNode(&wg, node)
 	}
 
 	wg.Wait()
@@ -98,7 +101,7 @@ func (cluster *Cluster) ProvisionNodes() error {
 	return nil
 }
 
-func (cluster *Cluster) ProvisionNode(wg sync.WaitGroup, node Node) {
+func (cluster *Cluster) ProvisionNode(wg *sync.WaitGroup, node Node) {
 	cluster.coordinator.AddEvent(node.Name, "install packages")
 	_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
 
@@ -146,16 +149,16 @@ func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.
 func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType string, count int) error {
 	template := Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType}
 	log.Println("creating master nodes...")
-	err := cluster.CreateNodes("master", template, count)
+	_, err := cluster.CreateNodes("master", template, count, 0)
 	saveCluster(cluster)
 	return err
 }
 
-func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType string, count int) error {
+func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType string, count int, offset int) ([]Node, error) {
 	template := Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
-	err := cluster.CreateNodes("worker", template, count)
+	nodes, err := cluster.CreateNodes("worker", template, count, offset)
 	saveCluster(cluster)
-	return err
+	return nodes, err
 }
 
 func (cluster *Cluster) InstallMaster() error {

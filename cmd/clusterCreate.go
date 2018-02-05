@@ -54,8 +54,11 @@ to quickly create a Cobra application.`,
 			log.Println(err)
 		}
 
+		var nodes []Node
 		if workerCount > 0 {
-			if err := cluster.CreateWorkerNodes(sshKeyName, workerServerType, workerCount); err != nil {
+			var err error
+			nodes, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, workerCount, 0)
+			if err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -69,7 +72,7 @@ to quickly create a Cobra application.`,
 
 		// provision nodes
 		tries := 0
-		for err := cluster.ProvisionNodes(); err != nil; {
+		for err := cluster.ProvisionNodes(nodes); err != nil; {
 			if tries < 3 {
 				fmt.Print(err)
 				tries++
@@ -86,7 +89,7 @@ to quickly create a Cobra application.`,
 		saveCluster(&cluster)
 
 		// install worker
-		if err := cluster.InstallWorkers(); err != nil {
+		if err := cluster.InstallWorkers(cluster.Nodes); err != nil {
 			log.Fatal(err)
 		}
 

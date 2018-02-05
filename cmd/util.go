@@ -124,3 +124,16 @@ func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Actio
 func randomName() string {
 	return fmt.Sprintf("%s-%s%s", randomdata.Adjective(), randomdata.Noun(), randomdata.Adjective())
 }
+
+func Index(vs []string, t string) int {
+	for i, v := range vs {
+		if v == t {
+			return i
+		}
+	}
+	return -1
+}
+
+func Include(vs []string, t string) bool {
+	return Index(vs, t) >= 0
+}
