@@ -22,6 +22,7 @@ import (
 	"strings"
 	"strconv"
 	"github.com/xetys/hetzner-kube/pkg"
+	"time"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -95,6 +96,9 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		saveCluster(cluster)
+
+		log.Println("sleep for 30s...")
+		time.Sleep(30 * time.Second)
 
 		cluster.ProvisionNodes(nodes)
 		saveCluster(cluster)
