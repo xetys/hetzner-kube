@@ -63,7 +63,7 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, off
 	for i := 1; i <= count; i++ {
 		var serverOpts hcloud.ServerCreateOpts
 		serverOpts = serverOptsTemplate
-		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i + offset), 1)
+		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i+offset), 1)
 
 		// create
 		server, err := cluster.runCreateServer(&serverOpts)
@@ -90,32 +90,31 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, off
 
 func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 	var wg sync.WaitGroup
-	for _, node := range nodes {
-		// log.Printf("installing docker.io and kubeadm on node '%s'...", node.Name)
+	for _, node := range cluster.Nodes {
+
 		wg.Add(1)
-		go cluster.ProvisionNode(&wg, node)
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "install packages")
+			_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			if node.IsMaster {
+				cluster.coordinator.AddEvent(node.Name, "packages installed")
+			} else {
+				cluster.coordinator.AddEvent(node.Name, "waiting for master")
+			}
+
+			wg.Done()
+
+		}(node)
 	}
 
 	wg.Wait()
 
 	return nil
-}
-
-func (cluster *Cluster) ProvisionNode(wg *sync.WaitGroup, node Node) {
-	cluster.coordinator.AddEvent(node.Name, "install packages")
-	_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if node.IsMaster {
-		cluster.coordinator.AddEvent(node.Name, "packages installed")
-	} else {
-		cluster.coordinator.AddEvent(node.Name, "waiting for master")
-	}
-
-	wg.Done()
 }
 
 func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
