@@ -24,9 +24,9 @@ import (
 	"github.com/xetys/hetzner-kube/pkg"
 )
 
-// clusterAddworkerCmd represents the clusterAddworker command
-var clusterAddworkerCmd = &cobra.Command{
-	Use:   "addworker",
+// clusterAddWorkerCmd represents the clusterAddWorker command
+var clusterAddWorkerCmd = &cobra.Command{
+	Use:   "add-worker",
 	Short: "Add worker nodes",
 	Long: `Adds n nodes as worker nodes to the cluster.
 You can specify the worker server type as in cluster create.`,
@@ -105,8 +105,8 @@ You can specify the worker server type as in cluster create.`,
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterAddworkerCmd)
-	clusterAddworkerCmd.Flags().StringP("name", "", "", "Name of the cluster to delete")
-	clusterAddworkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
-	clusterAddworkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
+	clusterCmd.AddCommand(clusterAddWorkerCmd)
+	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to delete")
+	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
+	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
 }
