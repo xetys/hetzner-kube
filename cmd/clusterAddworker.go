@@ -28,12 +28,8 @@ import (
 var clusterAddworkerCmd = &cobra.Command{
 	Use:   "addworker",
 	Short: "Add worker nodes",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `Adds n nodes as worker nodes to the cluster.
+You can specify the worker server type as in cluster create.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
