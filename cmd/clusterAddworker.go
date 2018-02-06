@@ -110,7 +110,7 @@ You can specify the worker server type as in cluster create.`,
 
 func init() {
 	clusterCmd.AddCommand(clusterAddWorkerCmd)
-	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to delete")
+	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to add the workers to")
 	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
 }
