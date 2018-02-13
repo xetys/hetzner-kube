@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/hetznercloud/hcloud-go/hcloud"
 	"context"
+	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/xetys/hetzner-kube/pkg"
 )
 

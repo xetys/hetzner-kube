@@ -1,19 +1,21 @@
 package pkg
 
 import (
-	"sync"
 	"fmt"
+	"github.com/go-kit/kit/log/term"
 	"github.com/gosuri/uiprogress"
 	"github.com/gosuri/uiprogress/util/strutil"
-	"github.com/go-kit/kit/log/term"
 	"os"
+	"sync"
 )
 
 type ProgressCoordinator struct {
-	group sync.WaitGroup
+	group      sync.WaitGroup
 	progresses map[string]*Progress
 }
+
 var RenderProgressBars bool
+
 func NewProgressCoordinator() *ProgressCoordinator {
 	if isUiEnabled() {
 		uiprogress.Start()
@@ -34,8 +36,8 @@ func isUiEnabled() bool {
 
 func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
-		Bar: uiprogress.AddBar(steps),
-		State: "starting",
+		Bar:     uiprogress.AddBar(steps),
+		State:   "starting",
 		channel: make(chan string),
 	}
 	progress.Bar.PrependFunc(func(b *uiprogress.Bar) string {
@@ -46,7 +48,7 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	c.group.Add(1)
 	go func(progress *Progress) {
 		for {
-			event := <- progress.channel
+			event := <-progress.channel
 			if event == "complete!" {
 				progress.Bar.Set(progress.Bar.Total)
 				progress.SetText(event)
@@ -54,7 +56,7 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 			}
 
 			if !isUiEnabled() {
-				fmt.Printf("%s (%d)",event, progress.Bar.Current() + 1)
+				fmt.Printf("%s (%d)", event, progress.Bar.Current()+1)
 				fmt.Println()
 			}
 			progress.SetText(event)
@@ -66,13 +68,13 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	}(progress)
 }
 
-func (c *ProgressCoordinator) AddEvent(progressName string, eventName string)  {
+func (c *ProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
 	}
 }
 
-func (c *ProgressCoordinator) Wait()  {
+func (c *ProgressCoordinator) Wait() {
 	c.group.Wait()
 	if isUiEnabled() {
 		uiprogress.Stop()

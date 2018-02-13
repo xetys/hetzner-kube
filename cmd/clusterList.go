@@ -18,15 +18,15 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"text/tabwriter"
 	"os"
+	"text/tabwriter"
 )
 
 // clusterListCmd represents the clusterList command
 var clusterListCmd = &cobra.Command{
-	Use:   "list",
+	Use:     "list",
 	Aliases: []string{"ls"},
-	Short: "lists all created clusters",
+	Short:   "lists all created clusters",
 	Run: func(cmd *cobra.Command, args []string) {
 		tw := new(tabwriter.Writer)
 		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)

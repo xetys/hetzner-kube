@@ -18,15 +18,15 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"text/tabwriter"
 	"os"
+	"text/tabwriter"
 )
 
 // sshKeyListCmd represents the sshKeyList command
 var sshKeyListCmd = &cobra.Command{
-	Use:   "list",
+	Use:     "list",
 	Aliases: []string{"ls"},
-	Short: "lists all saved SSH keys",
+	Short:   "lists all saved SSH keys",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 

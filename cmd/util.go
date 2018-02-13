@@ -1,15 +1,16 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"time"
-	"io/ioutil"
 	"bytes"
-	"log"
-	"golang.org/x/crypto/ssh"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"golang.org/x/crypto/ssh"
+	"io/ioutil"
+	"log"
+	"time"
+	"github.com/Pallinder/go-randomdata"
 )
 
 func runCmd(node Node, command string) (output string, err error) {
@@ -24,7 +25,7 @@ func runCmd(node Node, command string) (output string, err error) {
 	}
 	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("parse key failed:%v",err))
+		return "", errors.New(fmt.Sprintf("parse key failed:%v", err))
 	}
 	config := &ssh.ClientConfig{
 		User:            "root",
@@ -61,7 +62,7 @@ func runCmd(node Node, command string) (output string, err error) {
 		log.Printf("> %s", command)
 		log.Println()
 		log.Printf("%s", stdoutBuf.String())
-		return "", errors.New(fmt.Sprintf("Run failed:%v",err))
+		return "", errors.New(fmt.Sprintf("Run failed:%v", err))
 	}
 	// log.Println("Command execution succeeded!")
 	session.Close()
@@ -118,4 +119,21 @@ func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Actio
 	}()
 
 	return errCh, progressCh
+}
+
+func randomName() string {
+	return fmt.Sprintf("%s-%s%s", randomdata.Adjective(), randomdata.Noun(), randomdata.Adjective())
+}
+
+func Index(vs []string, t string) int {
+	for i, v := range vs {
+		if v == t {
+			return i
+		}
+	}
+	return -1
+}
+
+func Include(vs []string, t string) bool {
+	return Index(vs, t) >= 0
 }

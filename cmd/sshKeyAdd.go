@@ -17,14 +17,14 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"errors"
-	"os"
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
-	"github.com/mitchellh/go-homedir"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command
@@ -49,8 +49,8 @@ Note: the private key is never uploaded to any server at any time.`,
 			os.Exit(1)
 		}
 
-		privateKeyPath = strings.Replace(privateKeyPath,"~", home, 1)
-		publicKeyPath = strings.Replace(publicKeyPath,"~", home, 1)
+		privateKeyPath = strings.Replace(privateKeyPath, "~", home, 1)
+		publicKeyPath = strings.Replace(publicKeyPath, "~", home, 1)
 
 		var (
 			data []byte
@@ -73,7 +73,6 @@ Note: the private key is never uploaded to any server at any time.`,
 		context := AppConf.Context
 		client := AppConf.Client
 		sshKey, _, err := client.SSHKey.Create(context, opts)
-
 
 		if err != nil {
 			log.Fatalln(err)
@@ -117,8 +116,8 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	privateKeyPath = strings.Replace(privateKeyPath,"~", home, 1)
-	publicKeyPath = strings.Replace(publicKeyPath,"~", home, 1)
+	privateKeyPath = strings.Replace(privateKeyPath, "~", home, 1)
+	publicKeyPath = strings.Replace(publicKeyPath, "~", home, 1)
 	if _, err := os.Stat(privateKeyPath); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("could not find private key '%s'", privateKeyPath))
 
