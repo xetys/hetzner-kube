@@ -5,6 +5,8 @@ Pin: version 17.03.*
 Pin-Priority: 1000
 " > /etc/apt/preferences.d/docker-ce
 
+installPackages() {
+
 apt-get update
 apt-get install -y \
     apt-transport-https \
@@ -34,4 +36,10 @@ EOM
 
 systemctl daemon-reload
 
+}
 
+S=$(type -p kubeadm > /dev/null &> /dev/null; echo $?)
+while [ S = 1 ]; do
+    installPackages
+    S=$(type -p kubeadm > /dev/null &> /dev/null; echo $?)
+done;
