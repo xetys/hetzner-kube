@@ -39,7 +39,7 @@ systemctl daemon-reload
 }
 
 S=$(type -p kubeadm > /dev/null &> /dev/null; echo $?)
-while [ S = 1 ]; do
+while [ ${S} = 1 ]; do
     echo "installing packages..."
     installPackages
     S=$(type -p kubeadm > /dev/null &> /dev/null; echo $?)
