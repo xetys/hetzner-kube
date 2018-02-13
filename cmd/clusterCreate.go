@@ -68,7 +68,7 @@ to quickly create a Cobra application.`,
 			time.Sleep(30 * time.Second)
 		}
 		cluster.coordinator = pkg.NewProgressCoordinator()
-		cluster.RenderProgressBars()
+		cluster.RenderProgressBars(cluster.Nodes)
 
 		// provision nodes
 		tries := 0
@@ -105,8 +105,8 @@ func saveCluster(cluster *Cluster) {
 	AppConf.Config.WriteCurrentConfig()
 }
 
-func (cluster *Cluster) RenderProgressBars() {
-	for _, node := range cluster.Nodes {
+func (cluster *Cluster) RenderProgressBars(nodes []Node) {
+	for _, node := range nodes {
 		steps := 0
 		if node.IsMaster {
 			// the InstallMaster routine has 9 events

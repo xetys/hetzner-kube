@@ -28,7 +28,7 @@ import (
 // clusterAddWorkerCmd represents the clusterAddWorker command
 var clusterAddWorkerCmd = &cobra.Command{
 	Use:   "add-worker",
-	Short: "Add worker nodes",
+	Short: "add worker nodes",
 	Long: `Adds n nodes as worker nodes to the cluster.
 You can specify the worker server type as in cluster create.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -100,6 +100,7 @@ You can specify the worker server type as in cluster create.`,
 		log.Println("sleep for 30s...")
 		time.Sleep(30 * time.Second)
 
+		cluster.RenderProgressBars(nodes)
 		cluster.ProvisionNodes(nodes)
 		saveCluster(cluster)
 
