@@ -26,12 +26,6 @@ import (
 var sshKeyDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "removes a saved SSH key from local configuration and Hetzner Cloud account",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
 	PreRunE: validateSHHKeyDeleteFlags,
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
@@ -45,9 +39,7 @@ to quickly create a Cobra application.`,
 			log.Printf("SSH key not found: %s", name)
 		} else {
 			_, err = AppConf.Client.SSHKey.Delete(AppConf.Context, sshKey)
-			if err != nil {
-				log.Fatal(err)
-			}
+			FatalOnError(err)
 		}
 
 		if err = AppConf.Config.DeleteSSHKey(name); err != nil {

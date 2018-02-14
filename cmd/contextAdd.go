@@ -40,9 +40,7 @@ var addCmd = &cobra.Command{
 		for {
 			fmt.Printf("Token: ")
 			t, err := r.ReadString('\n')
-			if err != nil {
-				log.Fatal(err)
-			}
+			FatalOnError(err)
 			t = strings.TrimSpace(t)
 			if t == "" {
 				continue
@@ -60,9 +58,7 @@ var addCmd = &cobra.Command{
 		AppConf.Client = hcloud.NewClient(opts...)
 		_, err := AppConf.Client.Server.All(AppConf.Context)
 
-		if err != nil {
-			log.Fatal(err)
-		}
+		FatalOnError(err)
 
 		context := &HetznerContext{Name: name, Token: token}
 		AppConf.Config.AddContext(*context)

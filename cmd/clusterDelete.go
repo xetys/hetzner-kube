@@ -58,16 +58,12 @@ var clusterDeleteCmd = &cobra.Command{
 		for _, node := range cluster.Nodes {
 			server, _, err := AppConf.Client.Server.Get(AppConf.Context, node.Name)
 
-			if err != nil {
-				log.Fatal(err)
-			}
+			FatalOnError(err)
 
 			if server != nil {
 				_, err = AppConf.Client.Server.Delete(AppConf.Context, server)
 
-				if err != nil {
-					log.Fatal(err)
-				}
+				FatalOnError(err)
 
 				log.Printf("server '%s' deleted", node.Name)
 			} else {

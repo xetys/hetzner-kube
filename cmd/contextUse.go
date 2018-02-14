@@ -31,10 +31,7 @@ var useCmd = &cobra.Command{
 
 		err := AppConf.SwitchContextByName(contextName)
 
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
+		FatalOnError(err)
 
 		AppConf.Config.WriteCurrentConfig()
 		fmt.Printf("switched to context '%s'", contextName)

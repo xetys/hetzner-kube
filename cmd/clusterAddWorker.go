@@ -91,9 +91,7 @@ You can specify the worker server type as in cluster create.`,
 
 		nodes, err := cluster.CreateWorkerNodes(sshKeyName, workerServerType, nodeCount, maxNo)
 
-		if err != nil {
-			log.Fatal(err)
-		}
+		FatalOnError(err)
 
 		saveCluster(cluster)
 

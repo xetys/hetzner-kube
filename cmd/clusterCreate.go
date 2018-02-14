@@ -58,9 +58,7 @@ to quickly create a Cobra application.`,
 		if workerCount > 0 {
 			var err error
 			nodes, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, workerCount, 0)
-			if err != nil {
-				log.Fatal(err)
-			}
+			FatalOnError(err)
 		}
 
 		if cluster.wait {

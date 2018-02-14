@@ -6,6 +6,7 @@ import (
 	"strings"
 	"log"
 	"sync"
+	"errors"
 )
 
 func (cluster *Cluster) InstallWorkers(nodes []Node) error {
@@ -143,6 +144,17 @@ func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.
 	cluster.wait = true
 
 	return &result, nil
+}
+
+func (cluster *Cluster) GetMasterNode() (node *Node, err error) {
+
+	for _, node := range cluster.Nodes {
+		if node.IsMaster {
+			return &node, nil
+		}
+	}
+
+	return nil, errors.New("no master node found")
 }
 
 func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType string, count int) error {

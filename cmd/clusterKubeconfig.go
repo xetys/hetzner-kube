@@ -16,26 +16,83 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"log"
+	"fmt"
+	"errors"
+	"os/user"
+	"os"
+	"io/ioutil"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
 var clusterKubeconfigCmd = &cobra.Command{
 	Use:   "kubeconfig",
 	Short: "setups the kubeconfig for the local machine",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `fetches the kubeconfig (e.g. for usage with kubectl) and saves it to ~/.kube/config, or prints it.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Example 1: hetzner-kube cluster kubeconfig -n my-cluster # installs the kubeconfig of the cluster "my-cluster"
+Example 2: hetzner-kube cluster kubeconfig -n my-cluster -b # saves the existing before installing
+Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the contents of kubeonfig to console
+Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeonfig into a custom file
+	`,
+	PreRunE: validateKubeconfigCmd,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Fatalln("not implemented!")
+		name, _ := cmd.Flags().GetString("name")
+		_, cluster := AppConf.Config.FindClusterByName(name)
+		masterNode, err := cluster.GetMasterNode()
+
+		FatalOnError(err)
+
+		kubeConfigContent, err := runCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
+
+		FatalOnError(err)
+
+
+		printContent, _ := cmd.Flags().GetBool("print")
+
+		if printContent {
+			fmt.Println(kubeConfigContent)
+		} else {
+			fmt.Println("create file")
+
+			usr, _ := user.Current()
+			dir := usr.HomeDir
+			path := fmt.Sprintf("%s/.kube", dir)
+
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				os.MkdirAll(path, 0755)
+			}
+
+			ioutil.WriteFile(fmt.Sprintf("%s/config", path), []byte(kubeConfigContent), 0755)
+
+			fmt.Println("kubeconfig configured")
+		}
 	},
+}
+func validateKubeconfigCmd(cmd *cobra.Command, args []string) error {
+
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
+		return nil
+	}
+
+	if name == "" {
+		return errors.New("flag --name is required")
+	}
+
+	idx, _ := AppConf.Config.FindClusterByName(name)
+
+	if idx == -1 {
+		return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+	}
+	return nil
 }
 
 func init() {
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
+
+	clusterKubeconfigCmd.Flags().StringP("name", "n", "", "name of the cluster")
+	clusterKubeconfigCmd.Flags().BoolP("print", "p", false, "prints output to stdout")
+	clusterKubeconfigCmd.Flags().BoolP("backup", "b", false, "saves existing config")
 
 	// Here you will define your flags and configuration settings.
 

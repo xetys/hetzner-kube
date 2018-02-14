@@ -137,3 +137,9 @@ func Index(vs []string, t string) int {
 func Include(vs []string, t string) bool {
 	return Index(vs, t) >= 0
 }
+
+func FatalOnError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
