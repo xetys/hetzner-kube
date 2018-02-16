@@ -37,7 +37,7 @@ var cloudInitSetCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		cloudInitFile, _ := cmd.Flags().GetString("cloud-init-file")
+		cloudInitFile, _ := cmd.Flags().GetString("file")
 		AppConf.Config.CloudInitFile = cloudInitFile
 		AppConf.Config.WriteCurrentConfig()
 	},
