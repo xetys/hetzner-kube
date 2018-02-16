@@ -75,6 +75,12 @@ You can specify the worker server type as in cluster create.`,
 			log.Fatal("master not found")
 		}
 
+		err := capturePassphrase(sshKeyName)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		maxNo := 0
 		for _, node := range cluster.Nodes {
 			if !node.IsMaster {

@@ -48,14 +48,10 @@ to quickly create a Cobra application.`,
 		masterServerType, _ := cmd.Flags().GetString("master-server-type")
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 
-		encrypted, err := isEncrypted(sshKeyName)
+		err := capturePassphrase(sshKeyName)
 
 		if err != nil {
 			log.Fatal(err)
-		}
-
-		if encrypted {
-			capturePassphrase(sshKeyName)
 		}
 
 		cluster := Cluster{Name: clusterName, wait: false}

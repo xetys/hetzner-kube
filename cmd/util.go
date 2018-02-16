@@ -25,6 +25,16 @@ func capturePassphrase(sshKeyName string) (error) {
 		return errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
 	}
 
+	encrypted, err := isEncrypted(privateKey)
+
+	if err != nil {
+		return err
+	}
+
+	if !encrypted {
+		return nil
+	}
+
 	fmt.Print("Enter passphrase for ssh key " + privateKey.PrivateKeyPath + ": ")
 	text, err := terminal.ReadPassword(int(syscall.Stdin))
 
@@ -43,25 +53,10 @@ func getPassphrase(privateKeyPath string) ([]byte, error) {
 		return phrase, nil
 	}
 
-	fmt.Print("Enter passphrase for ssh key " + privateKeyPath + ": ")
-	text, err := terminal.ReadPassword(int(syscall.Stdin))
-
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Print("\n")
-	sshPassPhrases[privateKeyPath] = text
-
-	return sshPassPhrases[privateKeyPath], nil
+	return nil, errors.New("passphrase not found")
 }
 
-func isEncrypted(sshKeyName string) (bool, error) {
-	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
-	if index < 0 {
-		return false, errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
-	}
-
+func isEncrypted(privateKey *SSHKey) (bool, error) {
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
 		return false, err
@@ -82,7 +77,7 @@ func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 		return nil, errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
 	}
 
-	encrypted, err := isEncrypted(sshKeyName)
+	encrypted, err := isEncrypted(privateKey)
 
 	if err != nil {
 		return nil, err
