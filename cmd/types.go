@@ -56,6 +56,7 @@ type HetznerConfig struct {
 	Contexts          []HetznerContext `json:"contexts"`
 	SSHKeys           []SSHKey         `json:"ssh_keys"`
 	Clusters          []Cluster        `json:"clusters"`
+	CloudInitFile     string           `json:cloud_init_file`
 }
 
 type AppConfig struct {

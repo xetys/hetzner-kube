@@ -44,6 +44,17 @@ $ hetzner-kube cluster create --name my-cluster --nodes 3 --ssh-key my-key
 
 This will provision a brand new kubernetes cluster in latest version!
 
+If you like to run some scripts or install some additional packages while provisioning new servers you can use cloud-init
+```
+$ hetzner-kube cloud-init --file <PATH-TO-FILE>
+```
+An example file to make all nodes ansible ready. The comment on the first line is important:
+```yaml
+#cloud-config
+package_update: true
+packages:
+ - python
+```
 
 ## Full tutorial
 

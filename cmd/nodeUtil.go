@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"fmt"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"strings"
@@ -56,6 +57,14 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, off
 		Image: &hcloud.Image{
 			Name: "ubuntu-16.04",
 		},
+	}
+
+	if len(AppConf.Config.CloudInitFile) > 0 {
+		buf, err := ioutil.ReadFile(AppConf.Config.CloudInitFile)
+		if err == nil {
+			serverOptsTemplate.UserData = string(buf)
+		}
+
 	}
 
 	serverOptsTemplate.SSHKeys = append(serverOptsTemplate.SSHKeys, sshKey)

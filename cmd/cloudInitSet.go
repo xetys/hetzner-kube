@@ -15,38 +15,35 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"errors"
 )
 
-// useCmd represents the use command
-var useCmd = &cobra.Command{
-	Use:   "use <NAME>",
-	Short: "switches to a saved context given by NAME",
-	Args:  cobra.ExactArgs(1),
+// clusterAddWorkerCmd represents the clusterAddWorker command
+var cloudInitSetCmd = &cobra.Command{
+	Use:   "cloud-init",
+	Short: "set cloud-init file",
+	Long: `Sets the file used to preconfigure the newly created server.`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		cifile, err := cmd.Flags().GetString("file")
+		if err != nil {
+			return nil
+		}
+
+		if len(cifile) == 0 {
+			return errors.New("flag --file is required")
+		}
+
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		contextName := args[0]
-
-		err := AppConf.SwitchContextByName(contextName)
-
-		FatalOnError(err)
-
+		cloudInitFile, _ := cmd.Flags().GetString("cloud-init-file")
+		AppConf.Config.CloudInitFile = cloudInitFile
 		AppConf.Config.WriteCurrentConfig()
-		fmt.Printf("switched to context '%s'", contextName)
 	},
 }
 
 func init() {
-	contextCmd.AddCommand(useCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// useCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// useCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(cloudInitSetCmd)
+	cloudInitSetCmd.Flags().StringP("file", "f", "", "Cloud-init file for server preconfiguration")
 }
