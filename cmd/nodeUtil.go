@@ -59,8 +59,8 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, off
 		},
 	}
 
-	if len(AppConf.Config.CloudInitFile) > 0 {
-		buf, err := ioutil.ReadFile(AppConf.Config.CloudInitFile)
+	if len(cluster.CloudInitFile) > 0 {
+		buf, err := ioutil.ReadFile(cluster.CloudInitFile)
 		if err == nil {
 			serverOptsTemplate.UserData = string(buf)
 		}

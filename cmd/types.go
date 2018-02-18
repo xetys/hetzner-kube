@@ -26,11 +26,12 @@ type Node struct {
 }
 
 type Cluster struct {
-	Name        string                   `json:"name"`
-	Nodes       []Node                   `json:"nodes"`
-	SelfHosted  bool                     `json:"self_hosted"`
-	coordinator *pkg.ProgressCoordinator `json:"-"`
-	wait        bool                     `json:"-"`
+	Name          string                   `json:"name"`
+	Nodes         []Node                   `json:"nodes"`
+	SelfHosted    bool                     `json:"self_hosted"`
+	coordinator   *pkg.ProgressCoordinator `json:"-"`
+	wait          bool                     `json:"-"`
+	CloudInitFile string                   `json:cloud_init_file`
 }
 
 type SSHCommand struct {
@@ -56,7 +57,6 @@ type HetznerConfig struct {
 	Contexts          []HetznerContext `json:"contexts"`
 	SSHKeys           []SSHKey         `json:"ssh_keys"`
 	Clusters          []Cluster        `json:"clusters"`
-	CloudInitFile     string           `json:cloud_init_file`
 }
 
 type AppConfig struct {

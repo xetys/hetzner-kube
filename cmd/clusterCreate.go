@@ -21,6 +21,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg"
 	"log"
 	"time"
+	"os"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -49,6 +50,10 @@ to quickly create a Cobra application.`,
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 
 		cluster := Cluster{Name: clusterName, wait: false}
+
+		if cloudInit, _ := cmd.Flags().GetString("cloud-init"); cloudInit != "" {
+			cluster.CloudInitFile = cloudInit
+		}
 
 		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, 1); err != nil {
 			log.Println(err)
@@ -125,7 +130,7 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 
 	var (
-		ssh_key, master_server_type, worker_server_type string
+		ssh_key, master_server_type, worker_server_type, cloud_init string
 	)
 
 	if ssh_key, _ = cmd.Flags().GetString("ssh-key"); ssh_key == "" {
@@ -138,6 +143,12 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 
 	if worker_server_type, _ = cmd.Flags().GetString("worker-server-type"); worker_server_type == "" {
 		return errors.New("flag --worker_server_type is required")
+	}
+
+	if cloud_init, _ = cmd.Flags().GetString("cloud-init"); cloud_init != "" {
+		if _, err := os.Stat(cloud_init); os.IsNotExist(err) {
+			return errors.New("cloud-init file not found")
+		}
 	}
 
 	if index, _ := AppConf.Config.FindSSHKeyByName(ssh_key); index == -1 {
@@ -164,4 +175,6 @@ func init() {
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
 	clusterCreateCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
+	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
+
 }
