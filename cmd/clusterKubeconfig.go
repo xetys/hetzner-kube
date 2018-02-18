@@ -39,7 +39,9 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		name, _ := cmd.Flags().GetString("name")
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		masterNode, err := cluster.GetMasterNode()
+		FatalOnError(err)
 
+		err = capturePassphrase(masterNode.SSHKeyName)		
 		FatalOnError(err)
 
 		kubeConfigContent, err := runCmd(*masterNode, "cat /etc/kubernetes/admin.conf")

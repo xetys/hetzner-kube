@@ -11,22 +11,112 @@ import (
 	"log"
 	"time"
 	"github.com/Pallinder/go-randomdata"
+	"encoding/pem"
+	"strings"
+	"golang.org/x/crypto/ssh/terminal"
+	"syscall"
 )
 
-func runCmd(node Node, command string) (output string, err error) {
-	index, privateKey := AppConf.Config.FindSSHKeyByName(node.SSHKeyName)
+var sshPassPhrases = make(map[string][]byte)
+
+func capturePassphrase(sshKeyName string) (error) {
+	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
-		return "", errors.New(fmt.Sprintf("cound not find SSH key '%s'", node.SSHKeyName))
+		return errors.New(fmt.Sprintf("could not find SSH key '%s'", sshKeyName))
+	}
+
+	encrypted, err := isEncrypted(privateKey)
+
+	if err != nil {
+		return err
+	}
+
+	if !encrypted {
+		return nil
+	}
+
+	fmt.Print("Enter passphrase for ssh key " + privateKey.PrivateKeyPath + ": ")
+	text, err := terminal.ReadPassword(int(syscall.Stdin))
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Print("\n")
+	sshPassPhrases[privateKey.PrivateKeyPath] = text
+
+	return nil
+}
+
+func getPassphrase(privateKeyPath string) ([]byte, error) {
+	if phrase, ok := sshPassPhrases[privateKeyPath]; ok {
+		return phrase, nil
+	}
+
+	return nil, errors.New("passphrase not found")
+}
+
+func isEncrypted(privateKey *SSHKey) (bool, error) {
+	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
+	if err != nil {
+		return false, err
+	}
+
+	block, _ := pem.Decode(pemBytes)
+	if block == nil {
+		return false, errors.New("ssh: no key found")
+
+	}
+
+	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
+}
+
+func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
+	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
+	if index < 0 {
+		return nil, errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
+	}
+
+	encrypted, err := isEncrypted(privateKey)
+
+	if err != nil {
+		return nil, err
 	}
 
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
+		return nil, err
+	}
+
+	if encrypted {
+		passPhrase, err := getPassphrase(privateKey.PrivateKeyPath)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+		}
+
+		signer, err := ssh.ParsePrivateKeyWithPassphrase(pemBytes, passPhrase)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+		}
+
+		return signer, err
+	} else {
+		signer, err := ssh.ParsePrivateKey(pemBytes)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+		}
+
+		return signer, err
+	}
+}
+
+func runCmd(node Node, command string) (output string, err error) {
+	signer, err := getPrivateSshKey(node.SSHKeyName)
+
+	if err != nil {
 		return "", err
 	}
-	signer, err := ssh.ParsePrivateKey(pemBytes)
-	if err != nil {
-		return "", errors.New(fmt.Sprintf("parse key failed:%v", err))
-	}
+
 	config := &ssh.ClientConfig{
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
