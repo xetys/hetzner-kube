@@ -22,7 +22,7 @@ var sshPassPhrases = make(map[string][]byte)
 func capturePassphrase(sshKeyName string) (error) {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
-		return errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
+		return errors.New(fmt.Sprintf("could not find SSH key '%s'", sshKeyName))
 	}
 
 	encrypted, err := isEncrypted(privateKey)
