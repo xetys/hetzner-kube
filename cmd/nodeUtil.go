@@ -41,7 +41,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 	return nil
 }
 
-func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, offset int) ([]Node, error) {
+func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
 	sshKey, _, err := AppConf.Client.SSHKey.Get(AppConf.Context, template.SSHKeyName)
 
 	if err != nil {
@@ -69,11 +69,16 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, count int, off
 
 	serverOptsTemplate.SSHKeys = append(serverOptsTemplate.SSHKeys, sshKey)
 
+	datacentersCount := len(datacenters)
+
 	var nodes []Node
 	for i := 1; i <= count; i++ {
 		var serverOpts hcloud.ServerCreateOpts
 		serverOpts = serverOptsTemplate
 		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i+offset), 1)
+		serverOpts.Datacenter = &hcloud.Datacenter{
+			Name: datacenters[i%datacentersCount],
+		}
 
 		// create
 		server, err := cluster.runCreateServer(&serverOpts)
@@ -166,17 +171,17 @@ func (cluster *Cluster) GetMasterNode() (node *Node, err error) {
 	return nil, errors.New("no master node found")
 }
 
-func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType string, count int) error {
+func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error {
 	template := Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType}
 	log.Println("creating master nodes...")
-	_, err := cluster.CreateNodes("master", template, count, 0)
+	_, err := cluster.CreateNodes("master", template, datacenters, count, 0)
 	saveCluster(cluster)
 	return err
 }
 
-func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType string, count int, offset int) ([]Node, error) {
+func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]Node, error) {
 	template := Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
-	nodes, err := cluster.CreateNodes("worker", template, count, offset)
+	nodes, err := cluster.CreateNodes("worker", template, datacenters, count, offset)
 	saveCluster(cluster)
 	return nodes, err
 }
