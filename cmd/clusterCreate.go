@@ -48,6 +48,7 @@ to quickly create a Cobra application.`,
 		sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 		masterServerType, _ := cmd.Flags().GetString("master-server-type")
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
+		datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 
 		err := capturePassphrase(sshKeyName)
 
@@ -61,14 +62,14 @@ to quickly create a Cobra application.`,
 			cluster.CloudInitFile = cloudInit
 		}
 
-		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, 1); err != nil {
+		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, datacenters, 1); err != nil {
 			log.Println(err)
 		}
 
 		var nodes []Node
 		if workerCount > 0 {
 			var err error
-			nodes, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, workerCount, 0)
+			nodes, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, workerCount, 0)
 			FatalOnError(err)
 		}
 
@@ -182,5 +183,5 @@ func init() {
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
 	clusterCreateCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
-
+	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
 }

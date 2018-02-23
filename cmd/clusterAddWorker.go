@@ -63,6 +63,7 @@ You can specify the worker server type as in cluster create.`,
 		name, _ := cmd.Flags().GetString("name")
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
+		datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 		var sshKeyName string
 
 		for _, node := range cluster.Nodes {
@@ -95,7 +96,7 @@ You can specify the worker server type as in cluster create.`,
 
 		cluster.coordinator = pkg.NewProgressCoordinator()
 
-		nodes, err := cluster.CreateWorkerNodes(sshKeyName, workerServerType, nodeCount, maxNo)
+		nodes, err := cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 
 		FatalOnError(err)
 
@@ -118,4 +119,5 @@ func init() {
 	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to add the workers to")
 	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
+	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
 }
