@@ -1,3 +1,7 @@
+
+[![Build Status](https://travis-ci.org/xetys/hetzner-kube.svg?branch=master)](https://travis-ci.org/xetys/hetzner-kube)
+
+
 # hetzner-kube: fast and easy setup of kubernetes clusters on Hetzner Cloud
 
 This project contains a CLI tool to easily provision [kubernetes](https://kubernetes.io) clusters 
