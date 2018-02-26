@@ -32,7 +32,7 @@ EOF
 add-apt-repository ppa:wireguard/wireguard -y
 
 apt-get update && apt-get install -y docker-ce
-apt-get install -y docker-ce kubelet kubeadm kubectl wireguard
+apt-get install -y docker-ce kubelet kubeadm kubectl wireguard linux-headers-$(uname -r)
 
 # prepare for hetzners cloud controller manager
 mkdir -p /etc/systemd/system/kubelet.service.d
