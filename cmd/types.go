@@ -18,11 +18,13 @@ type SSHKey struct {
 }
 
 type Node struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	IsMaster   bool   `json:"is_master"`
-	IPAddress  string `json:"ip_address"`
-	SSHKeyName string `json:"ssh_key_name"`
+	Name             string    `json:"name"`
+	Type             string    `json:"type"`
+	IsMaster         bool      `json:"is_master"`
+	IPAddress        string    `json:"ip_address"`
+	PrivateIPAddress string    `json:"private_ip_address"`
+	SSHKeyName       string    `json:"ssh_key_name"`
+	WireGuardKeyPair WgKeyPair `json:"wire_guard_key_pair"`
 }
 
 type Cluster struct {

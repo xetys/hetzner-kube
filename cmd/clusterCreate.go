@@ -91,6 +91,11 @@ to quickly create a Cobra application.`,
 			}
 		}
 
+		// setup encrypted network
+		err = cluster.SetupEncryptedNetwork()
+		FatalOnError(err)
+		saveCluster(&cluster)
+
 		// install master
 		if err := cluster.InstallMaster(); err != nil {
 			log.Fatal(err)
@@ -116,18 +121,22 @@ func saveCluster(cluster *Cluster) {
 }
 
 func (cluster *Cluster) RenderProgressBars(nodes []Node) {
+	provisionSteps := 1
+	netWorkSetupSteps := 1
+	masterInstallSteps := 8
+	nodeInstallSteps := 3
 	for _, node := range nodes {
-		steps := 0
+		steps := provisionSteps + netWorkSetupSteps
 		if node.IsMaster {
 			// the InstallMaster routine has 9 events
-			steps += 9
+			steps += masterInstallSteps
 
 			// and one more, it's got tainted
 			if len(cluster.Nodes) == 1 {
 				steps += 1
 			}
 		} else {
-			steps = 4
+			steps += nodeInstallSteps
 		}
 
 		cluster.coordinator.StartProgress(node.Name, steps)
@@ -177,7 +186,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	clusterCreateCmd.Flags().String("name", "", "Name of the cluster")
-	clusterCreateCmd.Flags().String("ssh-key", "", "Name of the SSH key used for provisioning")
+	clusterCreateCmd.Flags().StringP("ssh-key", "k","", "Name of the SSH key used for provisioning")
 	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")

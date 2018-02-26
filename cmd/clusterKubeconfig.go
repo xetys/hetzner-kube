@@ -21,6 +21,7 @@ import (
 	"os/user"
 	"os"
 	"io/ioutil"
+	"strings"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -45,6 +46,8 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		FatalOnError(err)
 
 		kubeConfigContent, err := runCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
+		// change the IP to public
+		kubeConfigContent = strings.Replace(kubeConfigContent, masterNode.PrivateIPAddress, masterNode.IPAddress, -1)
 
 		FatalOnError(err)
 

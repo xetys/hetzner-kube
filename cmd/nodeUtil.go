@@ -75,7 +75,8 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 	for i := 1; i <= count; i++ {
 		var serverOpts hcloud.ServerCreateOpts
 		serverOpts = serverOptsTemplate
-		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", i+offset), 1)
+		nodeNumber := i + offset
+		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", nodeNumber), 1)
 		serverOpts.Datacenter = &hcloud.Datacenter{
 			Name: datacenters[i%datacentersCount],
 		}
@@ -89,12 +90,19 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 
 		ipAddress := server.Server.PublicNet.IPv4.IP.String()
 		log.Printf("Created node '%s' with IP %s", server.Server.Name, ipAddress)
+		privateIpLastBlock := 10 + nodeNumber
+		if !template.IsMaster {
+			privateIpLastBlock += 10
+		}
+		privateIpAddress := fmt.Sprintf("10.0.1.%d", privateIpLastBlock)
+
 		node := Node{
-			Name:       serverOpts.Name,
-			Type:       serverOpts.ServerType.Name,
-			IsMaster:   template.IsMaster,
-			IPAddress:  ipAddress,
-			SSHKeyName: template.SSHKeyName,
+			Name:             serverOpts.Name,
+			Type:             serverOpts.ServerType.Name,
+			IsMaster:         template.IsMaster,
+			IPAddress:        ipAddress,
+			PrivateIPAddress: privateIpAddress,
+			SSHKeyName:       template.SSHKeyName,
 		}
 		nodes = append(nodes, node)
 		cluster.Nodes = append(cluster.Nodes, node)
@@ -128,6 +136,36 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 	}
 
 	wg.Wait()
+
+	return nil
+}
+
+func (cluster *Cluster) SetupEncryptedNetwork() error {
+	nodes := cluster.Nodes
+	// render a public/private key pair
+	keyPairs := GenerateKeyPairs(nodes[0], len(nodes))
+
+	for i, keyPair := range keyPairs {
+		cluster.Nodes[i].WireGuardKeyPair = keyPair
+	}
+
+	nodes = cluster.Nodes
+
+	// for each node, get specific IP and install it on node
+	for _, node := range nodes {
+		cluster.coordinator.AddEvent(node.Name, "configure wireguard")
+		wireGuardConf := GenerateWireguardConf(node, cluster.Nodes)
+		err := writeNodeFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, false)
+		if err != nil {
+			return err
+		}
+
+		_, err = runCmd(node, "systemctl enable wg-quick@wg0 && systemctl restart wg-quick@wg0")
+
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -187,19 +225,27 @@ func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType st
 }
 
 func (cluster *Cluster) InstallMaster() error {
+
 	commands := []SSHCommand{
 		{"disable swap", "swapoff -a"},
-		{"kubeadm init", "kubeadm reset && kubeadm init --pod-network-cidr=10.244.0.0/16"},
+		{"kubeadm init", "kubeadm reset && kubeadm init --config /root/master-config.yaml"},
 		{"configure kubectl", "mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
 		{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"},
 		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
 		{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
 		{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
+
 	for _, node := range cluster.Nodes {
 		if node.IsMaster {
 			if len(cluster.Nodes) == 1 {
 				commands = append(commands, SSHCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
+			}
+
+			// create master-configuration
+			masterConfig := GenerateMasterConfiguration(node, nil)
+			if err := writeNodeFile(node, "/root/master-config.yaml", masterConfig, false); err != nil {
+				return err
 			}
 
 			for _, command := range commands {
@@ -216,4 +262,30 @@ func (cluster *Cluster) InstallMaster() error {
 	}
 
 	return nil
+}
+
+func GenerateMasterConfiguration(masterNode Node, etcdNodes []Node) string {
+	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+api:
+  advertiseAddress: %s
+networking:
+  podSubnet: 10.244.0.0/16
+apiServerCertSANs:
+  - %s
+  - 10.0.1.11
+  - 127.0.0.1
+`
+	etcdConfig := `etcd:
+  endpoints:`
+	masterConfig := fmt.Sprintf(masterConfigTpl, masterNode.PrivateIPAddress, masterNode.IPAddress)
+
+	if len(etcdNodes) > 0 {
+		masterConfig = masterConfig + etcdConfig + "\n"
+		for _, node := range etcdNodes {
+			masterConfig = fmt.Sprintf("%s%s\n", masterConfig, "  - http://"+node.PrivateIPAddress+":2379")
+		}
+	}
+
+	return masterConfig
 }

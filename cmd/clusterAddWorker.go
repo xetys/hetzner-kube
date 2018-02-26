@@ -109,6 +109,12 @@ You can specify the worker server type as in cluster create.`,
 		cluster.ProvisionNodes(nodes)
 		saveCluster(cluster)
 
+		// re-generate network encryption
+		err = cluster.SetupEncryptedNetwork()
+		FatalOnError(err)
+		saveCluster(cluster)
+
+
 		cluster.InstallWorkers(nodes)
 		saveCluster(cluster)
 	},

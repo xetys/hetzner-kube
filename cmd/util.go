@@ -15,6 +15,7 @@ import (
 	"strings"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
+	"path"
 )
 
 var sshPassPhrases = make(map[string][]byte)
@@ -110,6 +111,65 @@ func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 	}
 }
 
+func writeNodeFile(node Node, filePath string, content string, executable bool) error {
+	signer, err := getPrivateSshKey(node.SSHKeyName)
+
+	if err != nil {
+		return err
+	}
+
+	config := &ssh.ClientConfig{
+		User:            "root",
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	var connection *ssh.Client
+	for try := 0; ; try++ {
+		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
+		if err != nil {
+			log.Printf("dial failed:%v", err)
+			if try > 10 {
+				return err
+			}
+		} else {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	defer connection.Close()
+	// log.Println("Connected succeeded!")
+	session, err := connection.NewSession()
+	defer session.Close()
+	if err != nil {
+		log.Fatalf("session failed:%v", err)
+	}
+	permission := "C0644"
+	if executable {
+		permission = "C0755"
+	}
+	fileName := path.Base(filePath)
+	dir := path.Dir(filePath)
+
+	var stderrBuf bytes.Buffer
+	session.Stderr = &stderrBuf
+
+	go func() {
+		w,_ := session.StdinPipe()
+		defer w.Close()
+		fmt.Fprintln(w, permission, len(content), fileName)
+		fmt.Fprint(w, content)
+		fmt.Fprint(w, "\x00")
+	}()
+
+	err = session.Run("/usr/bin/scp -t " + dir)
+	if err != nil {
+		fmt.Println(stderrBuf.String())
+		log.Fatalf("write failed:%v", err.Error())
+	}
+
+	return nil
+}
+
 func runCmd(node Node, command string) (output string, err error) {
 	signer, err := getPrivateSshKey(node.SSHKeyName)
 
@@ -147,6 +207,7 @@ func runCmd(node Node, command string) (output string, err error) {
 	session.Stderr = &stderrBuf
 
 	err = session.Run(command)
+	
 	if err != nil {
 		log.Println(stderrBuf.String())
 		log.Printf("> %s", command)
