@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"testing"
-	"fmt"
 	"github.com/andreyvit/diff"
 )
 
