@@ -31,7 +31,7 @@ The HA-mode was designed referring to a PoC cluster with the following concepts:
 
 ### Network encryption
 
-![K8S Wireguard](full-ha-k8s-wireguard.png)
+<img src="full-ha-k8s-wireguard.png" width="600">
 
 Hetzner-kube uses wireguard, a simple VPN with modern encryption standards to spin up a private network. 
 
@@ -48,7 +48,7 @@ api server on each node. This is done using https://github.com/xetys/k8s-master-
 # docker run -d --name master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb 10.0.1.11 10.0.1.12 10.0.1.13
 ```
 
-![Clientbased load balancing](k8s-master-lb.png)
+<img src="k8s-master-lb.png" width="400">
 
 
 The load balancer itself is an nginx with custom rules for passive health checks. More than 1 failure in 10 seconds will 
