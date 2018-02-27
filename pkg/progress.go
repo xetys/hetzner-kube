@@ -3,6 +3,7 @@ package pkg
 import "github.com/gosuri/uiprogress"
 
 type Progress struct {
+	Name    string
 	Bar     *uiprogress.Bar
 	channel chan string
 	State   string

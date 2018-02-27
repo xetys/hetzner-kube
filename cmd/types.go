@@ -21,6 +21,7 @@ type Node struct {
 	Name             string    `json:"name"`
 	Type             string    `json:"type"`
 	IsMaster         bool      `json:"is_master"`
+	IsEtcd           bool      `json:"is_etcd"`
 	IPAddress        string    `json:"ip_address"`
 	PrivateIPAddress string    `json:"private_ip_address"`
 	SSHKeyName       string    `json:"ssh_key_name"`
@@ -33,7 +34,9 @@ type Cluster struct {
 	SelfHosted    bool                     `json:"self_hosted"`
 	coordinator   *pkg.ProgressCoordinator `json:"-"`
 	wait          bool                     `json:"-"`
-	CloudInitFile string                   `json:cloud_init_file`
+	CloudInitFile string                   `json:"cloud_init_file"`
+	HaEnabled     bool                     `json:"ha_enabled"`
+	IsolatedEtcd  bool                     `json:"isolated_etcd"`
 }
 
 type SSHCommand struct {
@@ -42,12 +45,12 @@ type SSHCommand struct {
 }
 
 type ClusterManager interface {
-	CreateMasterNodes(template Node, count int) error
-	CreateWorkerNodes(template Node, count int) error
-	ProvisionNodes() error
-	InstallMaster()
-	InstallWorkers()
-	GetKubeconfig()
+	CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
+	CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
+	CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]Node, error)
+	ProvisionNodes(nodes []Node) error
+	InstallMasters(haMode bool) error
+	InstallWorkers(nodes []Node) error
 }
 
 type SSHClient interface {

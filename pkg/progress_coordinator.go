@@ -39,6 +39,7 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 		Bar:     uiprogress.AddBar(steps),
 		State:   "starting",
 		channel: make(chan string),
+		Name:    name,
 	}
 	progress.Bar.PrependFunc(func(b *uiprogress.Bar) string {
 		percent := strutil.PadLeft(fmt.Sprintf("%.01f%%", b.CompletedPercent()), 6, ' ')
@@ -49,16 +50,16 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	go func(progress *Progress) {
 		for {
 			event := <-progress.channel
+			if !isUiEnabled() {
+				fmt.Printf("%s: %s (%d)", progress.Name, event, progress.Bar.Current()+1)
+				fmt.Println()
+			}
 			if event == "complete!" {
 				progress.Bar.Set(progress.Bar.Total)
 				progress.SetText(event)
 				break
 			}
 
-			if !isUiEnabled() {
-				fmt.Printf("%s (%d)", event, progress.Bar.Current()+1)
-				fmt.Println()
-			}
 			progress.SetText(event)
 			if done := progress.Bar.Incr(); !done {
 				break
