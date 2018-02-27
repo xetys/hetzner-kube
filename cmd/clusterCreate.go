@@ -28,22 +28,41 @@ import (
 var clusterCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "creates a cluster",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `This command lets you create kubernetes clusters with different level of high-availability.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The most simple command is: hetzner-kube cluster create -k YOUR-SSH-KEY-NAME
+This will create a 2 node cluster with a random name.
+
+You can specify a name using -n pr --name.
+
+= High-Availability =
+This tool supports these levels of kubernetes HA:
+	level 0: N/A # you cannot create a single-node cluster (currently)
+	level 1: hetzner-kube cluster create -k XX -w 3 # distinct masters and 3 workers
+	level 2: N/A # you cannot create a non-HA cluster with a separate etcd cluster (currently)
+	level 3: hetzner-kube cluster create -k XX -m 3 -w 3 --ha-enabled # deploys a 3 node etcd cluster and a 3-master-node cluster with 3 workers
+	level 4: hetzner-kube cluster create -k XX -e 3 -m 2 -w 3 --ha-enabled --isolated-etcd # etcd outside the k8s cluster
+
+
+	`,
 	PreRunE: validateClusterCreateFlags,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		nodeCount, _ := cmd.Flags().GetInt("nodes")
-		workerCount := nodeCount - 1
+		workerCount, _ := cmd.Flags().GetInt("worker-count")
+		masterCount, _ := cmd.Flags().GetInt("master-count")
+		etcdCount, _ := cmd.Flags().GetInt("etcd-count")
+		haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
+		if !haEnabled {
+			masterCount = 1
+		}
+		isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
 
 		clusterName := randomName()
 		if name, _ := cmd.Flags().GetString("name"); name != "" {
 			clusterName = name
 		}
+
+		log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
 
 		sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 		masterServerType, _ := cmd.Flags().GetString("master-server-type")
@@ -56,13 +75,19 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		cluster := Cluster{Name: clusterName, wait: false}
+		cluster := Cluster{Name: clusterName, wait: false, HaEnabled: haEnabled, IsolatedEtcd: isolatedEtcd}
 
 		if cloudInit, _ := cmd.Flags().GetString("cloud-init"); cloudInit != "" {
 			cluster.CloudInitFile = cloudInit
 		}
 
-		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, datacenters, 1); err != nil {
+		if haEnabled && isolatedEtcd {
+			if err := cluster.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
+				log.Println(err)
+			}
+		}
+
+		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount); err != nil {
 			log.Println(err)
 		}
 
@@ -96,12 +121,33 @@ to quickly create a Cobra application.`,
 		FatalOnError(err)
 		saveCluster(&cluster)
 
-		// install master
-		if err := cluster.InstallMaster(); err != nil {
+		if haEnabled {
+			var etcdNodes []Node
+
+			if isolatedEtcd {
+				etcdNodes = cluster.GetEtcdNodes()
+			} else {
+				etcdNodes = cluster.GetMasterNodes()
+			}
+
+			err = cluster.InstallEtcdNodes(etcdNodes)
+			FatalOnError(err)
+
+			saveCluster(&cluster)
+		}
+
+		// install masters
+		if err := cluster.InstallMasters(); err != nil {
 			log.Fatal(err)
 		}
 
 		saveCluster(&cluster)
+
+		// ha plane
+		if haEnabled {
+			err = cluster.SetupHA()
+			FatalOnError(err)
+		}
 
 		// install worker
 		if err := cluster.InstallWorkers(cluster.Nodes); err != nil {
@@ -121,15 +167,34 @@ func saveCluster(cluster *Cluster) {
 }
 
 func (cluster *Cluster) RenderProgressBars(nodes []Node) {
-	provisionSteps := 1
-	netWorkSetupSteps := 1
-	masterInstallSteps := 8
-	nodeInstallSteps := 3
-	for _, node := range nodes {
+	provisionSteps := 2
+	netWorkSetupSteps := 2
+	etcdSteps := 4
+	masterInstallSteps := 2
+	masterNonHaSteps := 4
+	masterHaNonFirstSteps := 1
+	masterHaSteps := 4
+	workerHaSteps := 1
+	nodeInstallSteps := 1
+	for idx, node := range nodes {
 		steps := provisionSteps + netWorkSetupSteps
+		if node.IsEtcd {
+			steps += etcdSteps
+		}
 		if node.IsMaster {
-			// the InstallMaster routine has 9 events
+			// the InstallMasters routine has 9 events
 			steps += masterInstallSteps
+			if idx == 0 {
+				steps += masterNonHaSteps
+			}
+
+			if idx > 0 && cluster.HaEnabled {
+				steps += masterHaNonFirstSteps
+			}
+
+			if cluster.HaEnabled {
+				steps += masterHaSteps
+			}
 
 			// and one more, it's got tainted
 			if len(cluster.Nodes) == 1 {
@@ -137,9 +202,13 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			}
 		} else {
 			steps += nodeInstallSteps
+
+			if cluster.HaEnabled {
+				steps += workerHaSteps
+			}
 		}
 
-		cluster.coordinator.StartProgress(node.Name, steps)
+		cluster.coordinator.StartProgress(node.Name, steps+8)
 	}
 }
 
@@ -171,26 +240,49 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 		return errors.New(fmt.Sprintf("SSH key '%s' not found", ssh_key))
 	}
 
+	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
+	isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
+
+	if worker, _ := cmd.Flags().GetInt("worker-count"); worker < 1 {
+		return errors.New(fmt.Sprintf("at least 1 worker node is needed. %d was provided", worker))
+	}
+
+	if haEnabled {
+		if isolatedEtcd {
+			if master, _ := cmd.Flags().GetInt("master-count"); master < 2 {
+				return errors.New(fmt.Sprintf("at least 2 master node are needed. %d was provided", master))
+			}
+
+			if etcds, _ := cmd.Flags().GetInt("etcd-count"); etcds%2 == 0 || etcds < 3 {
+				return errors.New(fmt.Sprintf("the number of etcds should be odd and at least 3. %d was provided", etcds))
+			}
+		} else {
+			if master, _ := cmd.Flags().GetInt("master-count"); master < 3 {
+				return errors.New(fmt.Sprintf("at least 3 master node are needed when etcd is installed on them. %d was provided", master))
+			}
+
+			if etcds, _ := cmd.Flags().GetInt("etcd-count"); etcds != 3 {
+				return errors.New("you cannot use etcd count without --isolated-etcd")
+			}
+		}
+	}
+
 	return nil
 }
 
 func init() {
 	clusterCmd.AddCommand(clusterCreateCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// clusterCreateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	clusterCreateCmd.Flags().String("name", "", "Name of the cluster")
-	clusterCreateCmd.Flags().StringP("ssh-key", "k","", "Name of the SSH key used for provisioning")
+	clusterCreateCmd.Flags().StringP("name", "n", "", "Name of the cluster")
+	clusterCreateCmd.Flags().StringP("ssh-key", "k", "", "Name of the SSH key used for provisioning")
 	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
+	clusterCreateCmd.Flags().Bool("ha-enabled", false, "Install high-available control plane")
+	clusterCreateCmd.Flags().Bool("isolated-etcd", false, "Isolates etcd cluster from master nodes")
+	clusterCreateCmd.Flags().IntP("master-count", "m", 3, "Number of master nodes, works only if -ha-enabled is passed")
+	clusterCreateCmd.Flags().IntP("etcd-count", "e", 3, "Number of etcd nodes, works only if --ha-enabled and --isolated-etcd are passed")
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
-	clusterCreateCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
+	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
 	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
 }

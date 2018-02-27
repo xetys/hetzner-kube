@@ -42,23 +42,38 @@ This assumes, you already have a SSH keypair `~/.ssh/id_rsa` and `~/.ssh/id_rsa.
 And finally you can create a cluster by running:
 
 ```
-$ hetzner-kube cluster create --name my-cluster --nodes 3 --ssh-key my-key
+$ hetzner-kube cluster create --name my-cluster --ssh-key my-key
 
 ```
 
 This will provision a brand new kubernetes cluster in latest version!
+## HA-clusters
+
+You can built high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
+further information.
+
+# Custom Options 
+
+## addons
+
+TODO
+
+## cloud-init
 
 If you like to run some scripts or install some additional packages while provisioning new servers you can use cloud-init
 ```
 $ hetzner-kube cluster create --name my-cluster --nodes 3 --ssh-key my-key --cloud-init <PATH-TO-FILE>
 ```
 An example file to make all nodes ansible ready. The comment on the first line is important:
+
 ```yaml
 #cloud-config
 package_update: true
 packages:
  - python
 ```
+
+
 
 ## Full tutorial
 

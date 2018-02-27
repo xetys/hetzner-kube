@@ -170,6 +170,22 @@ func writeNodeFile(node Node, filePath string, content string, executable bool) 
 	return nil
 }
 
+func copyFileOverNode(sourceNode Node, targetNode Node, filePath string, manipulator func(string) string) error {
+	// get the file
+	fileContent, err := runCmd(sourceNode, "cat " + filePath)
+	if err != nil {
+		return err
+	}
+
+	if manipulator != nil {
+		fileContent = manipulator(fileContent)
+	}
+
+	// write file
+	err = writeNodeFile(targetNode, filePath, fileContent, false)
+	return err
+}
+
 func runCmd(node Node, command string) (output string, err error) {
 	signer, err := getPrivateSshKey(node.SSHKeyName)
 
@@ -293,4 +309,18 @@ func FatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func waitOrError(tc chan bool, ec chan error, numProcPtr *int) error {
+	numProcs := *numProcPtr
+	for numProcs > 0 {
+		select {
+		case err := <-ec:
+			return err
+		case <-tc:
+			numProcs--
+		}
+	}
+
+	return nil
 }
