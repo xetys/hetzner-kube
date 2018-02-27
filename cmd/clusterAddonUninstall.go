@@ -56,6 +56,7 @@ var clusterAddonUninstallCmd = &cobra.Command{
 
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
+		log.Printf("removing addon %s", addonName)
 		addon := cluster.GetAddon(addonName)
 		addon.Uninstall()
 

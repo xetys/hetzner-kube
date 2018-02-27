@@ -60,6 +60,12 @@ You can install some addons to your cluster using the `cluster addon` sub-comman
 
 * helm
 * [Rook](https://rook.io)
+* NGinx ingress controller (requires helm)
+
+### contributing new addons
+
+Feel free to contribute cluster addons. You can simply create one by implementing the `ClusterAddon` interface and 
+adding it to the addons.
 
 ## cloud-init
 

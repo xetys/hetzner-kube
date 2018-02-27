@@ -56,6 +56,7 @@ var clusterAddonInstallCmd = &cobra.Command{
 
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
+		log.Printf("installing addon %s", addonName)
 		addon := cluster.GetAddon(addonName)
 		addon.Install()
 

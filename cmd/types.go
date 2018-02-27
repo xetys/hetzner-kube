@@ -54,7 +54,7 @@ type ClusterManager interface {
 }
 
 type SSHClient interface {
-	RunCmd(node *Node, cmd string)
+	RunCmd(node *Node, cmd string) (string, error)
 }
 
 type HetznerConfig struct {
@@ -69,4 +69,5 @@ type AppConfig struct {
 	Context        context.Context
 	CurrentContext *HetznerContext
 	Config         *HetznerConfig
+	SSHClient      SSHClient
 }
