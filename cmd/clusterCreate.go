@@ -131,7 +131,6 @@ to quickly create a Cobra application.`,
 		if haEnabled {
 			err = cluster.SetupHA()
 			FatalOnError(err)
-			time.Sleep(30 * time.Second)
 		}
 
 		// install worker
@@ -193,7 +192,7 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			}
 		}
 
-		cluster.coordinator.StartProgress(node.Name, 100)
+		cluster.coordinator.StartProgress(node.Name, steps + 10)
 	}
 }
 

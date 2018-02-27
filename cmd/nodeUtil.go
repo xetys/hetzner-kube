@@ -503,6 +503,10 @@ func (cluster *Cluster) SetupHA() error {
 		if err != nil {
 			return err
 		}
+
+		// wait for the apiserver to be back online
+		cluster.coordinator.AddEvent(node.Name, "wait for apiserver")
+		_, err = runCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
 		cluster.coordinator.AddEvent(node.Name, "complete!")
 	}
 
