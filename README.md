@@ -56,7 +56,10 @@ further information.
 
 ## addons
 
-TODO
+You can install some addons to your cluster using the `cluster addon` sub-command. Currently these are the supported first addons:
+
+* helm
+* [Rook](https://rook.io)
 
 ## cloud-init
 
