@@ -75,6 +75,7 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 			Name:             serverOpts.Name,
 			Type:             serverOpts.ServerType.Name,
 			IsMaster:         template.IsMaster,
+			IsEtcd:           template.IsEtcd,
 			IPAddress:        ipAddress,
 			PrivateIPAddress: privateIpAddress,
 			SSHKeyName:       template.SSHKeyName,
@@ -287,48 +288,50 @@ func (cluster *Cluster) InstallMasters() error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProc := 0
+	numMaster := 0
 
-	for nodeCount, node := range cluster.Nodes {
-		_, err := runCmd(node, "kubeadm reset")
-		if err != nil {
-			return nil
-		}
-
-		_, err = runCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
-		if err != nil {
-			return nil
-		}
+	for _, node := range cluster.Nodes {
 
 		if node.IsMaster {
+			_, err := runCmd(node, "kubeadm reset")
+			if err != nil {
+				return nil
+			}
+
+			_, err = runCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
+			if err != nil {
+				return nil
+			}
 			if len(cluster.Nodes) == 1 {
 				commands = append(commands, SSHCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
 
-			if nodeCount == 0 {
+			if numMaster == 0 {
 				masterNode = node
 			}
 
 			numProc++
 			go func(node Node) {
-				cluster.installMasterStep(node, nodeCount, masterNode, commands, trueChan, errChan)
+				cluster.installMasterStep(node, numMaster, masterNode, commands, trueChan, errChan)
 			}(node)
 
 			// early wait the first time
-			if nodeCount == 0 {
+			if numMaster == 0 {
 				select {
-				case err := <- errChan:
+				case err := <-errChan:
 					return err
 				case <-trueChan:
 					numProc--
 				}
 			}
+			numMaster++
 		}
 	}
 
 	return waitOrError(trueChan, errChan, &numProc)
 }
 
-func (cluster *Cluster) installMasterStep(node Node, nodeCount int, masterNode Node, commands []SSHCommand, trueChan chan bool, errChan chan error) {
+func (cluster *Cluster) installMasterStep(node Node, numMaster int, masterNode Node, commands []SSHCommand, trueChan chan bool, errChan chan error) {
 
 	// create master-configuration
 	var etcdNodes []Node
@@ -345,7 +348,7 @@ func (cluster *Cluster) installMasterStep(node Node, nodeCount int, masterNode N
 		errChan <- err
 	}
 
-	if nodeCount > 0 {
+	if numMaster > 0 {
 		cluster.coordinator.AddEvent(node.Name, "copy PKI")
 
 		files := []string{
@@ -378,7 +381,7 @@ func (cluster *Cluster) installMasterStep(node Node, nodeCount int, masterNode N
 			errChan <- err
 		}
 
-		if nodeCount > 0 && i > 0 {
+		if numMaster > 0 && i > 0 {
 			break
 		}
 	}
@@ -553,7 +556,7 @@ func (cluster *Cluster) SetupHA() error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-func (cluster *Cluster) DeployLoadBalancer(nodes []Node) error  {
+func (cluster *Cluster) DeployLoadBalancer(nodes []Node) error {
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
