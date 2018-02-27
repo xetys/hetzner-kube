@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
 	sshKey, _, err := AppConf.Client.SSHKey.Get(AppConf.Context, template.SSHKeyName)
 
@@ -53,7 +52,6 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 		}
 
 		// try to find
-
 
 		// create
 		server, err := cluster.runCreateServer(&serverOpts)
@@ -129,30 +127,37 @@ func (cluster *Cluster) SetupEncryptedNetwork() error {
 	nodes = cluster.Nodes
 
 	// for each node, get specific IP and install it on node
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProc := 0
 	for _, node := range nodes {
-		cluster.coordinator.AddEvent(node.Name, "configure wireguard")
-		wireGuardConf := GenerateWireguardConf(node, cluster.Nodes)
-		err := writeNodeFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, false)
-		if err != nil {
-			return err
-		}
+		numProc++
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "configure wireguard")
+			wireGuardConf := GenerateWireguardConf(node, cluster.Nodes)
+			err := writeNodeFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, false)
+			if err != nil {
+				errChan <- err
+			}
 
-		_, err = runCmd(node, "systemctl enable wg-quick@wg0 && systemctl restart wg-quick@wg0")
+			_, err = runCmd(node, "systemctl enable wg-quick@wg0 && systemctl restart wg-quick@wg0")
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				errChan <- err
+			}
 
-		cluster.coordinator.AddEvent(node.Name, "wireguard configured")
+			cluster.coordinator.AddEvent(node.Name, "wireguard configured")
+			trueChan <- true
+		}(node)
 	}
 
-	return nil
+	return waitOrError(trueChan, errChan, &numProc)
 }
 
 func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
 
 	log.Printf("creating server '%s'...", opts.Name)
-	server,_,  err := AppConf.Client.Server.GetByName(AppConf.Context, opts.Name)
+	server, _, err := AppConf.Client.Server.GetByName(AppConf.Context, opts.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +238,7 @@ func Node2IP(node Node) string {
 	return node.IPAddress
 }
 
-func Nodes2IPs(nodes []Node) []string  {
+func Nodes2IPs(nodes []Node) []string {
 	ips := []string{}
 	for _, node := range nodes {
 		ips = append(ips, Node2IP(node))
@@ -267,7 +272,6 @@ func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType st
 	return nodes, err
 }
 
-
 func (cluster *Cluster) InstallMasters() error {
 
 	commands := []SSHCommand{
@@ -279,6 +283,10 @@ func (cluster *Cluster) InstallMasters() error {
 		{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
 	var masterNode Node
+
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProc := 0
 
 	for nodeCount, node := range cluster.Nodes {
 		_, err := runCmd(node, "kubeadm reset")
@@ -296,68 +304,93 @@ func (cluster *Cluster) InstallMasters() error {
 				commands = append(commands, SSHCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
 
-			// create master-configuration
-			var etcdNodes []Node
-			if cluster.HaEnabled {
-				if cluster.IsolatedEtcd {
-					etcdNodes = cluster.GetEtcdNodes()
-				} else {
-					etcdNodes = cluster.GetMasterNodes()
-				}
-			}
-			masterNodes := cluster.GetMasterNodes()
-			masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes)
-			if err := writeNodeFile(node, "/root/master-config.yaml", masterConfig, false); err != nil {
-				return err
-			}
-
-			if nodeCount > 0 {
-				cluster.coordinator.AddEvent(node.Name, "copy PKI")
-
-				files := []string{
-					"apiserver-kubelet-client.crt",
-					"apiserver-kubelet-client.key",
-					"apiserver.crt",
-					"apiserver.key",
-					"ca.crt",
-					"ca.key",
-					"front-proxy-ca.crt",
-					"front-proxy-ca.key",
-					"front-proxy-client.crt",
-					"front-proxy-client.key",
-					"sa.key",
-					"sa.pub",
-				}
-
-				for _, file := range files {
-					copyFileOverNode(masterNode, node, "/etc/kubernetes/pki/" + file, nil)
-				}
-			} else {
+			if nodeCount == 0 {
 				masterNode = node
 			}
 
-			for i, command := range commands {
-				cluster.coordinator.AddEvent(node.Name, command.eventName)
-				_, err := runCmd(node, command.command)
-				if err != nil {
+			numProc++
+			go func(node Node) {
+				cluster.installMasterStep(node, nodeCount, masterNode, commands, trueChan, errChan)
+			}(node)
+
+			// early wait the first time
+			if nodeCount == 0 {
+				select {
+				case err := <- errChan:
 					return err
+				case <-trueChan:
+					numProc--
 				}
-
-				if nodeCount > 0 && i > 0 {
-					break
-				}
-			}
-
-			if !cluster.HaEnabled {
-				cluster.coordinator.AddEvent(node.Name, "complete!")
 			}
 		}
 	}
 
-	return nil
+	return waitOrError(trueChan, errChan, &numProc)
 }
 
-func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error  {
+func (cluster *Cluster) installMasterStep(node Node, nodeCount int, masterNode Node, commands []SSHCommand, trueChan chan bool, errChan chan error) {
+
+	// create master-configuration
+	var etcdNodes []Node
+	if cluster.HaEnabled {
+		if cluster.IsolatedEtcd {
+			etcdNodes = cluster.GetEtcdNodes()
+		} else {
+			etcdNodes = cluster.GetMasterNodes()
+		}
+	}
+	masterNodes := cluster.GetMasterNodes()
+	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes)
+	if err := writeNodeFile(node, "/root/master-config.yaml", masterConfig, false); err != nil {
+		errChan <- err
+	}
+
+	if nodeCount > 0 {
+		cluster.coordinator.AddEvent(node.Name, "copy PKI")
+
+		files := []string{
+			"apiserver-kubelet-client.crt",
+			"apiserver-kubelet-client.key",
+			"apiserver.crt",
+			"apiserver.key",
+			"ca.crt",
+			"ca.key",
+			"front-proxy-ca.crt",
+			"front-proxy-ca.key",
+			"front-proxy-client.crt",
+			"front-proxy-client.key",
+			"sa.key",
+			"sa.pub",
+		}
+
+		for _, file := range files {
+			err := copyFileOverNode(masterNode, node, "/etc/kubernetes/pki/"+file, nil)
+			if err != nil {
+				errChan <- err
+			}
+		}
+	}
+
+	for i, command := range commands {
+		cluster.coordinator.AddEvent(node.Name, command.eventName)
+		_, err := runCmd(node, command.command)
+		if err != nil {
+			errChan <- err
+		}
+
+		if nodeCount > 0 && i > 0 {
+			break
+		}
+	}
+
+	if !cluster.HaEnabled {
+		cluster.coordinator.AddEvent(node.Name, "complete!")
+	}
+
+	trueChan <- true
+}
+
+func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error {
 
 	commands := []SSHCommand{
 		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.2.13/etcd-v3.2.13-linux-amd64.tar.gz -o /opt/etcd-v3.2.13-linux-amd64.tar.gz"},
@@ -365,26 +398,34 @@ func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error  {
 		{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
 	}
 
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
 	for _, node := range nodes {
-		// set systemd service
-		etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
-		err := writeNodeFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
-		if err != nil {
-			return err
-		}
+		numProcs++
 
-		// install etcd
-		for _, command := range commands {
-			cluster.coordinator.AddEvent(node.Name, command.eventName)
-			_, err := runCmd(node, command.command)
+		go func(node Node) {
+			// set systemd service
+			etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
+			err := writeNodeFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
 			if err != nil {
-				return err
+				errChan <- err
 			}
-		}
-		cluster.coordinator.AddEvent(node.Name, "etcd configured")
+
+			// install etcd
+			for _, command := range commands {
+				cluster.coordinator.AddEvent(node.Name, command.eventName)
+				_, err := runCmd(node, command.command)
+				if err != nil {
+					errChan <- err
+				}
+			}
+			cluster.coordinator.AddEvent(node.Name, "etcd configured")
+			trueChan <- true
+		}(node)
 	}
 
-	return nil
+	return waitOrError(trueChan, errChan, &numProcs)
 }
 
 func (cluster *Cluster) InstallWorkers(nodes []Node) error {
@@ -398,7 +439,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 				if tries < 10 && err != nil {
 					return err
 				} else {
-					time.Sleep(2 *time.Second)
+					time.Sleep(2 * time.Second)
 				}
 				joinCommand = output
 				break
@@ -452,6 +493,9 @@ func (cluster *Cluster) SetupHA() error {
 		return err
 	}
 
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
 	masterNodes := cluster.GetMasterNodes()
 	// deploy load balancer
 	masterIps := strings.Join(Nodes2IPs(masterNodes), " ")
@@ -459,23 +503,33 @@ func (cluster *Cluster) SetupHA() error {
 		if !node.IsMaster && node.IsEtcd {
 			continue
 		}
-		cluster.coordinator.AddEvent(node.Name, "deploy load balancer")
-		// delete old if exists
-		_, err := runCmd(node, `docker ps | grep master-lb | awk '{print "docker stop "$1" && docker rm "$1}' | sh`)
-		if err != nil {
-			return err
-		}
-		_, err = runCmd(node, fmt.Sprintf("docker run -d --name=master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb %s", masterIps))
-		if err != nil {
-			return err
-		}
+		numProcs++
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "deploy load balancer")
+			// delete old if exists
+			_, err := runCmd(node, `docker ps | grep master-lb | awk '{print "docker stop "$1" && docker rm "$1}' | sh`)
+			if err != nil {
+				errChan <- err
+			}
+			_, err = runCmd(node, fmt.Sprintf("docker run -d --name=master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb %s", masterIps))
+			if err != nil {
+				errChan <- err
+			}
+
+			trueChan <- true
+		}(node)
+	}
+
+	err = waitOrError(trueChan, errChan, &numProcs)
+	if err != nil {
+		return err
 	}
 
 	// set apiserver-count to 3
 	for _, node := range masterNodes {
 		cluster.coordinator.AddEvent(node.Name, "set api-server count")
 		copyFileOverNode(node, node, "/etc/kubernetes/manifests/kube-apiserver.yaml", func(in string) string {
-			return strings.Replace(in,"image: gcr.io/", "- --apiserver-count=3\n    image: gcr.io/", 1)
+			return strings.Replace(in, "image: gcr.io/", "- --apiserver-count=3\n    image: gcr.io/", 1)
 		})
 	}
 
@@ -491,26 +545,33 @@ func (cluster *Cluster) SetupHA() error {
 	rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 	kubeConfigs := []string{"kubelet.conf", "controller-manager.conf", "scheduler.conf"}
 
+	numProcs = 0
 	for _, node := range masterNodes {
-		cluster.coordinator.AddEvent(node.Name, "rewrite kubeconfigs")
-		for _, conf := range kubeConfigs {
-			_, err := runCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
-			if err != nil {
-				return err
-			}
-		}
-		_, err = runCmd(node, "systemctl restart docker && systemctl restart kubelet")
-		if err != nil {
-			return err
-		}
+		numProcs++
 
-		// wait for the apiserver to be back online
-		cluster.coordinator.AddEvent(node.Name, "wait for apiserver")
-		_, err = runCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
-		cluster.coordinator.AddEvent(node.Name, "complete!")
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "rewrite kubeconfigs")
+			for _, conf := range kubeConfigs {
+				_, err := runCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
+				if err != nil {
+					errChan <- err
+				}
+			}
+			_, err = runCmd(node, "systemctl restart docker && systemctl restart kubelet")
+			if err != nil {
+				errChan <- err
+			}
+
+			// wait for the apiserver to be back online
+			cluster.coordinator.AddEvent(node.Name, "wait for apiserver")
+			_, err = runCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
+			cluster.coordinator.AddEvent(node.Name, "complete!")
+
+			trueChan <- true
+		}(node)
 	}
 
-	return nil
+	return waitOrError(trueChan, errChan, &numProcs)
 }
 
 func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
@@ -584,4 +645,3 @@ WantedBy=multi-user.target
 
 	return service
 }
-
