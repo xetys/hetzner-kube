@@ -28,12 +28,23 @@ import (
 var clusterCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "creates a cluster",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `This command lets you create kubernetes clusters with different level of high-availability.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The most simple command is: hetzner-kube cluster create -k YOUR-SSH-KEY-NAME
+This will create a 2 node cluster with a random name.
+
+You can specify a name using -n pr --name.
+
+= High-Availability =
+This tool supports these levels of kubernetes HA:
+	level 0: N/A # you cannot create a single-node cluster (currently)
+	level 1: hetzner-kube cluster create -k XX -w 3 # distinct masters and 3 workers
+	level 2: N/A # you cannot create a non-HA cluster with a separate etcd cluster (currently)
+	level 3: hetzner-kube cluster create -k XX -m 3 -w 3 --ha-enabled # deploys a 3 node etcd cluster and a 3-master-node cluster with 3 workers
+	level 4: hetzner-kube cluster create -k XX -e 3 -m 2 -w 3 --ha-enabled --isolated-etcd # etcd outside the k8s cluster
+
+
+	`,
 	PreRunE: validateClusterCreateFlags,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -41,12 +52,17 @@ to quickly create a Cobra application.`,
 		masterCount, _ := cmd.Flags().GetInt("master-count")
 		etcdCount, _ := cmd.Flags().GetInt("etcd-count")
 		haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
-		isolatedEtcd, _ := cmd.Flags().GetBool("iso-etcd")
+		if !haEnabled {
+			masterCount = 1
+		}
+		isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
 
 		clusterName := randomName()
 		if name, _ := cmd.Flags().GetString("name"); name != "" {
 			clusterName = name
 		}
+
+		log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
 
 		sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 		masterServerType, _ := cmd.Flags().GetString("master-server-type")
@@ -192,7 +208,7 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			}
 		}
 
-		cluster.coordinator.StartProgress(node.Name, steps + 10)
+		cluster.coordinator.StartProgress(node.Name, steps+8)
 	}
 }
 
@@ -225,7 +241,7 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 	}
 
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
-	isolatedEtcd, _ := cmd.Flags().GetBool("iso-etcd")
+	isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
 
 	if worker, _ := cmd.Flags().GetInt("worker-count"); worker < 1 {
 		return errors.New(fmt.Sprintf("at least 1 worker node is needed. %d was provided", worker))
@@ -246,7 +262,7 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 			}
 
 			if etcds, _ := cmd.Flags().GetInt("etcd-count"); etcds != 3 {
-				return errors.New("you cannot use etcd count without --iso-etcd")
+				return errors.New("you cannot use etcd count without --isolated-etcd")
 			}
 		}
 	}
@@ -257,14 +273,14 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 func init() {
 	clusterCmd.AddCommand(clusterCreateCmd)
 
-	clusterCreateCmd.Flags().String("name", "", "Name of the cluster")
+	clusterCreateCmd.Flags().StringP("name", "n", "", "Name of the cluster")
 	clusterCreateCmd.Flags().StringP("ssh-key", "k", "", "Name of the SSH key used for provisioning")
 	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterCreateCmd.Flags().Bool("ha-enabled", false, "Install high-available control plane")
-	clusterCreateCmd.Flags().Bool("iso-etcd", false, "Isolates etcd cluster from master nodes")
-	clusterCreateCmd.Flags().Int("master-count", 3, "Number of master nodes, works only if -ha-enabled is passed")
-	clusterCreateCmd.Flags().Int("etcd-count", 3, "Number of etcd nodes, works only if --ha-enabled and --iso-etcd are passed")
+	clusterCreateCmd.Flags().Bool("isolated-etcd", false, "Isolates etcd cluster from master nodes")
+	clusterCreateCmd.Flags().IntP("master-count", "m", 3, "Number of master nodes, works only if -ha-enabled is passed")
+	clusterCreateCmd.Flags().IntP("etcd-count", "e", 3, "Number of etcd nodes, works only if --ha-enabled and --isolated-etcd are passed")
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")

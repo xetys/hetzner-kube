@@ -115,6 +115,11 @@ You can specify the worker server type as in cluster create.`,
 		saveCluster(cluster)
 
 
+		if cluster.HaEnabled {
+			err = cluster.DeployLoadBalancer(nodes)
+			FatalOnError(err)
+		}
+
 		cluster.InstallWorkers(nodes)
 		saveCluster(cluster)
 	},

@@ -462,6 +462,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 			}
 
 			if cluster.HaEnabled {
+				time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
 
 				rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 				kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
@@ -496,31 +497,9 @@ func (cluster *Cluster) SetupHA() error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
-	masterNodes := cluster.GetMasterNodes()
 	// deploy load balancer
-	masterIps := strings.Join(Nodes2IPs(masterNodes), " ")
-	for _, node := range cluster.Nodes {
-		if !node.IsMaster && node.IsEtcd {
-			continue
-		}
-		numProcs++
-		go func(node Node) {
-			cluster.coordinator.AddEvent(node.Name, "deploy load balancer")
-			// delete old if exists
-			_, err := runCmd(node, `docker ps | grep master-lb | awk '{print "docker stop "$1" && docker rm "$1}' | sh`)
-			if err != nil {
-				errChan <- err
-			}
-			_, err = runCmd(node, fmt.Sprintf("docker run -d --name=master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb %s", masterIps))
-			if err != nil {
-				errChan <- err
-			}
-
-			trueChan <- true
-		}(node)
-	}
-
-	err = waitOrError(trueChan, errChan, &numProcs)
+	masterNodes := cluster.GetMasterNodes()
+	err = cluster.DeployLoadBalancer(cluster.Nodes)
 	if err != nil {
 		return err
 	}
@@ -566,6 +545,37 @@ func (cluster *Cluster) SetupHA() error {
 			cluster.coordinator.AddEvent(node.Name, "wait for apiserver")
 			_, err = runCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
 			cluster.coordinator.AddEvent(node.Name, "complete!")
+
+			trueChan <- true
+		}(node)
+	}
+
+	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (cluster *Cluster) DeployLoadBalancer(nodes []Node) error  {
+
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
+	masterNodes := cluster.GetMasterNodes()
+	masterIps := strings.Join(Nodes2IPs(masterNodes), " ")
+	for _, node := range nodes {
+		if !node.IsMaster && node.IsEtcd {
+			continue
+		}
+		numProcs++
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "deploy load balancer")
+			// delete old if exists
+			_, err := runCmd(node, `docker ps | grep master-lb | awk '{print "docker stop "$1" && docker rm "$1}' | sh`)
+			if err != nil {
+				errChan <- err
+			}
+			_, err = runCmd(node, fmt.Sprintf("docker run -d --name=master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb %s", masterIps))
+			if err != nil {
+				errChan <- err
+			}
 
 			trueChan <- true
 		}(node)
