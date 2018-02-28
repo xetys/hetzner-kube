@@ -393,7 +393,7 @@ func (cluster *Cluster) installMasterStep(node Node, numMaster int, masterNode N
 	trueChan <- true
 }
 
-func (cluster *Cluster) InstallEtcdNodes(nodes []Node, isolatedEtcd bool) error {
+func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error {
 
 	commands := []SSHCommand{
 		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.2.13/etcd-v3.2.13-linux-amd64.tar.gz -o /opt/etcd-v3.2.13-linux-amd64.tar.gz"},
@@ -423,7 +423,7 @@ func (cluster *Cluster) InstallEtcdNodes(nodes []Node, isolatedEtcd bool) error 
 					errChan <- err
 				}
 			}
-			if isolatedEtcd {
+			if cluster.IsolatedEtcd {
 				cluster.coordinator.AddEvent(node.Name, "complete!")
 			} else {
 				cluster.coordinator.AddEvent(node.Name, "etcd configured")
