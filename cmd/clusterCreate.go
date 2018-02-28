@@ -130,7 +130,7 @@ This tool supports these levels of kubernetes HA:
 				etcdNodes = cluster.GetMasterNodes()
 			}
 
-			err = cluster.InstallEtcdNodes(etcdNodes)
+			err = cluster.InstallEtcdNodes(etcdNodes, isolatedEtcd)
 			FatalOnError(err)
 
 			saveCluster(&cluster)
