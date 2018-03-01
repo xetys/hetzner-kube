@@ -35,7 +35,14 @@ func isUiEnabled() bool {
 		return false
 	}
 }
-
+func shortLeftPadRight(s string, padWidth int) string {
+	if len(s) > 20 {
+		l := len(s)
+		return "..." + s[(l - (padWidth - 2)):(l - 1)]
+	} else {
+		return strutil.PadRight(s, padWidth, ' ')
+	}
+}
 func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
 		Bar:     uiprogress.AddBar(steps),
@@ -43,9 +50,14 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 		channel: make(chan string),
 		Name:    name,
 	}
+	progress.Bar.Width = 16
 	progress.Bar.PrependFunc(func(b *uiprogress.Bar) string {
 		percent := strutil.PadLeft(fmt.Sprintf("%.01f%%", b.CompletedPercent()), 6, ' ')
-		return fmt.Sprintf("%s: %s  %s", name, strutil.PadRight(progress.State, 40, ' '), percent)
+		return fmt.Sprintf("%s : %s  %s",
+			shortLeftPadRight(name, 20),
+			shortLeftPadRight(progress.State, 32),
+			percent,
+		)
 	})
 	c.progresses[name] = progress
 	c.group.Add(1)
