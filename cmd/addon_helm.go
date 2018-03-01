@@ -37,7 +37,7 @@ subjects:
 	err = writeNodeFile(node, "/root/helm-service-account.yaml", serviceAccount, false)
 	FatalOnError(err)
 
-	_, err = runCmd(node, "kubectl apply -f helm-service-account")
+	_, err = runCmd(node, "kubectl apply -f helm-service-account.yaml")
 	FatalOnError(err)
 
 	_, err = runCmd(node, "helm init --service-account tiller")
