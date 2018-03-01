@@ -101,11 +101,7 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 				log.Fatalln(err)
 			}
 
-			if node.IsMaster {
-				cluster.coordinator.AddEvent(node.Name, "packages installed")
-			} else {
-				cluster.coordinator.AddEvent(node.Name, "waiting for master")
-			}
+			cluster.coordinator.AddEvent(node.Name, "packages installed")
 
 			wg.Done()
 
@@ -464,7 +460,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 			if cluster.HaEnabled {
 				// joinCommand = strings.Replace(joinCommand, "https://" + masterNode.IPAddress + ":6443", "https://127.0.0.1:16443", 1)
 			}
-			_, err := runCmd(node, joinCommand)
+			_, err := runCmd(node, "kubeadm reset && " + joinCommand)
 			if err != nil {
 				return err
 			}

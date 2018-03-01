@@ -171,24 +171,26 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 	netWorkSetupSteps := 2
 	etcdSteps := 4
 	masterInstallSteps := 2
-	masterNonHaSteps := 4
+	masterFirstSteps := 4
 	masterHaNonFirstSteps := 1
 	masterHaSteps := 4
 	workerHaSteps := 1
 	nodeInstallSteps := 1
-	for idx, node := range nodes {
+	numMaster := 0
+	for _, node := range nodes {
 		steps := provisionSteps + netWorkSetupSteps
 		if node.IsEtcd {
 			steps += etcdSteps
 		}
 		if node.IsMaster {
+			numMaster++
 			// the InstallMasters routine has 9 events
 			steps += masterInstallSteps
-			if idx == 0 {
-				steps += masterNonHaSteps
+			if numMaster == 1 {
+				steps += masterFirstSteps
 			}
 
-			if idx > 0 && cluster.HaEnabled {
+			if numMaster > 1 && cluster.HaEnabled {
 				steps += masterHaNonFirstSteps
 			}
 
@@ -200,7 +202,9 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			if len(cluster.Nodes) == 1 {
 				steps += 1
 			}
-		} else {
+		}
+
+		if !node.IsEtcd && !node.IsMaster {
 			steps += nodeInstallSteps
 
 			if cluster.HaEnabled {
@@ -208,7 +212,7 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			}
 		}
 
-		cluster.coordinator.StartProgress(node.Name, steps+8)
+		cluster.coordinator.StartProgress(node.Name, steps+6)
 	}
 }
 

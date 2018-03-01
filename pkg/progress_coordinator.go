@@ -36,7 +36,7 @@ func isUiEnabled() bool {
 	}
 }
 func shortLeftPadRight(s string, padWidth int) string {
-	if len(s) > 20 {
+	if len(s) > padWidth {
 		l := len(s)
 		return "..." + s[(l - (padWidth - 2)):(l - 1)]
 	} else {
