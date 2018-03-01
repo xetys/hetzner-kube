@@ -25,6 +25,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"net/http"
+	"golang.org/x/crypto/ssh"
+	"bytes"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command
@@ -72,21 +75,63 @@ Note: the private key is never uploaded to any server at any time.`,
 
 		context := AppConf.Context
 		client := AppConf.Client
-		sshKey, _, err := client.SSHKey.Create(context, opts)
+		sshKey, res, err := client.SSHKey.Create(context, opts)
 
-		if err != nil {
+		if res.StatusCode == http.StatusConflict {
+			pkey, _, _, _, err := ssh.ParseAuthorizedKey(data)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			// check if the key is already in to local app config
+			for _, sshKey := range AppConf.Config.SSHKeys {
+				localData, err := ioutil.ReadFile(sshKey.PublicKeyPath)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				localPkey, _, _, _,  err := ssh.ParseAuthorizedKey(localData)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				// if the key is in the local app config print a message and return
+				if bytes.Equal(pkey.Marshal(), localPkey.Marshal()) {
+					fmt.Printf("SSH key does already exists in your config as %s\n", sshKey.Name)
+					return
+				}
+			}
+			// if the key is not in the local app config, fetch it from hetzner
+			sshKeys, err := client.SSHKey.All(context)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			for _, sshKeyHetzner := range sshKeys {
+				hetznerPkey, _, _, _,  err := ssh.ParseAuthorizedKey([]byte(sshKeyHetzner.PublicKey))
+				if err != nil {
+					log.Fatalln(err)
+				}
+				if bytes.Equal(pkey.Marshal(), hetznerPkey.Marshal()) {
+					fmt.Printf("SSH key does already on hetzner as '%s'\n", sshKeyHetzner.Name)
+					fmt.Printf("SSH key will be added to your config as '%s'\n", sshKeyHetzner.Name)
+					// We replace the failed request response with the fetched sshkey that has the same public key
+					sshKey = sshKeyHetzner
+					break
+				}
+				if sshKeyHetzner.Name == name {
+					log.Fatalf("Name '%s' is already taken!", name)
+				}
+			}
+		} else if err != nil {
 			log.Fatalln(err)
 		}
 
 		AppConf.Config.AddSSHKey(SSHKey{
-			Name:           name,
+			Name:           sshKey.Name,
 			PrivateKeyPath: privateKeyPath,
 			PublicKeyPath:  publicKeyPath,
 		})
 
 		AppConf.Config.WriteCurrentConfig()
 
-		fmt.Printf("SSH key %s(%d) created\n", name, sshKey.ID)
+		fmt.Printf("SSH key %s(%d) created\n", sshKey.Name, sshKey.ID)
 	},
 }
 
