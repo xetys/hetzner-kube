@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+const CompletedEvent = "complete!"
+
 type ProgressCoordinator struct {
 	group      sync.WaitGroup
 	progresses map[string]*Progress
@@ -54,7 +56,7 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 				fmt.Printf("%s: %s (%d)", progress.Name, event, progress.Bar.Current()+1)
 				fmt.Println()
 			}
-			if event == "complete!" {
+			if event == CompletedEvent {
 				progress.Bar.Set(progress.Bar.Total)
 				progress.SetText(event)
 				break
