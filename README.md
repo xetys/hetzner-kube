@@ -60,6 +60,7 @@ You can install some addons to your cluster using the `cluster addon` sub-comman
 
 * helm
 * [Rook](https://rook.io)
+* OpenEBS
 * NGinx ingress controller (requires helm)
 
 ### contributing new addons
