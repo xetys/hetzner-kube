@@ -9,6 +9,7 @@ import (
 	"sync"
 	"errors"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg"
 )
 
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
@@ -387,7 +388,7 @@ func (cluster *Cluster) installMasterStep(node Node, numMaster int, masterNode N
 	}
 
 	if !cluster.HaEnabled {
-		cluster.coordinator.AddEvent(node.Name, "complete!")
+		cluster.coordinator.AddEvent(node.Name, pkg.CompletedEvent)
 	}
 
 	trueChan <- true
@@ -487,7 +488,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 				}
 			}
 
-			cluster.coordinator.AddEvent(node.Name, "complete!")
+			cluster.coordinator.AddEvent(node.Name, pkg.CompletedEvent)
 		}
 	}
 
@@ -551,7 +552,7 @@ func (cluster *Cluster) SetupHA() error {
 			// wait for the apiserver to be back online
 			cluster.coordinator.AddEvent(node.Name, "wait for apiserver")
 			_, err = runCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
-			cluster.coordinator.AddEvent(node.Name, "complete!")
+			cluster.coordinator.AddEvent(node.Name, pkg.CompletedEvent)
 
 			trueChan <- true
 		}(node)
