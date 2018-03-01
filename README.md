@@ -13,7 +13,7 @@ This is my very first tool written in Go.
 
 Get the linux binary from releases page.
 
-[Download version 0.2.0 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.2.0/hetzner-kube)
+[Download version 0.2.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.2.1/hetzner-kube)
 
 
 or get it from source:
