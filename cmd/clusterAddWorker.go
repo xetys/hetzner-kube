@@ -49,7 +49,7 @@ You can specify the worker server type as in cluster create.`,
 
 		var workerServerType string
 		if workerServerType, _ = cmd.Flags().GetString("worker-server-type"); workerServerType == "" {
-			return errors.New("flag --worker_server_type is required")
+			return errors.New("flag --worker-server-type is required")
 		}
 
 		if err != nil {
@@ -106,7 +106,8 @@ You can specify the worker server type as in cluster create.`,
 		time.Sleep(30 * time.Second)
 
 		cluster.RenderProgressBars(nodes)
-		cluster.ProvisionNodes(nodes)
+		err = cluster.ProvisionNodes(nodes)
+		FatalOnError(err)
 		saveCluster(cluster)
 
 		// re-generate network encryption
@@ -121,7 +122,10 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		cluster.InstallWorkers(nodes)
+
+		cluster.coordinator.Wait()
 		saveCluster(cluster)
+		log.Println("workers created successfully")
 	},
 }
 
