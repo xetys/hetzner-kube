@@ -7,7 +7,7 @@ type ClusterAddon interface {
 
 func AddonExists(addonName string) bool {
 	switch addonName {
-	case "helm", "rook", "ingress", "openebs":
+	case "helm", "rook", "ingress", "openebs", "cert-manager":
 		return true
 	default:
 		return false
@@ -24,6 +24,8 @@ func (cluster Cluster) GetAddon(addonName string) ClusterAddon {
 		return NewIngressAddon(cluster)
 	case "openebs":
 		return NewOpenEBSAddon(cluster)
+	case "cert-manager":
+		return NewCertmanagerAddon(cluster)
 	default:
 		return nil
 	}
