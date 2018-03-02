@@ -6,7 +6,6 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"strings"
 	"log"
-	"sync"
 	"errors"
 	"time"
 	"github.com/xetys/hetzner-kube/pkg"
@@ -89,28 +88,26 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 }
 
 func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
-	var wg sync.WaitGroup
-	for _, node := range cluster.Nodes {
-
-		wg.Add(1)
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
+	for _, node := range nodes {
+		numProcs++
 		go func(node Node) {
 			cluster.coordinator.AddEvent(node.Name, "install packages")
 			_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
 
 			if err != nil {
-				log.Fatalln(err)
+				errChan <- err
 			}
 
 			cluster.coordinator.AddEvent(node.Name, "packages installed")
 
-			wg.Done()
-
+			trueChan <- true
 		}(node)
 	}
 
-	wg.Wait()
-
-	return nil
+	return waitOrError(trueChan, errChan, &numProcs)
 }
 
 func (cluster *Cluster) SetupEncryptedNetwork() error {
