@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"errors"
 	"fmt"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"strings"
-	"log"
-	"errors"
-	"time"
 	"github.com/xetys/hetzner-kube/pkg"
+	"io/ioutil"
+	"log"
+	"strings"
+	"time"
 )
 
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
@@ -99,6 +99,13 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 
 			if err != nil {
 				errChan <- err
+			}
+
+			if node.IsExternal {
+				_, err := runCmd(node, "rm /etc/systemd/system/kubelet.service.d/20-hcloud.conf")
+				if err != nil {
+					errChan <- err
+				}
 			}
 
 			cluster.coordinator.AddEvent(node.Name, "packages installed")
@@ -457,7 +464,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 			if cluster.HaEnabled {
 				// joinCommand = strings.Replace(joinCommand, "https://" + masterNode.IPAddress + ":6443", "https://127.0.0.1:16443", 1)
 			}
-			_, err := runCmd(node, "kubeadm reset && " + joinCommand)
+			_, err := runCmd(node, "kubeadm reset && "+joinCommand)
 			if err != nil {
 				return err
 			}

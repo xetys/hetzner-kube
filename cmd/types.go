@@ -21,6 +21,7 @@ type Node struct {
 	Name             string    `json:"name"`
 	Type             string    `json:"type"`
 	IsMaster         bool      `json:"is_master"`
+	IsExternal       bool      `json:"is_external"`
 	IsEtcd           bool      `json:"is_etcd"`
 	IPAddress        string    `json:"ip_address"`
 	PrivateIPAddress string    `json:"private_ip_address"`
