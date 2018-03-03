@@ -88,6 +88,8 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 }
 
 func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
+	nodes = cluster.Nodes
+
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0

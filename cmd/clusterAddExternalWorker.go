@@ -143,6 +143,8 @@ An external server must meet the following requirements:
 
 		FatalOnError(err)
 
+		cluster.Nodes = append(cluster.Nodes, externalNode)
+
 		cluster.RenderProgressBars(nodes)
 		err = cluster.ProvisionNodes(nodes)
 		FatalOnError(err)
