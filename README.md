@@ -62,6 +62,7 @@ You can install some addons to your cluster using the `cluster addon` sub-comman
 * [Rook](https://rook.io)
 * OpenEBS
 * NGinx ingress controller (requires helm)
+* [cert-manager](https://github.com/jetstack/cert-manager) (requires helm)
 
 ### contributing new addons
 
