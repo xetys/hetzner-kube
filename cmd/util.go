@@ -92,6 +92,14 @@ func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 	if encrypted {
 		passPhrase, err := getPassphrase(privateKey.PrivateKeyPath)
 		if err != nil {
+			// Fallback as sometimes the cache with the passphrases is not set, i.e. on program start
+			err = capturePassphrase(sshKeyName)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("error capturing passphrase:%v", err))
+			}
+			passPhrase, err = getPassphrase(privateKey.PrivateKeyPath)
+		}
+		if err != nil {
 			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
 		}
 
