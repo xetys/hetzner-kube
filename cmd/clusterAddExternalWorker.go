@@ -55,6 +55,12 @@ An external server must meet the following requirements:
 			return errors.New("IP address cannot be empty")
 		}
 
+		sshPort, _ := cmd.Flags().GetString("port")
+
+		if sshPort == "" {
+			sshPort = "22"
+		}
+
 		if len(cluster.Nodes) == 0 {
 			return errors.New("your cluster has no nodes, no idea how this was possible")
 		}
@@ -62,7 +68,7 @@ An external server must meet the following requirements:
 		externalNode := Node{
 			IPAddress:  ipAddress,
 			SSHKeyName: cluster.Nodes[0].SSHKeyName,
-			IsExternal: true,
+			SSHPort:    sshPort,
 		}
 
 		sshKeyName := cluster.Nodes[0].SSHKeyName
@@ -99,6 +105,7 @@ An external server must meet the following requirements:
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
 		ipAddress, _ := cmd.Flags().GetString("ip")
+		sshPort, _ := cmd.Flags().GetString("port")
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		var sshKeyName string
 
@@ -106,6 +113,10 @@ An external server must meet the following requirements:
 			if node.IsMaster {
 				sshKeyName = node.SSHKeyName
 			}
+		}
+
+		if sshPort == "" {
+			sshPort = "22"
 		}
 
 		if sshKeyName == "" {
@@ -121,7 +132,7 @@ An external server must meet the following requirements:
 		externalNode := Node{
 			IPAddress:  ipAddress,
 			SSHKeyName: sshKeyName,
-			IsExternal: true,
+			SSHPort:    sshPort,
 		}
 
 		hostname, err := runCmd(externalNode, "hostname -s")
@@ -143,13 +154,14 @@ An external server must meet the following requirements:
 
 		FatalOnError(err)
 
-		cluster.Nodes = append(cluster.Nodes, externalNode)
-
 		cluster.RenderProgressBars(nodes)
 		err = cluster.ProvisionNodes(nodes)
 		FatalOnError(err)
 
 		saveCluster(cluster)
+
+		err = cluster.RemoveHCloudManagerKubeletOption(nodes)
+		FatalOnError(err)
 
 		cluster.Nodes = append(cluster.Nodes, externalNode)
 
@@ -176,5 +188,6 @@ func init() {
 	clusterCmd.AddCommand(clusterAddExternalWorkerCmd)
 	clusterAddExternalWorkerCmd.Flags().StringP("name", "n", "", "Name of the cluster to add the workers to")
 	clusterAddExternalWorkerCmd.Flags().StringP("ip", "i", "", "The IP address of the external node")
+	clusterAddExternalWorkerCmd.Flags().StringP("port", "p", "", "The ssh port of the external node (default 22)")
 
 }

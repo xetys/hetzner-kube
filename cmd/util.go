@@ -3,24 +3,24 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"log"
-	"time"
-	"github.com/Pallinder/go-randomdata"
-	"encoding/pem"
-	"strings"
-	"golang.org/x/crypto/ssh/terminal"
-	"syscall"
 	"path"
+	"strings"
+	"syscall"
+	"time"
 )
 
 var sshPassPhrases = make(map[string][]byte)
 
-func capturePassphrase(sshKeyName string) (error) {
+func capturePassphrase(sshKeyName string) error {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
 		return errors.New(fmt.Sprintf("could not find SSH key '%s'", sshKeyName))
@@ -124,8 +124,12 @@ func writeNodeFile(node Node, filePath string, content string, executable bool) 
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	var connection *ssh.Client
+	sshPort := "22"
+	if node.SSHPort != "" {
+		sshPort = node.SSHPort
+	}
 	for try := 0; ; try++ {
-		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
+		connection, err = ssh.Dial("tcp", node.IPAddress+":"+sshPort, config)
 		if err != nil {
 			log.Printf("dial failed:%v", err)
 			if try > 10 {
@@ -154,7 +158,7 @@ func writeNodeFile(node Node, filePath string, content string, executable bool) 
 	session.Stderr = &stderrBuf
 
 	go func() {
-		w,_ := session.StdinPipe()
+		w, _ := session.StdinPipe()
 		defer w.Close()
 		fmt.Fprintln(w, permission, len(content), fileName)
 		fmt.Fprint(w, content)
@@ -172,7 +176,7 @@ func writeNodeFile(node Node, filePath string, content string, executable bool) 
 
 func copyFileOverNode(sourceNode Node, targetNode Node, filePath string, manipulator func(string) string) error {
 	// get the file
-	fileContent, err := runCmd(sourceNode, "cat " + filePath)
+	fileContent, err := runCmd(sourceNode, "cat "+filePath)
 	if err != nil {
 		return err
 	}
@@ -199,8 +203,12 @@ func runCmd(node Node, command string) (output string, err error) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	var connection *ssh.Client
+	sshPort := "22"
+	if node.SSHPort != "" {
+		sshPort = node.SSHPort
+	}
 	for try := 0; ; try++ {
-		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
+		connection, err = ssh.Dial("tcp", node.IPAddress+":"+sshPort, config)
 		if err != nil {
 			log.Printf("dial failed:%v", err)
 			if try > 10 {
@@ -223,7 +231,7 @@ func runCmd(node Node, command string) (output string, err error) {
 	session.Stderr = &stderrBuf
 
 	err = session.Run(command)
-	
+
 	if err != nil {
 		log.Println(stderrBuf.String())
 		log.Printf("> %s", command)

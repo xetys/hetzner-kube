@@ -88,8 +88,6 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 }
 
 func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
-	nodes = cluster.Nodes
-
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
@@ -103,11 +101,27 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 				errChan <- err
 			}
 
-			if node.IsExternal {
-				_, err := runCmd(node, "rm /etc/systemd/system/kubelet.service.d/20-hcloud.conf")
-				if err != nil {
-					errChan <- err
-				}
+			cluster.coordinator.AddEvent(node.Name, "packages installed")
+
+			trueChan <- true
+		}(node)
+	}
+
+	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (cluster *Cluster) RemoveHCloudManagerKubeletOption(nodes []Node) error {
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
+	for _, node := range nodes {
+		numProcs++
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "remove extra opts kubelet external node")
+			_, err := runCmd(node, "rm /etc/systemd/system/kubelet.service.d/20-hcloud.conf")
+
+			if err != nil {
+				errChan <- err
 			}
 
 			cluster.coordinator.AddEvent(node.Name, "packages installed")
