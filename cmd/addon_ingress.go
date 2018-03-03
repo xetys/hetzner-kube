@@ -23,5 +23,5 @@ func (addon IngressAddon) Uninstall() {
 	node := *addon.masterNode
 	_, err := runCmd(node, "helm delete --purge ingress")
 	FatalOnError(err)
-	log.Println("nginx ingress installed")
+	log.Println("nginx ingress uninstalled")
 }
