@@ -91,10 +91,9 @@ This tool supports these levels of kubernetes HA:
 			log.Println(err)
 		}
 
-		var nodes []Node
 		if workerCount > 0 {
 			var err error
-			nodes, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, workerCount, 0)
+			_, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, workerCount, 0)
 			FatalOnError(err)
 		}
 
@@ -107,7 +106,7 @@ This tool supports these levels of kubernetes HA:
 
 		// provision nodes
 		tries := 0
-		for err := cluster.ProvisionNodes(nodes); err != nil; {
+		for err := cluster.ProvisionNodes(cluster.Nodes); err != nil; {
 			if tries < 3 {
 				fmt.Print(err)
 				tries++
