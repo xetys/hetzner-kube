@@ -32,8 +32,8 @@ type Cluster struct {
 	Name          string                   `json:"name"`
 	Nodes         []Node                   `json:"nodes"`
 	SelfHosted    bool                     `json:"self_hosted"`
-	coordinator   *pkg.ProgressCoordinator `json:"-"`
-	wait          bool                     `json:"-"`
+	coordinator   *pkg.ProgressCoordinator
+	wait          bool
 	CloudInitFile string                   `json:"cloud_init_file"`
 	HaEnabled     bool                     `json:"ha_enabled"`
 	IsolatedEtcd  bool                     `json:"isolated_etcd"`

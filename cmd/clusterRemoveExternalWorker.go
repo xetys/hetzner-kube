@@ -54,8 +54,6 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 		}
 
 		return errors.New("node not found")
-
-		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
