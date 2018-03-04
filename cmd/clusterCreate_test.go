@@ -32,26 +32,26 @@ func TestClusterCmdValidate(t *testing.T) {
 	err = validateClusterCreateFlags(cmd, []string{})
 
 	if err == nil {
-		t.Error("no errors occured with worker count 0, but should")
+		t.Error("no errors occurred with worker count 0, but should")
 	}
 	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--master-count", "1"})
 	err = validateClusterCreateFlags(cmd, []string{})
 
 	if err == nil {
-		t.Error("no errors occured with master count 1 in HA mode, but should")
+		t.Error("no errors occurred with master count 1 in HA mode, but should")
 	}
 
 	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--master-count", "2", "--isolated-etcd", "--etcd-count", "2"})
 	err = validateClusterCreateFlags(cmd, []string{})
 
 	if err == nil {
-		t.Error("no errors occured with etcd count 2 in HA mode, but should")
+		t.Error("no errors occurred with etcd count 2 in HA mode, but should")
 	}
 
 	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--master-count", "2", "--etcd-count", "3"})
 	err = validateClusterCreateFlags(cmd, []string{})
 
 	if err == nil {
-		t.Error("no errors occured with provided etcd count without --isolated-etcd, but should")
+		t.Error("no errors occurred with provided etcd count without --isolated-etcd, but should")
 	}
 }

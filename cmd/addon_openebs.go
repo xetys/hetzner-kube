@@ -31,6 +31,7 @@ parameters:
 	FatalOnError(err)
 
 	_, err = runCmd(node, "kubectl delete -f openebs-storageclass.yaml && kubectl apply -f openebs-storageclass.yaml")
+	FatalOnError(err)
 
 	fmt.Println("OpenEBS installed")
 }
