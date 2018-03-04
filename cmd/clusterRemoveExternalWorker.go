@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
 	"log"
 )
 
@@ -61,19 +61,33 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 		name, _ := cmd.Flags().GetString("name")
 		ipAddress, _ := cmd.Flags().GetString("ip")
 		_, cluster := AppConf.Config.FindClusterByName(name)
-		masterVisited := false
 		var masterNode Node
+		var sshKeyName string
+
+		for _, node := range cluster.Nodes {
+			if node.IsMaster {
+				masterNode = node
+				sshKeyName = node.SSHKeyName
+			}
+		}
+
+		if sshKeyName == "" {
+			log.Fatal("master not found")
+		}
+
+		err := capturePassphrase(sshKeyName)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		for idx, node := range cluster.Nodes {
-			if node.IsMaster && !masterVisited{
-				masterNode = node
-				masterVisited = true
-			}
-
 			if node.IPAddress == ipAddress {
 				_, err := runCmd(masterNode, fmt.Sprintf("kubectl delete node %s", node.Name))
 
-				log.Printf("deletion failed %s", err)
+				if err != nil {
+					log.Printf("deletion failed %s", err)
+				}
 				cluster.Nodes = append(cluster.Nodes[:idx], cluster.Nodes[idx+1:]...)
 				saveCluster(cluster)
 			}

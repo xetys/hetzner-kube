@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"errors"
 	"fmt"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"strings"
-	"log"
-	"errors"
-	"time"
 	"github.com/xetys/hetzner-kube/pkg"
+	"io/ioutil"
+	"log"
+	"strings"
+	"time"
 )
 
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
@@ -96,6 +96,29 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 		go func(node Node) {
 			cluster.coordinator.AddEvent(node.Name, "install packages")
 			_, err := runCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+
+			if err != nil {
+				errChan <- err
+			}
+
+			cluster.coordinator.AddEvent(node.Name, "packages installed")
+
+			trueChan <- true
+		}(node)
+	}
+
+	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (cluster *Cluster) RemoveHCloudManagerKubeletOption(nodes []Node) error {
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
+	for _, node := range nodes {
+		numProcs++
+		go func(node Node) {
+			cluster.coordinator.AddEvent(node.Name, "remove extra opts kubelet external node")
+			_, err := runCmd(node, "rm /etc/systemd/system/kubelet.service.d/20-hcloud.conf")
 
 			if err != nil {
 				errChan <- err
@@ -457,7 +480,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 			if cluster.HaEnabled {
 				// joinCommand = strings.Replace(joinCommand, "https://" + masterNode.IPAddress + ":6443", "https://127.0.0.1:16443", 1)
 			}
-			_, err := runCmd(node, "kubeadm reset && " + joinCommand)
+			_, err := runCmd(node, "kubeadm reset && "+joinCommand)
 			if err != nil {
 				return err
 			}

@@ -25,6 +25,7 @@ type Node struct {
 	IPAddress        string    `json:"ip_address"`
 	PrivateIPAddress string    `json:"private_ip_address"`
 	SSHKeyName       string    `json:"ssh_key_name"`
+	SSHPort          string    `json:"ssh_port"`
 	WireGuardKeyPair WgKeyPair `json:"wire_guard_key_pair"`
 }
 

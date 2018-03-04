@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
 	"log"
 	"strings"
-	"github.com/xetys/hetzner-kube/pkg"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -55,13 +55,20 @@ An external server must meet the following requirements:
 			return errors.New("IP address cannot be empty")
 		}
 
+		sshPort, _ := cmd.Flags().GetString("port")
+
+		if sshPort == "" {
+			sshPort = "22"
+		}
+
 		if len(cluster.Nodes) == 0 {
 			return errors.New("your cluster has no nodes, no idea how this was possible")
 		}
 
 		externalNode := Node{
-			IPAddress: ipAddress,
+			IPAddress:  ipAddress,
 			SSHKeyName: cluster.Nodes[0].SSHKeyName,
+			SSHPort:    sshPort,
 		}
 
 		sshKeyName := cluster.Nodes[0].SSHKeyName
@@ -93,12 +100,12 @@ An external server must meet the following requirements:
 			return errors.New("target server has no Ubuntu 16.04 installed")
 		}
 
-
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
 		ipAddress, _ := cmd.Flags().GetString("ip")
+		sshPort, _ := cmd.Flags().GetString("port")
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		var sshKeyName string
 
@@ -106,6 +113,10 @@ An external server must meet the following requirements:
 			if node.IsMaster {
 				sshKeyName = node.SSHKeyName
 			}
+		}
+
+		if sshPort == "" {
+			sshPort = "22"
 		}
 
 		if sshKeyName == "" {
@@ -119,8 +130,9 @@ An external server must meet the following requirements:
 		}
 
 		externalNode := Node{
-			IPAddress: ipAddress,
+			IPAddress:  ipAddress,
 			SSHKeyName: sshKeyName,
+			SSHPort:    sshPort,
 		}
 
 		hostname, err := runCmd(externalNode, "hostname -s")
@@ -130,7 +142,7 @@ An external server must meet the following requirements:
 
 		// render internal IP address
 		nextNode := 21
-		for _,node := range cluster.Nodes {
+		for _, node := range cluster.Nodes {
 			if !node.IsMaster && !node.IsEtcd {
 				nextNode++
 			}
@@ -148,13 +160,15 @@ An external server must meet the following requirements:
 
 		saveCluster(cluster)
 
+		err = cluster.RemoveHCloudManagerKubeletOption(nodes)
+		FatalOnError(err)
+
 		cluster.Nodes = append(cluster.Nodes, externalNode)
 
 		// re-generate network encryption
 		err = cluster.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
-
 
 		if cluster.HaEnabled {
 			err = cluster.DeployLoadBalancer(nodes)
@@ -174,5 +188,6 @@ func init() {
 	clusterCmd.AddCommand(clusterAddExternalWorkerCmd)
 	clusterAddExternalWorkerCmd.Flags().StringP("name", "n", "", "Name of the cluster to add the workers to")
 	clusterAddExternalWorkerCmd.Flags().StringP("ip", "i", "", "The IP address of the external node")
+	clusterAddExternalWorkerCmd.Flags().StringP("port", "p", "", "The ssh port of the external node (default 22)")
 
 }
