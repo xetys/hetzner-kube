@@ -1,0 +1,10 @@
+version: "2"
+plugins:
+  gofmt:
+    enabled: true
+  govet:
+    enabled: true
+  golint:
+    enabled: true
+exclude_paths:
+  - vendor/
