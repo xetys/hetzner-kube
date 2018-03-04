@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"fmt"
 	"errors"
-	"os/user"
-	"os"
+	"fmt"
+	"github.com/spf13/cobra"
 	"io/ioutil"
+	"os"
+	"os/user"
 	"strings"
 )
 
@@ -42,7 +42,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		masterNode, err := cluster.GetMasterNode()
 		FatalOnError(err)
 
-		err = capturePassphrase(masterNode.SSHKeyName)		
+		err = capturePassphrase(masterNode.SSHKeyName)
 		FatalOnError(err)
 
 		kubeConfigContent, err := runCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
@@ -50,7 +50,6 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		kubeConfigContent = strings.Replace(kubeConfigContent, masterNode.PrivateIPAddress, masterNode.IPAddress, -1)
 
 		FatalOnError(err)
-
 
 		printContent, _ := cmd.Flags().GetBool("print")
 
@@ -73,6 +72,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		}
 	},
 }
+
 func validateKubeconfigCmd(cmd *cobra.Command, args []string) error {
 
 	name, err := cmd.Flags().GetString("name")

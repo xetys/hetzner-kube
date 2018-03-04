@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 )
 
 type WgKeyPair struct {
 	Private string `json:"private"`
-	Public string `json:"public"`
+	Public  string `json:"public"`
 }
 
 func GenerateKeyPairs(node Node, count int) []WgKeyPair {
@@ -48,8 +48,8 @@ Endpoint = %s:51820
 
 		output = fmt.Sprintf("%s\n%s",
 			output,
-				fmt.Sprintf(peerTpl, peer.Name, peer.WireGuardKeyPair.Public, peer.PrivateIPAddress, peer.IPAddress),
-			)
+			fmt.Sprintf(peerTpl, peer.Name, peer.WireGuardKeyPair.Public, peer.PrivateIPAddress, peer.IPAddress),
+		)
 	}
 
 	return output

@@ -20,8 +20,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
 	"log"
-	"time"
 	"os"
+	"time"
 )
 
 // clusterCreateCmd represents the clusterCreate command

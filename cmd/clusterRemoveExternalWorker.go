@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
 	"log"
 )
 
@@ -65,7 +65,7 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 		var masterNode Node
 
 		for idx, node := range cluster.Nodes {
-			if node.IsMaster && !masterVisited{
+			if node.IsMaster && !masterVisited {
 				masterNode = node
 				masterVisited = true
 			}

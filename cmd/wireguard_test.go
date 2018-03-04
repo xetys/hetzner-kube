@@ -4,8 +4,8 @@ import "testing"
 
 func TestGenerateWireguardConf(t *testing.T) {
 	nodes := []Node{
-		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1", WireGuardKeyPair: WgKeyPair{Private:"node1priv", Public: "node1pub"}},
-		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2", WireGuardKeyPair: WgKeyPair{Private:"node2priv", Public: "node2pub"}},
+		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1", WireGuardKeyPair: WgKeyPair{Private: "node1priv", Public: "node1pub"}},
+		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2", WireGuardKeyPair: WgKeyPair{Private: "node2priv", Public: "node2pub"}},
 	}
 
 	expectedConf := `[Interface]
@@ -27,4 +27,3 @@ Endpoint = 1.1.1.1:51820
 	}
 
 }
-

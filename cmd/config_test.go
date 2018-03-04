@@ -80,5 +80,3 @@ func getAppConfig() AppConfig {
 	}
 	return config
 }
-
-

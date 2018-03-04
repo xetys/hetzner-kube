@@ -24,8 +24,8 @@ import (
 
 // sshKeyDeleteCmd represents the sshKeyDelete command
 var sshKeyDeleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "removes a saved SSH key from local configuration and Hetzner Cloud account",
+	Use:     "delete",
+	Short:   "removes a saved SSH key from local configuration and Hetzner Cloud account",
 	PreRunE: validateSHHKeyDeleteFlags,
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")

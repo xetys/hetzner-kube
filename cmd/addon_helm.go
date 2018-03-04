@@ -11,7 +11,7 @@ func NewHelmAddon(cluster Cluster) ClusterAddon {
 	return HelmAddon{masterNode: masterNode}
 }
 
-func (addon HelmAddon) Install(args ... string) {
+func (addon HelmAddon) Install(args ...string) {
 
 	node := *addon.masterNode
 	_, err := runCmd(node, "curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash")

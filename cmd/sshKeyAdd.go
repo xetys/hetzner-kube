@@ -17,17 +17,17 @@ package cmd
 import (
 	"fmt"
 
+	"bytes"
 	"errors"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
-	"net/http"
-	"golang.org/x/crypto/ssh"
-	"bytes"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command
@@ -88,7 +88,7 @@ Note: the private key is never uploaded to any server at any time.`,
 				if err != nil {
 					log.Fatalln(err)
 				}
-				localPkey, _, _, _,  err := ssh.ParseAuthorizedKey(localData)
+				localPkey, _, _, _, err := ssh.ParseAuthorizedKey(localData)
 				if err != nil {
 					log.Fatalln(err)
 				}
@@ -104,7 +104,7 @@ Note: the private key is never uploaded to any server at any time.`,
 				log.Fatalln(err)
 			}
 			for _, sshKeyHetzner := range sshKeys {
-				hetznerPkey, _, _, _,  err := ssh.ParseAuthorizedKey([]byte(sshKeyHetzner.PublicKey))
+				hetznerPkey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(sshKeyHetzner.PublicKey))
 				if err != nil {
 					log.Fatalln(err)
 				}

@@ -17,11 +17,11 @@ import (
 
 var DefaultConfigPath string
 var AppConf AppConfig = AppConfig{}
-type AppSSHClient struct {
 
+type AppSSHClient struct {
 }
 
-func (AppSSHClient) RunCmd(node *Node, command string) (string, error)  {
+func (AppSSHClient) RunCmd(node *Node, command string) (string, error) {
 	return runCmd(*node, command)
 }
 
@@ -181,7 +181,7 @@ func init() {
 	}
 
 	AppConf = AppConfig{
-		Context: context.Background(),
+		Context:   context.Background(),
 		SSHClient: AppSSHClient{},
 	}
 
