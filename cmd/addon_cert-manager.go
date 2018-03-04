@@ -14,7 +14,7 @@ func NewCertmanagerAddon(cluster Cluster) ClusterAddon {
 
 func (addon CertmanagerAddon) Install(args ... string) {
 	node := *addon.masterNode
-	_, err := runCmd(node, "helm install --name cert-manager --namespace kube-system stable/cert-manager")
+	_, err := runCmd(node, "helm install --name cert-manager --namespace ingress stable/cert-manager")
 	FatalOnError(err)
 	log.Println("cert-manager installed")
 }
