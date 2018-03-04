@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
 type RookAddon struct {
@@ -14,7 +14,7 @@ func NewRookAddon(cluster Cluster) ClusterAddon {
 	return RookAddon{masterNode: masterNode}
 }
 
-func (addon RookAddon) Install(args ... string) {
+func (addon RookAddon) Install(args ...string) {
 	node := *addon.masterNode
 
 	_, err := runCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-operator.yaml")

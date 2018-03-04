@@ -8,12 +8,11 @@ func TestClusterCmdValidate(t *testing.T) {
 
 	AppConf.Config = &HetznerConfig{
 		SSHKeys: []SSHKey{
-			{Name:"test"},
+			{Name: "test"},
 		},
 	}
 
 	cmd := clusterCreateCmd
-
 
 	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test"})
 	err := validateClusterCreateFlags(cmd, []string{})
@@ -49,11 +48,10 @@ func TestClusterCmdValidate(t *testing.T) {
 		t.Error("no errors occured with etcd count 2 in HA mode, but should")
 	}
 
-	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--master-count", "2",  "--etcd-count", "3"})
+	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--master-count", "2", "--etcd-count", "3"})
 	err = validateClusterCreateFlags(cmd, []string{})
 
 	if err == nil {
 		t.Error("no errors occured with provided etcd count without --isolated-etcd, but should")
 	}
 }
-

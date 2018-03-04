@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
 	"log"
 	"strings"
-	"github.com/xetys/hetzner-kube/pkg"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -60,7 +60,7 @@ An external server must meet the following requirements:
 		}
 
 		externalNode := Node{
-			IPAddress: ipAddress,
+			IPAddress:  ipAddress,
 			SSHKeyName: cluster.Nodes[0].SSHKeyName,
 		}
 
@@ -93,7 +93,6 @@ An external server must meet the following requirements:
 			return errors.New("target server has no Ubuntu 16.04 installed")
 		}
 
-
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -119,7 +118,7 @@ An external server must meet the following requirements:
 		}
 
 		externalNode := Node{
-			IPAddress: ipAddress,
+			IPAddress:  ipAddress,
 			SSHKeyName: sshKeyName,
 		}
 
@@ -130,7 +129,7 @@ An external server must meet the following requirements:
 
 		// render internal IP address
 		nextNode := 21
-		for _,node := range cluster.Nodes {
+		for _, node := range cluster.Nodes {
 			if !node.IsMaster && !node.IsEtcd {
 				nextNode++
 			}
@@ -154,7 +153,6 @@ An external server must meet the following requirements:
 		err = cluster.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
-
 
 		if cluster.HaEnabled {
 			err = cluster.DeployLoadBalancer(nodes)

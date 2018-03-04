@@ -38,7 +38,7 @@ func isUiEnabled() bool {
 func shortLeftPadRight(s string, padWidth int) string {
 	if len(s) > padWidth {
 		l := len(s)
-		return "..." + s[(l - (padWidth - 2)):(l - 1)]
+		return "..." + s[(l-(padWidth-2)):(l-1)]
 	} else {
 		return strutil.PadRight(s, padWidth, ' ')
 	}

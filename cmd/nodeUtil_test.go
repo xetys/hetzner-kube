@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"testing"
 	"github.com/andreyvit/diff"
+	"testing"
 )
 
 func TestGenerateMasterConfiguration(t *testing.T) {
@@ -36,11 +36,11 @@ etcd:
   - http://10.0.0.2:2379
 `
 	nodes := []Node{
-		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1", },
-		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2", },
+		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1"},
+		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2"},
 	}
 
-	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes,nil)
+	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil)
 
 	if noEtcdConf != expectedConf {
 		t.Errorf("master config without etcd does not match to expected.\n%s\n", noEtcdConf)
@@ -79,9 +79,9 @@ StartLimitInterval=0
 WantedBy=multi-user.target
 `
 	nodes := []Node{
-		{Name: "kube1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.1.11", },
-		{Name: "kube2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.1.12", },
-		{Name: "kube3", IPAddress: "1.1.1.3", PrivateIPAddress: "10.0.1.13", },
+		{Name: "kube1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.1.11"},
+		{Name: "kube2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.1.12"},
+		{Name: "kube3", IPAddress: "1.1.1.3", PrivateIPAddress: "10.0.1.13"},
 	}
 
 	etcdService := GenerateEtcdSystemdService(nodes[0], nodes)
@@ -94,12 +94,12 @@ WantedBy=multi-user.target
 
 func TestCluster_CreateEtcdNodes(t *testing.T) {
 	nodes := []Node{
-		{Name: "kube1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.1.11", IsEtcd: true },
+		{Name: "kube1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.1.11", IsEtcd: true},
 		{Name: "kube2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.1.12", IsMaster: true},
-		{Name: "kube3", IPAddress: "1.1.1.3", PrivateIPAddress: "10.0.1.13", },
+		{Name: "kube3", IPAddress: "1.1.1.3", PrivateIPAddress: "10.0.1.13"},
 	}
 
-	cluster := Cluster{Nodes:nodes}
+	cluster := Cluster{Nodes: nodes}
 
 	etcdNodes := cluster.GetEtcdNodes()
 
@@ -111,4 +111,3 @@ func TestCluster_CreateEtcdNodes(t *testing.T) {
 		t.Error("wrong node found")
 	}
 }
-

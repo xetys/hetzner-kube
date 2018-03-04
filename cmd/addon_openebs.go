@@ -11,7 +11,7 @@ func NewOpenEBSAddon(cluster Cluster) ClusterAddon {
 	return OpenEBSAddon{masterNode: masterNode}
 }
 
-func (addon OpenEBSAddon) Install(args ... string) {
+func (addon OpenEBSAddon) Install(args ...string) {
 	node := *addon.masterNode
 
 	_, err := runCmd(node, "kubectl apply -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml")

@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"errors"
 	"fmt"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"strings"
-	"log"
-	"errors"
-	"time"
 	"github.com/xetys/hetzner-kube/pkg"
+	"io/ioutil"
+	"log"
+	"strings"
+	"time"
 )
 
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
@@ -457,7 +457,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 			if cluster.HaEnabled {
 				// joinCommand = strings.Replace(joinCommand, "https://" + masterNode.IPAddress + ":6443", "https://127.0.0.1:16443", 1)
 			}
-			_, err := runCmd(node, "kubeadm reset && " + joinCommand)
+			_, err := runCmd(node, "kubeadm reset && "+joinCommand)
 			if err != nil {
 				return err
 			}

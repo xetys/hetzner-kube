@@ -15,13 +15,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"errors"
 	"fmt"
-	"log"
-	"strings"
-	"strconv"
+	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
+	"log"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -114,7 +114,6 @@ You can specify the worker server type as in cluster create.`,
 		err = cluster.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
-
 
 		if cluster.HaEnabled {
 			err = cluster.DeployLoadBalancer(nodes)

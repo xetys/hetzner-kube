@@ -1,7 +1,7 @@
 package cmd
 
 type ClusterAddon interface {
-	Install(args ... string)
+	Install(args ...string)
 	Uninstall()
 }
 

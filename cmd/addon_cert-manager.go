@@ -12,7 +12,7 @@ func NewCertmanagerAddon(cluster Cluster) ClusterAddon {
 	return CertmanagerAddon{masterNode: masterNode}
 }
 
-func (addon CertmanagerAddon) Install(args ... string) {
+func (addon CertmanagerAddon) Install(args ...string) {
 	node := *addon.masterNode
 	_, err := runCmd(node, "helm install --name cert-manager --namespace kube-system --set ingressShim.extraArgs='{--default-issuer-name=letsencrypt-prod,--default-issuer-kind=ClusterIssuer}' stable/cert-manager")
 	FatalOnError(err)

@@ -17,8 +17,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"errors"
+	"github.com/spf13/cobra"
 	"log"
 )
 
