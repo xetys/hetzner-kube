@@ -44,7 +44,7 @@ You can specify the worker server type as in cluster create.`,
 		idx, _ := AppConf.Config.FindClusterByName(name)
 
 		if idx == -1 {
-			return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+			return fmt.Errorf("cluster '%s' not found", name)
 		}
 
 		var workerServerType string

@@ -134,7 +134,7 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("context '%s' not found", name))
+	return nil, fmt.Errorf("context '%s' not found", name)
 }
 
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {

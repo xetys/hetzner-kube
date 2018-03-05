@@ -38,7 +38,7 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 		idx, cluster := AppConf.Config.FindClusterByName(name)
 
 		if idx == -1 {
-			return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+			return fmt.Errorf("cluster '%s' not found", name)
 		}
 
 		ipAddress, _ := cmd.Flags().GetString("ip")

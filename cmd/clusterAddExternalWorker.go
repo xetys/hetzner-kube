@@ -46,7 +46,7 @@ An external server must meet the following requirements:
 		idx, cluster := AppConf.Config.FindClusterByName(name)
 
 		if idx == -1 {
-			return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+			return fmt.Errorf("cluster '%s' not found", name)
 		}
 
 		ipAddress, _ := cmd.Flags().GetString("ip")
@@ -80,7 +80,7 @@ An external server must meet the following requirements:
 
 		for _, node := range cluster.Nodes {
 			if node.Name == hostname {
-				return errors.New(fmt.Sprintf("there is already a node with the name '%s'", hostname))
+				return fmt.Errorf("there is already a node with the name '%s'", hostname)
 			}
 		}
 

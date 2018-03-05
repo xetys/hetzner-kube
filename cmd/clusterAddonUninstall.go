@@ -39,14 +39,14 @@ var clusterAddonUninstallCmd = &cobra.Command{
 		idx, _ := AppConf.Config.FindClusterByName(name)
 
 		if idx == -1 {
-			return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+			return fmt.Errorf("cluster '%s' not found", name)
 		}
 		if len(args) != 1 {
 			return errors.New("exactly one argument expected")
 		}
 		addonName := args[0]
 		if !AddonExists(addonName) {
-			return errors.New(fmt.Sprintf("addon %s not found", addonName))
+			return fmt.Errorf("addon %s not found", addonName)
 		}
 		return nil
 	},

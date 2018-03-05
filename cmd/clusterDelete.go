@@ -40,7 +40,7 @@ var clusterDeleteCmd = &cobra.Command{
 		idx, _ := AppConf.Config.FindClusterByName(name)
 
 		if idx == -1 {
-			return errors.New(fmt.Sprintf("cluster '%s' not found", name))
+			return fmt.Errorf("cluster '%s' not found", name)
 		}
 
 		if err != nil {
