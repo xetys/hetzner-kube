@@ -24,7 +24,11 @@ func (addon RookAddon) Install(args ...string) {
 	FatalOnError(err)
 	_, err = runCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-storageclass.yaml")
 	FatalOnError(err)
-
+	_, err = runCmd(node, "kubectl get storageclass | grep -v 'NAME' | awk '{print$1}' | xargs kubectl patch storageclass -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'")
+	FatalOnError(err)
+	_, err = runCmd(node, "kubectl patch storageclass rook-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
+	FatalOnError(err)
+	
 	fmt.Println("Rook installed")
 }
 
