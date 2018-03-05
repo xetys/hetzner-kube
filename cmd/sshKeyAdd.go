@@ -164,12 +164,12 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	privateKeyPath = strings.Replace(privateKeyPath, "~", home, 1)
 	publicKeyPath = strings.Replace(publicKeyPath, "~", home, 1)
 	if _, err := os.Stat(privateKeyPath); os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("could not find private key '%s'", privateKeyPath))
+		return fmt.Errorf("could not find private key '%s'", privateKeyPath)
 
 	}
 
 	if _, err := os.Stat(publicKeyPath); os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("could not find public key '%s'", publicKeyPath))
+		return fmt.Errorf("could not find public key '%s'", publicKeyPath)
 	}
 
 	return nil

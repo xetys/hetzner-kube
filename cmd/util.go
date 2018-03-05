@@ -23,7 +23,7 @@ var sshPassPhrases = make(map[string][]byte)
 func capturePassphrase(sshKeyName string) error {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
-		return errors.New(fmt.Sprintf("could not find SSH key '%s'", sshKeyName))
+		return fmt.Errorf("could not find SSH key '%s'", sshKeyName)
 	}
 
 	encrypted, err := isEncrypted(privateKey)
@@ -75,7 +75,7 @@ func isEncrypted(privateKey *SSHKey) (bool, error) {
 func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
-		return nil, errors.New(fmt.Sprintf("cound not find SSH key '%s'", sshKeyName))
+		return nil, fmt.Errorf("cound not find SSH key '%s'", sshKeyName)
 	}
 
 	encrypted, err := isEncrypted(privateKey)
@@ -95,24 +95,24 @@ func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 			// Fallback as sometimes the cache with the passphrases is not set, i.e. on program start
 			err = capturePassphrase(sshKeyName)
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("error capturing passphrase:%v", err))
+				return nil, fmt.Errorf("error capturing passphrase:%v", err)
 			}
 			passPhrase, err = getPassphrase(privateKey.PrivateKeyPath)
 		}
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+			return nil, fmt.Errorf("parse key failed:%v", err)
 		}
 
 		signer, err := ssh.ParsePrivateKeyWithPassphrase(pemBytes, passPhrase)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+			return nil, fmt.Errorf("parse key failed:%v", err)
 		}
 
 		return signer, err
 	} else {
 		signer, err := ssh.ParsePrivateKey(pemBytes)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("parse key failed:%v", err))
+			return nil, fmt.Errorf("parse key failed:%v", err)
 		}
 
 		return signer, err
@@ -237,7 +237,7 @@ func runCmd(node Node, command string) (output string, err error) {
 		log.Printf("> %s", command)
 		log.Println()
 		log.Printf("%s", stdoutBuf.String())
-		return "", errors.New(fmt.Sprintf("Run failed:%v", err))
+		return "", fmt.Errorf("run failed:%v", err)
 	}
 	// log.Println("Command execution succeeded!")
 	session.Close()

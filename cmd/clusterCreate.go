@@ -240,28 +240,28 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 	}
 
 	if index, _ := AppConf.Config.FindSSHKeyByName(ssh_key); index == -1 {
-		return errors.New(fmt.Sprintf("SSH key '%s' not found", ssh_key))
+		return fmt.Errorf("SSH key '%s' not found", ssh_key)
 	}
 
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
 	isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
 
 	if worker, _ := cmd.Flags().GetInt("worker-count"); worker < 1 {
-		return errors.New(fmt.Sprintf("at least 1 worker node is needed. %d was provided", worker))
+		return fmt.Errorf("at least 1 worker node is needed. %d was provided", worker)
 	}
 
 	if haEnabled {
 		if isolatedEtcd {
 			if master, _ := cmd.Flags().GetInt("master-count"); master < 2 {
-				return errors.New(fmt.Sprintf("at least 2 master node are needed. %d was provided", master))
+				return fmt.Errorf("at least 2 master node are needed. %d was provided", master)
 			}
 
 			if etcds, _ := cmd.Flags().GetInt("etcd-count"); etcds%2 == 0 || etcds < 3 {
-				return errors.New(fmt.Sprintf("the number of etcds should be odd and at least 3. %d was provided", etcds))
+				return fmt.Errorf("the number of etcds should be odd and at least 3. %d was provided", etcds)
 			}
 		} else {
 			if master, _ := cmd.Flags().GetInt("master-count"); master < 3 {
-				return errors.New(fmt.Sprintf("at least 3 master node are needed when etcd is installed on them. %d was provided", master))
+				return fmt.Errorf("at least 3 master node are needed when etcd is installed on them. %d was provided", master)
 			}
 
 			if etcds, _ := cmd.Flags().GetInt("etcd-count"); etcds != 3 {
