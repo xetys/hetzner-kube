@@ -64,6 +64,7 @@ You can install some addons to your cluster using the `cluster addon` sub-comman
 * OpenEBS
 * NGinx ingress controller (requires helm)
 * [cert-manager](https://github.com/jetstack/cert-manager) (requires helm)
+* [docker-registry](https://github.com/kubernetes/charts/tree/master/stable/docker-registry) (requires PVC)
 
 ### contributing new addons
 
