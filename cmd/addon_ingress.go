@@ -14,7 +14,7 @@ func NewIngressAddon(cluster Cluster) ClusterAddon {
 
 func (addon IngressAddon) Install(args ...string) {
 	node := *addon.masterNode
-	_, err := runCmd(node, "helm install --name ingress --set rbac.create=true,controller.kind=DaemonSet,controller.service.type=ClusterIP,controller.hostNetwork=true stable/nginx-ingress")
+	_, err := runCmd(node, "helm install --name ingress --namespace ingress --set rbac.create=true,controller.kind=DaemonSet,controller.service.type=ClusterIP,controller.hostNetwork=true stable/nginx-ingress")
 	FatalOnError(err)
 	log.Println("nginx ingress installed")
 }
