@@ -87,6 +87,7 @@ func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []
 	return nodes, nil
 }
 
+// deprecated
 func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -110,6 +111,7 @@ func (cluster *Cluster) ProvisionNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
+// deprecated
 func (cluster *Cluster) SetupEncryptedNetwork() error {
 	nodes := cluster.Nodes
 	// render a public/private key pair
@@ -229,10 +231,12 @@ func (cluster *Cluster) GetWorkerNodes() []Node {
 	return nodes
 }
 
+// deprecated
 func Node2IP(node Node) string {
 	return node.IPAddress
 }
 
+// deprecated
 func Nodes2IPs(nodes []Node) []string {
 	ips := []string{}
 	for _, node := range nodes {
@@ -267,6 +271,7 @@ func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType st
 	return nodes, err
 }
 
+// deprecated
 func (cluster *Cluster) InstallMasters() error {
 
 	commands := []SSHCommand{
@@ -325,6 +330,7 @@ func (cluster *Cluster) InstallMasters() error {
 	return waitOrError(trueChan, errChan, &numProc)
 }
 
+// deprecated
 func (cluster *Cluster) installMasterStep(node Node, numMaster int, masterNode Node, commands []SSHCommand, trueChan chan bool, errChan chan error) {
 
 	// create master-configuration
@@ -387,6 +393,7 @@ func (cluster *Cluster) installMasterStep(node Node, numMaster int, masterNode N
 	trueChan <- true
 }
 
+// deprecated
 func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error {
 
 	commands := []SSHCommand{
@@ -429,6 +436,7 @@ func (cluster *Cluster) InstallEtcdNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
+// deprecated
 func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 	var joinCommand string
 	// var masterNode Node
@@ -488,6 +496,7 @@ func (cluster *Cluster) InstallWorkers(nodes []Node) error {
 	return nil
 }
 
+// deprecated
 func (cluster *Cluster) SetupHA() error {
 	// copy pki
 	masterNode, err := cluster.GetMasterNode()
@@ -554,6 +563,7 @@ func (cluster *Cluster) SetupHA() error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
+// deprecated
 func (cluster *Cluster) DeployLoadBalancer(nodes []Node) error {
 
 	errChan := make(chan error)
@@ -585,6 +595,7 @@ func (cluster *Cluster) DeployLoadBalancer(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
+// deprecated
 func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
 	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
@@ -613,6 +624,7 @@ apiServerCertSANs:
 	return masterConfig
 }
 
+// deprecated
 func GenerateEtcdSystemdService(node Node, etcdNodes []Node) string {
 	serviceTpls := `# /etc/systemd/system/etcd.service
 [Unit]

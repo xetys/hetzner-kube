@@ -32,7 +32,7 @@ type Cluster struct {
 	Name          string                   `json:"name"`
 	Nodes         []Node                   `json:"nodes"`
 	SelfHosted    bool                     `json:"self_hosted"`
-	coordinator   *pkg.ProgressCoordinator
+	coordinator   *pkg.UiProgressCoordinator
 	wait          bool
 	CloudInitFile string                   `json:"cloud_init_file"`
 	HaEnabled     bool                     `json:"ha_enabled"`
@@ -44,14 +44,6 @@ type SSHCommand struct {
 	command   string
 }
 
-type ClusterManager interface {
-	CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
-	CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
-	CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]Node, error)
-	ProvisionNodes(nodes []Node) error
-	InstallMasters(haMode bool) error
-	InstallWorkers(nodes []Node) error
-}
 
 type SSHClient interface {
 	RunCmd(node *Node, cmd string) (string, error)

@@ -20,6 +20,7 @@ import (
 
 var sshPassPhrases = make(map[string][]byte)
 
+// deprecated
 func capturePassphrase(sshKeyName string) error {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
@@ -49,6 +50,7 @@ func capturePassphrase(sshKeyName string) error {
 	return nil
 }
 
+// deprecated
 func getPassphrase(privateKeyPath string) ([]byte, error) {
 	if phrase, ok := sshPassPhrases[privateKeyPath]; ok {
 		return phrase, nil
@@ -57,6 +59,7 @@ func getPassphrase(privateKeyPath string) ([]byte, error) {
 	return nil, errors.New("passphrase not found")
 }
 
+// deprecated
 func isEncrypted(privateKey *SSHKey) (bool, error) {
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
@@ -72,6 +75,7 @@ func isEncrypted(privateKey *SSHKey) (bool, error) {
 	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
 }
 
+// deprecated
 func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 	index, privateKey := AppConf.Config.FindSSHKeyByName(sshKeyName)
 	if index < 0 {
@@ -119,6 +123,7 @@ func getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
 	}
 }
 
+// deprecated
 func writeNodeFile(node Node, filePath string, content string, executable bool) error {
 	signer, err := getPrivateSshKey(node.SSHKeyName)
 
@@ -178,6 +183,7 @@ func writeNodeFile(node Node, filePath string, content string, executable bool) 
 	return nil
 }
 
+// deprecated
 func copyFileOverNode(sourceNode Node, targetNode Node, filePath string, manipulator func(string) string) error {
 	// get the file
 	fileContent, err := runCmd(sourceNode, "cat "+filePath)

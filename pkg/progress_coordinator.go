@@ -11,18 +11,18 @@ import (
 
 const CompletedEvent = "complete!"
 
-type ProgressCoordinator struct {
+type UiProgressCoordinator struct {
 	group      sync.WaitGroup
 	progresses map[string]*Progress
 }
 
 var RenderProgressBars bool
 
-func NewProgressCoordinator() *ProgressCoordinator {
+func NewProgressCoordinator() *UiProgressCoordinator {
 	if isUiEnabled() {
 		uiprogress.Start()
 	}
-	pc := new(ProgressCoordinator)
+	pc := new(UiProgressCoordinator)
 	pc.progresses = make(map[string]*Progress)
 
 	return pc
@@ -43,7 +43,7 @@ func shortLeftPadRight(s string, padWidth int) string {
 		return strutil.PadRight(s, padWidth, ' ')
 	}
 }
-func (c *ProgressCoordinator) StartProgress(name string, steps int) {
+func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
 		Bar:     uiprogress.AddBar(steps),
 		State:   "starting",
@@ -83,13 +83,13 @@ func (c *ProgressCoordinator) StartProgress(name string, steps int) {
 	}(progress)
 }
 
-func (c *ProgressCoordinator) AddEvent(progressName string, eventName string) {
+func (c *UiProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
 	}
 }
 
-func (c *ProgressCoordinator) Wait() {
+func (c *UiProgressCoordinator) Wait() {
 	c.group.Wait()
 	if isUiEnabled() {
 		uiprogress.Stop()
