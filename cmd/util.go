@@ -46,7 +46,12 @@ func capturePassphrase(sshKeyName string) error {
 	fmt.Print("\n")
 	sshPassPhrases[privateKey.PrivateKeyPath] = text
 
-	return nil
+	// We now check if the password is correct by trying to get the ssh key
+	_, err = getPrivateSshKey(sshKeyName)
+	if err != nil {
+		delete(sshPassPhrases, privateKey.PrivateKeyPath)
+	}
+	return err
 }
 
 func getPassphrase(privateKeyPath string) ([]byte, error) {
