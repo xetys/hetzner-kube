@@ -201,7 +201,13 @@ func (ssh *SSHCommunicator) capturePassphrase(sshKeyName string) error {
 	fmt.Print("\n")
 	ssh.passPhrases[privateKey.PrivateKeyPath] = text
 
-	return nil
+	// check that the captured password is correct
+	_, err = ssh.getPrivateSshKey(sshKeyName)
+	if err != nil {
+		delete(ssh.passPhrases, privateKey.PrivateKeyPath)
+	}
+
+	return err
 }
 
 func (ssh *SSHCommunicator) getPassphrase(privateKeyPath string) ([]byte, error) {
