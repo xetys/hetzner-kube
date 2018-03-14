@@ -20,6 +20,8 @@ import (
 	"errors"
 	"github.com/spf13/cobra"
 	"log"
+	"github.com/xetys/hetzner-kube/pkg/addons"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
@@ -57,7 +59,9 @@ var clusterAddonInstallCmd = &cobra.Command{
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
 		log.Printf("installing addon %s", addonName)
-		addon := cluster.GetAddon(addonName)
+		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil)
+		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
+		addon := addonService.GetAddon(addonName)
 		addon.Install()
 
 		log.Printf("addon %s successfully installed", addonName)

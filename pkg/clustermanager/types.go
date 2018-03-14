@@ -18,10 +18,6 @@ type Cluster struct {
 	IsolatedEtcd     bool   `json:"isolated_etcd"`
 	SelfHosted       bool   `json:"self_hosted"`
 	CloudInitFile    string `json:"cloud_init_file"`
-	eventService     EventService
-	wait             bool
-	nodeCommunicator NodeCommunicator
-	clusterProvider  ClusterProvider
 }
 
 type NodeCommand struct {

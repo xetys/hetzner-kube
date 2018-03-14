@@ -10,10 +10,10 @@ type WgKeyPair struct {
 	Public  string `json:"public"`
 }
 
-func GenerateKeyPairs(node Node, count int) []WgKeyPair {
+func (manager *Manager) GenerateKeyPairs(node Node, count int) []WgKeyPair {
 	genKeyPairs := fmt.Sprintf(`echo "[" ;for i in {1..%d}; do pk=$(wg genkey); pubk=$(echo $pk | wg pubkey);echo "{\"private\":\"$pk\",\"public\":\"$pubk\"},"; done; echo "]";`, count)
 	// gives an invalid JSON back
-	o, err := runCmd(node, genKeyPairs)
+	o, err := manager.nodeCommunicator.RunCmd(node, genKeyPairs)
 	FatalOnError(err)
 	o = o[0:len(o)-4] + "]"
 	// now it's a valid json

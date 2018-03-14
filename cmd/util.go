@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 var sshPassPhrases = make(map[string][]byte)
@@ -60,7 +61,7 @@ func getPassphrase(privateKeyPath string) ([]byte, error) {
 }
 
 // deprecated
-func isEncrypted(privateKey *SSHKey) (bool, error) {
+func isEncrypted(privateKey *clustermanager.SSHKey) (bool, error) {
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
 		return false, err

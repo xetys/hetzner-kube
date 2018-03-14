@@ -21,6 +21,8 @@ import (
 	"github.com/xetys/hetzner-kube/pkg"
 	"log"
 	"strings"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -59,19 +61,13 @@ An external server must meet the following requirements:
 			return errors.New("your cluster has no nodes, no idea how this was possible")
 		}
 
-		externalNode := Node{
+		externalNode := clustermanager.Node{
 			IPAddress:  ipAddress,
 			SSHKeyName: cluster.Nodes[0].SSHKeyName,
 		}
 
-		sshKeyName := cluster.Nodes[0].SSHKeyName
-		err = capturePassphrase(sshKeyName)
-		if err != nil {
-			return err
-		}
-
 		// check the host name
-		hostname, err := runCmd(externalNode, "hostname -s")
+		hostname, err := AppConf.SSHClient.RunCmd(externalNode, "hostname -s")
 		hostname = strings.TrimSpace(hostname)
 		// this also implies the check that SSH is working
 		if err != nil {
@@ -85,7 +81,7 @@ An external server must meet the following requirements:
 		}
 
 		// check ubuntu 16.04
-		issue, err := runCmd(externalNode, "cat /etc/issue | xargs")
+		issue, err := AppConf.SSHClient.RunCmd(externalNode, "cat /etc/issue | xargs")
 		if err != nil {
 			return err
 		}
@@ -117,12 +113,13 @@ An external server must meet the following requirements:
 			log.Fatal(err)
 		}
 
-		externalNode := Node{
+		externalNode := clustermanager.Node{
 			IPAddress:  ipAddress,
 			SSHKeyName: sshKeyName,
 		}
 
-		hostname, err := runCmd(externalNode, "hostname -s")
+		sshClient := AppConf.SSHClient
+		hostname, err := sshClient.RunCmd(externalNode, "hostname -s")
 		hostname = strings.TrimSpace(hostname)
 		FatalOnError(err)
 		externalNode.Name = hostname
@@ -135,14 +132,17 @@ An external server must meet the following requirements:
 			}
 		}
 		externalNode.PrivateIPAddress = fmt.Sprintf("10.0.1.%d", nextNode)
-		cluster.coordinator = pkg.NewProgressCoordinator()
+		coordinator := pkg.NewProgressCoordinator()
+		hetznerProvider := hetzner.NewHetznerProvider(cluster.Name, AppConf.Client, AppConf.Context)
+		hetznerProvider.SetNodes(cluster.Nodes)
+		clusterManager := clustermanager.NewClusterManagerFromCluster(*cluster, hetznerProvider, sshClient, coordinator)
 
-		nodes := []Node{externalNode}
+		nodes := []clustermanager.Node{externalNode}
 
 		FatalOnError(err)
 
-		cluster.RenderProgressBars(nodes)
-		err = cluster.ProvisionNodes(nodes)
+		RenderProgressBars(cluster, coordinator)
+		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 
 		saveCluster(cluster)
@@ -150,18 +150,18 @@ An external server must meet the following requirements:
 		cluster.Nodes = append(cluster.Nodes, externalNode)
 
 		// re-generate network encryption
-		err = cluster.SetupEncryptedNetwork()
+		err = clusterManager.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
 
 		if cluster.HaEnabled {
-			err = cluster.DeployLoadBalancer(nodes)
+			err = clusterManager.DeployLoadBalancer(nodes)
 			FatalOnError(err)
 		}
 
-		cluster.InstallWorkers(nodes)
+		clusterManager.InstallWorkers(nodes)
 
-		cluster.coordinator.Wait()
+		coordinator.Wait()
 		saveCluster(cluster)
 		log.Printf("external worker %s with IP %s added to the cluster", externalNode.Name, externalNode.IPAddress)
 		log.Println()

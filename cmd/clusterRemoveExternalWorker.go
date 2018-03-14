@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -60,7 +61,7 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 		ipAddress, _ := cmd.Flags().GetString("ip")
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		masterVisited := false
-		var masterNode Node
+		var masterNode clustermanager.Node
 
 		for idx, node := range cluster.Nodes {
 			if node.IsMaster && !masterVisited {
@@ -69,7 +70,7 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 			}
 
 			if node.IPAddress == ipAddress {
-				_, err := runCmd(masterNode, fmt.Sprintf("kubectl delete node %s", node.Name))
+				_, err := AppConf.SSHClient.RunCmd(masterNode, fmt.Sprintf("kubectl delete node %s", node.Name))
 
 				log.Printf("deletion failed %s", err)
 				cluster.Nodes = append(cluster.Nodes[:idx], cluster.Nodes[idx+1:]...)

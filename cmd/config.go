@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 var DefaultConfigPath string
@@ -21,9 +22,6 @@ var AppConf AppConfig = AppConfig{}
 type AppSSHClient struct {
 }
 
-func (AppSSHClient) RunCmd(node *Node, command string) (string, error) {
-	return runCmd(*node, command)
-}
 
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
@@ -44,7 +42,7 @@ func (config *HetznerConfig) AddContext(context HetznerContext) {
 	config.Contexts = append(config.Contexts, context)
 }
 
-func (config *HetznerConfig) AddSSHKey(key SSHKey) {
+func (config *HetznerConfig) AddSSHKey(key clustermanager.SSHKey) {
 	config.SSHKeys = append(config.SSHKeys, key)
 }
 
@@ -61,7 +59,7 @@ func (config *HetznerConfig) DeleteSSHKey(name string) error {
 	return nil
 }
 
-func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *SSHKey) {
+func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *clustermanager.SSHKey) {
 	index := -1
 	for i, v := range config.SSHKeys {
 		if v.Name == name {
@@ -72,7 +70,7 @@ func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *SSHKey) {
 	return index, nil
 }
 
-func (config *HetznerConfig) AddCluster(cluster Cluster) {
+func (config *HetznerConfig) AddCluster(cluster clustermanager.Cluster) {
 	for i, v := range config.Clusters {
 		if v.Name == cluster.Name {
 			config.Clusters[i] = cluster
@@ -96,7 +94,7 @@ func (config *HetznerConfig) DeleteCluster(name string) error {
 	return nil
 }
 
-func (config *HetznerConfig) FindClusterByName(name string) (int, *Cluster) {
+func (config *HetznerConfig) FindClusterByName(name string) (int, *clustermanager.Cluster) {
 	for i, cluster := range config.Clusters {
 		if cluster.Name == name {
 			return i, &cluster
@@ -137,6 +135,7 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 	return nil, fmt.Errorf("context '%s' not found", name)
 }
 
+// deprecated
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
 	errCh, progressCh := waitAction(ctx, app.Client, action)
 
@@ -182,10 +181,10 @@ func init() {
 
 	AppConf = AppConfig{
 		Context:   context.Background(),
-		SSHClient: AppSSHClient{},
 	}
 
 	makeConfigIfNotExists()
+	AppConf.SSHClient = clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
 }
 
 func makeConfigIfNotExists() {

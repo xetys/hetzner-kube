@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -39,13 +40,13 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
 		_, cluster := AppConf.Config.FindClusterByName(name)
-		masterNode, err := cluster.GetMasterNode()
+
+		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil)
+
+		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)
 
-		err = capturePassphrase(masterNode.SSHKeyName)
-		FatalOnError(err)
-
-		kubeConfigContent, err := runCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
+		kubeConfigContent, err := AppConf.SSHClient.RunCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
 		// change the IP to public
 		kubeConfigContent = strings.Replace(kubeConfigContent, masterNode.PrivateIPAddress, masterNode.IPAddress, -1)
 

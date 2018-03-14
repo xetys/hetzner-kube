@@ -1,5 +1,7 @@
 package clustermanager
 
+import "log"
+
 func waitOrError(tc chan bool, ec chan error, numProcPtr *int) error {
 	numProcs := *numProcPtr
 	for numProcs > 0 {
@@ -25,4 +27,10 @@ func Nodes2IPs(nodes []Node) []string {
 	}
 
 	return ips
+}
+
+func FatalOnError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

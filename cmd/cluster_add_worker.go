@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -76,12 +77,6 @@ You can specify the worker server type as in cluster create.`,
 			log.Fatal("master not found")
 		}
 
-		err := capturePassphrase(sshKeyName)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		maxNo := 0
 		for _, node := range cluster.Nodes {
 			if !node.IsMaster {
@@ -94,36 +89,33 @@ You can specify the worker server type as in cluster create.`,
 			}
 		}
 
-		cluster.coordinator = pkg.NewProgressCoordinator()
+		coordinator := pkg.NewProgressCoordinator()
+		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator)
 
-		nodes, err := cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
-
+		nodes, err := hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 		FatalOnError(err)
-
 		saveCluster(cluster)
 
 		log.Println("sleep for 30s...")
 		time.Sleep(30 * time.Second)
 
-		cluster.RenderProgressBars(nodes)
-		err = cluster.ProvisionNodes(nodes)
+		RenderProgressBars(cluster, coordinator)
+		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
-		saveCluster(cluster)
 
 		// re-generate network encryption
-		err = cluster.SetupEncryptedNetwork()
+		err = clusterManager.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
 
 		if cluster.HaEnabled {
-			err = cluster.DeployLoadBalancer(nodes)
+			err = clusterManager.DeployLoadBalancer(nodes)
 			FatalOnError(err)
 		}
 
-		cluster.InstallWorkers(nodes)
+		clusterManager.InstallWorkers(nodes)
 
-		cluster.coordinator.Wait()
-		saveCluster(cluster)
+		coordinator.Wait()
 		log.Println("workers created successfully")
 	},
 }

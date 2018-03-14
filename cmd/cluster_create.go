@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -46,126 +48,126 @@ This tool supports these levels of kubernetes HA:
 
 	`,
 	PreRunE: validateClusterCreateFlags,
-	Run: func(cmd *cobra.Command, args []string) {
-
-		workerCount, _ := cmd.Flags().GetInt("worker-count")
-		masterCount, _ := cmd.Flags().GetInt("master-count")
-		etcdCount, _ := cmd.Flags().GetInt("etcd-count")
-		haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
-		if !haEnabled {
-			masterCount = 1
-		}
-		isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
-
-		clusterName := randomName()
-		if name, _ := cmd.Flags().GetString("name"); name != "" {
-			clusterName = name
-		}
-
-		log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
-
-		sshKeyName, _ := cmd.Flags().GetString("ssh-key")
-		masterServerType, _ := cmd.Flags().GetString("master-server-type")
-		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
-		datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
-
-		err := capturePassphrase(sshKeyName)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		cluster := Cluster{Name: clusterName, wait: false, HaEnabled: haEnabled, IsolatedEtcd: isolatedEtcd}
-
-		if cloudInit, _ := cmd.Flags().GetString("cloud-init"); cloudInit != "" {
-			cluster.CloudInitFile = cloudInit
-		}
-
-		if haEnabled && isolatedEtcd {
-			if err := cluster.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
-				log.Println(err)
-			}
-		}
-
-		if err := cluster.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount); err != nil {
-			log.Println(err)
-		}
-
-		if workerCount > 0 {
-			var err error
-			_, err = cluster.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, workerCount, 0)
-			FatalOnError(err)
-		}
-
-		if cluster.wait {
-			log.Println("sleep for 30s...")
-			time.Sleep(30 * time.Second)
-		}
-		cluster.coordinator = pkg.NewProgressCoordinator()
-		cluster.RenderProgressBars(cluster.Nodes)
-
-		// provision nodes
-		tries := 0
-		for err := cluster.ProvisionNodes(cluster.Nodes); err != nil; {
-			if tries < 3 {
-				fmt.Print(err)
-				tries++
-			} else {
-				log.Fatal(err)
-			}
-		}
-
-		// setup encrypted network
-		err = cluster.SetupEncryptedNetwork()
-		FatalOnError(err)
-		saveCluster(&cluster)
-
-		if haEnabled {
-			var etcdNodes []Node
-
-			if isolatedEtcd {
-				etcdNodes = cluster.GetEtcdNodes()
-			} else {
-				etcdNodes = cluster.GetMasterNodes()
-			}
-
-			err = cluster.InstallEtcdNodes(etcdNodes)
-			FatalOnError(err)
-
-			saveCluster(&cluster)
-		}
-
-		// install masters
-		if err := cluster.InstallMasters(); err != nil {
-			log.Fatal(err)
-		}
-
-		saveCluster(&cluster)
-
-		// ha plane
-		if haEnabled {
-			err = cluster.SetupHA()
-			FatalOnError(err)
-		}
-
-		// install worker
-		if err := cluster.InstallWorkers(cluster.Nodes); err != nil {
-			log.Fatal(err)
-		}
-
-		cluster.coordinator.Wait()
-		log.Println("Cluster successfully created!")
-
-		saveCluster(&cluster)
-	},
+	Run: RunClusterCreate,
 }
 
-func saveCluster(cluster *Cluster) {
+func RunClusterCreate(cmd *cobra.Command, args []string) {
+	workerCount, _ := cmd.Flags().GetInt("worker-count")
+	masterCount, _ := cmd.Flags().GetInt("master-count")
+	etcdCount, _ := cmd.Flags().GetInt("etcd-count")
+	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
+	if !haEnabled {
+		masterCount = 1
+	}
+	isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
+
+	clusterName := randomName()
+	if name, _ := cmd.Flags().GetString("name"); name != "" {
+		clusterName = name
+	}
+
+	log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
+
+	sshKeyName, _ := cmd.Flags().GetString("ssh-key")
+	masterServerType, _ := cmd.Flags().GetString("master-server-type")
+	workerServerType, _ := cmd.Flags().GetString("worker-server-type")
+	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
+
+
+	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context)
+
+	var cloudInit string
+	if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {
+		hetznerProvider.SetCloudInitFile(cloudInit)
+	}
+
+	if haEnabled && isolatedEtcd {
+		if err := hetznerProvider.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
+			log.Println(err)
+		}
+	}
+
+	if err := hetznerProvider.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount, isolatedEtcd); err != nil {
+		log.Println(err)
+	}
+
+	if workerCount > 0 {
+		var err error
+		_, err = hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, workerCount, 0)
+		FatalOnError(err)
+	}
+
+	if hetznerProvider.MustWait() {
+		log.Println("sleep for 30s...")
+		time.Sleep(30 * time.Second)
+	}
+
+	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
+	coordinator := pkg.NewProgressCoordinator()
+
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit,false)
+	cluster := clusterManager.Cluster()
+	RenderProgressBars(&cluster, coordinator)
+
+	// provision nodes
+	tries := 0
+	for err := clusterManager.ProvisionNodes(cluster.Nodes); err != nil; {
+		if tries < 3 {
+			fmt.Print(err)
+			tries++
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	// setup encrypted network
+	err := clusterManager.SetupEncryptedNetwork()
+	FatalOnError(err)
+	cluster = clusterManager.Cluster()
+	saveCluster(&cluster)
+
+	if haEnabled {
+		var etcdNodes []clustermanager.Node
+
+		if isolatedEtcd {
+			etcdNodes = hetznerProvider.GetEtcdNodes()
+		} else {
+			etcdNodes = hetznerProvider.GetMasterNodes()
+		}
+
+		err = clusterManager.InstallEtcdNodes(etcdNodes)
+		FatalOnError(err)
+
+		saveCluster(&cluster)
+	}
+
+	// install masters
+	if err := clusterManager.InstallMasters(); err != nil {
+		log.Fatal(err)
+	}
+
+	// ha plane
+	if haEnabled {
+		err = clusterManager.SetupHA()
+		FatalOnError(err)
+	}
+
+	// install worker
+	if err := clusterManager.InstallWorkers(cluster.Nodes); err != nil {
+		log.Fatal(err)
+	}
+
+	coordinator.Wait()
+	log.Println("Cluster successfully created!")
+}
+
+func saveCluster(cluster *clustermanager.Cluster) {
 	AppConf.Config.AddCluster(*cluster)
 	AppConf.Config.WriteCurrentConfig()
 }
 
-func (cluster *Cluster) RenderProgressBars(nodes []Node) {
+func RenderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
+	nodes := cluster.Nodes
 	provisionSteps := 2
 	netWorkSetupSteps := 2
 	etcdSteps := 4
@@ -211,7 +213,7 @@ func (cluster *Cluster) RenderProgressBars(nodes []Node) {
 			}
 		}
 
-		cluster.coordinator.StartProgress(node.Name, steps+6)
+		coordinator.StartProgress(node.Name, steps+6)
 	}
 }
 

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"testing"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 func TestClusterCmdValidate(t *testing.T) {
 
 	AppConf.Config = &HetznerConfig{
-		SSHKeys: []SSHKey{
+		SSHKeys: []clustermanager.SSHKey{
 			{Name: "test"},
 		},
 	}

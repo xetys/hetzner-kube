@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command
@@ -123,7 +124,7 @@ Note: the private key is never uploaded to any server at any time.`,
 			log.Fatalln(err)
 		}
 
-		AppConf.Config.AddSSHKey(SSHKey{
+		AppConf.Config.AddSSHKey(clustermanager.SSHKey{
 			Name:           sshKey.Name,
 			PrivateKeyPath: privateKeyPath,
 			PublicKeyPath:  publicKeyPath,

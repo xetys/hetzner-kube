@@ -12,6 +12,7 @@ type EventService interface {
 }
 
 type ClusterProvider interface {
+	SetNodes([]Node)
 	GetAllNodes() []Node
 	GetMasterNodes() []Node
 	GetEtcdNodes() []Node
@@ -19,4 +20,5 @@ type ClusterProvider interface {
 	GetMasterNode() (*Node, error)
 	GetCluster() Cluster
 	GetAdditionalMasterInstallCommands() []NodeCommand
+	MustWait() bool
 }

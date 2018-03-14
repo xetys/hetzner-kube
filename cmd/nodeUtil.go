@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// deprecated
 func (cluster *Cluster) CreateNodes(suffix string, template Node, datacenters []string, count int, offset int) ([]Node, error) {
 	sshKey, _, err := AppConf.Client.SSHKey.Get(AppConf.Context, template.SSHKeyName)
 
@@ -151,6 +152,7 @@ func (cluster *Cluster) SetupEncryptedNetwork() error {
 	return waitOrError(trueChan, errChan, &numProc)
 }
 
+// deprecated
 func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
 
 	log.Printf("creating server '%s'...", opts.Name)
@@ -246,13 +248,14 @@ func Nodes2IPs(nodes []Node) []string {
 	return ips
 }
 
+// deprecated
 func (cluster *Cluster) CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error {
 	template := Node{SSHKeyName: sshKeyName, IsEtcd: true, Type: masterServerType}
 	_, err := cluster.CreateNodes("etcd", template, datacenters, count, 0)
-	saveCluster(cluster)
 	return err
 }
 
+// deprecated
 func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error {
 	isEtcd := true
 	if cluster.IsolatedEtcd {
@@ -260,14 +263,13 @@ func (cluster *Cluster) CreateMasterNodes(sshKeyName string, masterServerType st
 	}
 	template := Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType, IsEtcd: isEtcd}
 	_, err := cluster.CreateNodes("master", template, datacenters, count, 0)
-	saveCluster(cluster)
 	return err
 }
 
+// deprecated
 func (cluster *Cluster) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]Node, error) {
 	template := Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
 	nodes, err := cluster.CreateNodes("worker", template, datacenters, count, offset)
-	saveCluster(cluster)
 	return nodes, err
 }
 
