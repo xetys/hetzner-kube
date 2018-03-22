@@ -26,12 +26,10 @@ import (
 var clusterDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "removes a cluster and deletes the associated nodes",
+	Args: cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 
-		name, err := cmd.Flags().GetString("name")
-		if err != nil {
-			return nil
-		}
+		name := args[0]
 
 		if name == "" {
 			return errors.New("flag --name is required")
@@ -43,15 +41,11 @@ var clusterDeleteCmd = &cobra.Command{
 			return fmt.Errorf("cluster '%s' not found", name)
 		}
 
-		if err != nil {
-			return err
-		}
-
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		name, _ := cmd.Flags().GetString("name")
+		name := args[0]
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		// first kill all nodes
 

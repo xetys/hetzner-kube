@@ -74,7 +74,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 
 
-	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context)
+	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context, AppConf.CurrentContext.Token)
 
 	var cloudInit string
 	if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {

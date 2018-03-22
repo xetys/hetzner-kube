@@ -29,7 +29,7 @@ var clusterListCmd = &cobra.Command{
 	Short:   "lists all created clusters",
 	Run: func(cmd *cobra.Command, args []string) {
 		tw := new(tabwriter.Writer)
-		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		tw.Init(os.Stdout, 0, 8, 2, '\t', 0)
 		fmt.Fprintln(tw, "NAME\tNODES\tMASTER IP")
 
 		for _, cluster := range AppConf.Config.Clusters {

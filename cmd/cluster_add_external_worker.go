@@ -133,7 +133,7 @@ An external server must meet the following requirements:
 		}
 		externalNode.PrivateIPAddress = fmt.Sprintf("10.0.1.%d", nextNode)
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider := hetzner.NewHetznerProvider(cluster.Name, AppConf.Client, AppConf.Context)
+		hetznerProvider := hetzner.NewHetznerProvider(cluster.Name, AppConf.Client, AppConf.Context, AppConf.CurrentContext.Token)
 		hetznerProvider.SetNodes(cluster.Nodes)
 		clusterManager := clustermanager.NewClusterManagerFromCluster(*cluster, hetznerProvider, sshClient, coordinator)
 

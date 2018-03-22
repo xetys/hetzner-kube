@@ -7,8 +7,8 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
-func ProviderAndManager(cluster clustermanager.Cluster, client *hcloud.Client, context context.Context, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService) (*Provider, *clustermanager.Manager) {
-	provider := NewHetznerProvider(cluster.Name, client, context)
+func ProviderAndManager(cluster clustermanager.Cluster, client *hcloud.Client, context context.Context, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService, token string) (*Provider, *clustermanager.Manager) {
+	provider := NewHetznerProvider(cluster.Name, client, context, token)
 	provider.SetNodes(cluster.Nodes)
 	manager := clustermanager.NewClusterManagerFromCluster(cluster, provider, nc, eventService)
 

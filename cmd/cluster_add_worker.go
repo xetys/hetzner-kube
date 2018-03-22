@@ -90,7 +90,7 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator)
+		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
 
 		nodes, err := hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 		FatalOnError(err)

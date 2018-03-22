@@ -238,8 +238,8 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 	}
 
 	for i, command := range commands {
-		manager.eventService.AddEvent(node.Name, command.eventName)
-		_, err := manager.nodeCommunicator.RunCmd(node, command.command)
+		manager.eventService.AddEvent(node.Name, command.EventName)
+		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
 		if err != nil {
 			errChan <- err
 		}
@@ -281,8 +281,8 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 
 			// install etcd
 			for _, command := range commands {
-				manager.eventService.AddEvent(node.Name, command.eventName)
-				_, err := manager.nodeCommunicator.RunCmd(node, command.command)
+				manager.eventService.AddEvent(node.Name, command.EventName)
+				_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
 				if err != nil {
 					errChan <- err
 				}

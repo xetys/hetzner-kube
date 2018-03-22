@@ -20,14 +20,14 @@ import (
 	"errors"
 	"github.com/spf13/cobra"
 	"log"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"github.com/xetys/hetzner-kube/pkg/addons"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
-var clusterAddonUninstallCmd = &cobra.Command{
-	Use:   "uninstall",
-	Short: "removes an addon to a cluster",
+var clusterAddonInstallCmd = &cobra.Command{
+	Use:   "install",
+	Short: "installs an addon to a cluster",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
@@ -58,17 +58,17 @@ var clusterAddonUninstallCmd = &cobra.Command{
 
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
-		log.Printf("removing addon %s", addonName)
-		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil)
+		log.Printf("installing addon %s", addonName)
+		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		addon := addonService.GetAddon(addonName)
-		addon.Uninstall()
+		addon.Install()
 
-		log.Printf("addon %s successfully removed", addonName)
+		log.Printf("addon %s successfully installed", addonName)
 	},
 }
 
 func init() {
-	clusterAddonCmd.AddCommand(clusterAddonUninstallCmd)
-	clusterAddonUninstallCmd.Flags().StringP("name", "n", "", "Name of the cluster")
+	clusterAddonCmd.AddCommand(clusterAddonInstallCmd)
+	clusterAddonInstallCmd.Flags().StringP("name", "n", "", "Name of the cluster")
 }

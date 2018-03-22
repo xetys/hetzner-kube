@@ -23,11 +23,13 @@ import (
 	"os/user"
 	"strings"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	"bufio"
+	"log"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
 var clusterKubeconfigCmd = &cobra.Command{
-	Use:   "kubeconfig",
+	Use:   "kubeconfig <CLUSTER NAME>",
 	Short: "setups the kubeconfig for the local machine",
 	Long: `fetches the kubeconfig (e.g. for usage with kubectl) and saves it to ~/.kube/config, or prints it.
 
@@ -36,12 +38,13 @@ Example 2: hetzner-kube cluster kubeconfig -n my-cluster -b # saves the existing
 Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the contents of kubeonfig to console
 Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeonfig into a custom file
 	`,
+	Args: cobra.ExactArgs(1),
 	PreRunE: validateKubeconfigCmd,
 	Run: func(cmd *cobra.Command, args []string) {
-		name, _ := cmd.Flags().GetString("name")
+		name := args[0]
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
-		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil)
+		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 
 		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)
@@ -53,11 +56,13 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		FatalOnError(err)
 
 		printContent, _ := cmd.Flags().GetBool("print")
+		force, _ := cmd.Flags().GetBool("force")
 
 		if printContent {
 			fmt.Println(kubeConfigContent)
 		} else {
 			fmt.Println("create file")
+
 
 			usr, _ := user.Current()
 			dir := usr.HomeDir
@@ -67,7 +72,19 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 				os.MkdirAll(path, 0755)
 			}
 
-			ioutil.WriteFile(fmt.Sprintf("%s/config", path), []byte(kubeConfigContent), 0755)
+			// check if there already is an existing config
+			kubeconfigPath := fmt.Sprintf("%s/config", path)
+			if _, err := os.Stat(path); !force && err == nil {
+				fmt.Println("There already exists a kubeconfig. Overwrite? (use -f to supress this question) [yN]:")
+				r := bufio.NewReader(os.Stdin)
+				answer, err := r.ReadString('\n')
+				FatalOnError(err)
+				if !strings.ContainsAny(answer, "yY") {
+					log.Fatalln("aborted")
+				}
+			}
+
+			ioutil.WriteFile(kubeconfigPath, []byte(kubeConfigContent), 0755)
 
 			fmt.Println("kubeconfig configured")
 		}
@@ -76,10 +93,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 
 func validateKubeconfigCmd(cmd *cobra.Command, args []string) error {
 
-	name, err := cmd.Flags().GetString("name")
-	if err != nil {
-		return nil
-	}
+	name := args[0]
 
 	if name == "" {
 		return errors.New("flag --name is required")
@@ -99,6 +113,7 @@ func init() {
 	clusterKubeconfigCmd.Flags().StringP("name", "n", "", "name of the cluster")
 	clusterKubeconfigCmd.Flags().BoolP("print", "p", false, "prints output to stdout")
 	clusterKubeconfigCmd.Flags().BoolP("backup", "b", false, "saves existing config")
+	clusterKubeconfigCmd.Flags().BoolP("force", "f", false, "don't ask to overwrite")
 
 	// Here you will define your flags and configuration settings.
 

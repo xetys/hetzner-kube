@@ -21,6 +21,6 @@ type Cluster struct {
 }
 
 type NodeCommand struct {
-	eventName string
-	command   string
+	EventName string
+	Command   string
 }

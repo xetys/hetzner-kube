@@ -11,6 +11,7 @@ import (
 	"github.com/go-kit/kit/log/term"
 	"os"
 	"github.com/gosuri/uiprogress"
+	"errors"
 )
 
 type Provider struct {
@@ -20,11 +21,12 @@ type Provider struct {
 	clusterName string
 	cloudInitFile string
 	wait bool
+	token string
 }
 
-func NewHetznerProvider(clusterName string, client *hcloud.Client, context context.Context) *Provider {
+func NewHetznerProvider(clusterName string, client *hcloud.Client, context context.Context, token string) *Provider {
 
-	return &Provider{client: client, context:context,clusterName:clusterName}
+	return &Provider{client: client, context:context,clusterName:clusterName, token: token}
 }
 
 func (provider *Provider) SetCloudInitFile(cloudInitFile string)  {
@@ -136,20 +138,47 @@ func (provider *Provider) SetNodes(nodes []clustermanager.Node) {
 }
 
 func (provider *Provider) GetMasterNodes() []clustermanager.Node {
-	return nil
+	nodes := []clustermanager.Node{}
+	for _, node := range provider.nodes {
+		if node.IsMaster {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (provider *Provider) GetEtcdNodes() []clustermanager.Node {
 
-	return nil
+	nodes := []clustermanager.Node{}
+	for _, node := range provider.nodes {
+		if node.IsEtcd {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
-	return nil
+	nodes := []clustermanager.Node{}
+	for _, node := range provider.nodes {
+		if !node.IsMaster && !node.IsEtcd {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
-	return nil, nil
+	for _, node := range provider.nodes {
+		if node.IsMaster {
+			return &node, nil
+		}
+	}
+
+	return nil, errors.New("no master node found")
 }
 
 func (provider *Provider) GetCluster() clustermanager.Cluster {
@@ -162,7 +191,11 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
 
-	return nil
+	return []clustermanager.NodeCommand{
+		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
+		{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", provider.token)},
+		{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
+	}
 }
 
 func (provider *Provider) MustWait() bool {

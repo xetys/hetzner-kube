@@ -189,6 +189,7 @@ func (cluster *Cluster) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.
 	}
 }
 
+// deprecated
 func (cluster *Cluster) GetMasterNode() (node *Node, err error) {
 
 	for _, node := range cluster.Nodes {
@@ -200,6 +201,7 @@ func (cluster *Cluster) GetMasterNode() (node *Node, err error) {
 	return nil, errors.New("no master node found")
 }
 
+// deprecated
 func (cluster *Cluster) GetEtcdNodes() []Node {
 	nodes := []Node{}
 	for _, node := range cluster.Nodes {
@@ -211,6 +213,7 @@ func (cluster *Cluster) GetEtcdNodes() []Node {
 	return nodes
 }
 
+// deprecated
 func (cluster *Cluster) GetMasterNodes() []Node {
 	nodes := []Node{}
 	for _, node := range cluster.Nodes {
@@ -222,6 +225,7 @@ func (cluster *Cluster) GetMasterNodes() []Node {
 	return nodes
 }
 
+// deprecated
 func (cluster *Cluster) GetWorkerNodes() []Node {
 	nodes := []Node{}
 	for _, node := range cluster.Nodes {
