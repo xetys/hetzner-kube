@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 type HetznerContext struct {
@@ -11,57 +11,18 @@ type HetznerContext struct {
 	Name  string `json:"name"`
 }
 
+// deprecated
 type SSHKey struct {
 	Name           string `json:"name"`
 	PrivateKeyPath string `json:"private_key_path"`
 	PublicKeyPath  string `json:"public_key_path"`
 }
 
-type Node struct {
-	Name             string    `json:"name"`
-	Type             string    `json:"type"`
-	IsMaster         bool      `json:"is_master"`
-	IsEtcd           bool      `json:"is_etcd"`
-	IPAddress        string    `json:"ip_address"`
-	PrivateIPAddress string    `json:"private_ip_address"`
-	SSHKeyName       string    `json:"ssh_key_name"`
-	WireGuardKeyPair WgKeyPair `json:"wire_guard_key_pair"`
-}
-
-type Cluster struct {
-	Name          string                   `json:"name"`
-	Nodes         []Node                   `json:"nodes"`
-	SelfHosted    bool                     `json:"self_hosted"`
-	coordinator   *pkg.ProgressCoordinator
-	wait          bool
-	CloudInitFile string                   `json:"cloud_init_file"`
-	HaEnabled     bool                     `json:"ha_enabled"`
-	IsolatedEtcd  bool                     `json:"isolated_etcd"`
-}
-
-type SSHCommand struct {
-	eventName string
-	command   string
-}
-
-type ClusterManager interface {
-	CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
-	CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error
-	CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]Node, error)
-	ProvisionNodes(nodes []Node) error
-	InstallMasters(haMode bool) error
-	InstallWorkers(nodes []Node) error
-}
-
-type SSHClient interface {
-	RunCmd(node *Node, cmd string) (string, error)
-}
-
 type HetznerConfig struct {
-	ActiveContextName string           `json:"active_context_name"`
-	Contexts          []HetznerContext `json:"contexts"`
-	SSHKeys           []SSHKey         `json:"ssh_keys"`
-	Clusters          []Cluster        `json:"clusters"`
+	ActiveContextName string                   `json:"active_context_name"`
+	Contexts          []HetznerContext         `json:"contexts"`
+	SSHKeys           []clustermanager.SSHKey  `json:"ssh_keys"`
+	Clusters          []clustermanager.Cluster `json:"clusters"`
 }
 
 type AppConfig struct {
@@ -69,5 +30,5 @@ type AppConfig struct {
 	Context        context.Context
 	CurrentContext *HetznerContext
 	Config         *HetznerConfig
-	SSHClient      SSHClient
+	SSHClient      clustermanager.NodeCommunicator
 }

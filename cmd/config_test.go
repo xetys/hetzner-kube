@@ -1,12 +1,15 @@
 package cmd
 
-import "testing"
+import (
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"testing"
+)
 
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
 	config := HetznerConfig{
-		SSHKeys: []SSHKey{
-			SSHKey{Name: "test-key1"},
-			SSHKey{Name: "test-key2"},
+		SSHKeys: []clustermanager.SSHKey{
+			{Name: "test-key1"},
+			{Name: "test-key2"},
 		},
 	}
 	tests := []struct {
