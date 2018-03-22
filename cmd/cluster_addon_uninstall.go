@@ -19,6 +19,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/addons"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
@@ -34,6 +35,12 @@ var clusterAddonUninstallCmd = &cobra.Command{
 
 		log.Printf("removing addon %s", addonName)
 		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		masterNode, err := provider.GetMasterNode()
+		FatalOnError(err)
+
+		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
+		FatalOnError(err)
+
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		addon := addonService.GetAddon(addonName)
 		addon.Uninstall()

@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -45,8 +46,10 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
 		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
-
 		masterNode, err := provider.GetMasterNode()
+		FatalOnError(err)
+
+		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
 		FatalOnError(err)
 
 		kubeConfigContent, err := AppConf.SSHClient.RunCmd(*masterNode, "cat /etc/kubernetes/admin.conf")

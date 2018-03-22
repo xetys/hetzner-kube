@@ -24,18 +24,18 @@ type Provider struct {
 	token         string
 }
 
-// returns an instance of hetzner.Provider
+// NewHetznerProvider returns an instance of hetzner.Provider
 func NewHetznerProvider(clusterName string, client *hcloud.Client, context context.Context, token string) *Provider {
 
 	return &Provider{client: client, context: context, clusterName: clusterName, token: token}
 }
 
-// sets cloud init file for node provisioning
+// SetCloudInitFile sets cloud init file for node provisioning
 func (provider *Provider) SetCloudInitFile(cloudInitFile string) {
 	provider.cloudInitFile = cloudInitFile
 }
 
-// creates hetzner nodes
+// CreateNodes creates hetzner nodes
 func (provider *Provider) CreateNodes(suffix string, template clustermanager.Node, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
 	sshKey, _, err := provider.client.SSHKey.Get(provider.context, template.SSHKeyName)
 
@@ -112,39 +112,39 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 	return nodes, nil
 }
 
-// creates nodes with type 'etcd'
+// CreateEtcdNodes creates nodes with type 'etcd'
 func (provider *Provider) CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsEtcd: true, Type: masterServerType}
 	_, err := provider.CreateNodes("etcd", template, datacenters, count, 0)
 	return err
 }
 
-// creates nodes with type 'master'
+// CreateMasterNodes creates nodes with type 'master'
 func (provider *Provider) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int, isEtcd bool) error {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType, IsEtcd: isEtcd}
 	_, err := provider.CreateNodes("master", template, datacenters, count, 0)
 	return err
 }
 
-// create worker nodes
+// CreateWorkerNodes
 func (provider *Provider) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
 	nodes, err := provider.CreateNodes("worker", template, datacenters, count, offset)
 	return nodes, err
 }
 
-// retrieves all nodes
+// GetAllNodes retrieves all nodes
 func (provider *Provider) GetAllNodes() []clustermanager.Node {
 
 	return provider.nodes
 }
 
-// set nodes
+// SetNodes
 func (provider *Provider) SetNodes(nodes []clustermanager.Node) {
 	provider.nodes = nodes
 }
 
-// returns master nodes only
+// GetMasterNodes returns master nodes only
 func (provider *Provider) GetMasterNodes() []clustermanager.Node {
 	nodes := []clustermanager.Node{}
 	for _, node := range provider.nodes {
@@ -156,7 +156,7 @@ func (provider *Provider) GetMasterNodes() []clustermanager.Node {
 	return nodes
 }
 
-// returns etcd nodes only
+// GetEtcdNodes returns etcd nodes only
 func (provider *Provider) GetEtcdNodes() []clustermanager.Node {
 
 	nodes := []clustermanager.Node{}
@@ -169,7 +169,7 @@ func (provider *Provider) GetEtcdNodes() []clustermanager.Node {
 	return nodes
 }
 
-// returns worker nodes only
+// GetWorkerNodes returns worker nodes only
 func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
 	nodes := []clustermanager.Node{}
 	for _, node := range provider.nodes {
@@ -181,7 +181,7 @@ func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
 	return nodes
 }
 
-// returns the first master node or fail, if no master nodes are found
+// GetMasterNode returns the first master node or fail, if no master nodes are found
 func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
 	for _, node := range provider.nodes {
 		if node.IsMaster {
@@ -192,7 +192,7 @@ func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
 	return nil, errors.New("no master node found")
 }
 
-// returns a template for Cluster
+// GetCluster returns a template for Cluster
 func (provider *Provider) GetCluster() clustermanager.Cluster {
 
 	return clustermanager.Cluster{
@@ -201,6 +201,7 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 	}
 }
 
+// GetAdditionalMasterInstallCommands
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
 
 	return []clustermanager.NodeCommand{
@@ -210,7 +211,7 @@ func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.
 	}
 }
 
-// returns true, if we have to wait after creation for some time
+// MustWait returns true, if we have to wait after creation for some time
 func (provider *Provider) MustWait() bool {
 	return provider.wait
 }

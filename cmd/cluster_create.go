@@ -74,6 +74,9 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 
 	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context, AppConf.CurrentContext.Token)
+	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
+	err := sshClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
+	FatalOnError(err)
 
 	var cloudInit string
 	if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {
@@ -101,7 +104,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		time.Sleep(30 * time.Second)
 	}
 
-	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
+
 	coordinator := pkg.NewProgressCoordinator()
 
 	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
@@ -120,7 +123,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	}
 
 	// setup encrypted network
-	err := clusterManager.SetupEncryptedNetwork()
+	err = clusterManager.SetupEncryptedNetwork()
 	FatalOnError(err)
 	cluster = clusterManager.Cluster()
 	saveCluster(&cluster)

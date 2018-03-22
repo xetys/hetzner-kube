@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -91,6 +92,10 @@ You can specify the worker server type as in cluster create.`,
 
 		coordinator := pkg.NewProgressCoordinator()
 		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
+		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		nodes, err := hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 		FatalOnError(err)

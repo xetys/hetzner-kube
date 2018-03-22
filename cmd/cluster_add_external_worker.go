@@ -108,7 +108,6 @@ An external server must meet the following requirements:
 		}
 
 		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
-
 		if err != nil {
 			log.Fatal(err)
 		}
