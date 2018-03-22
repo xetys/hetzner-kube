@@ -107,7 +107,7 @@ An external server must meet the following requirements:
 			log.Fatal("master not found")
 		}
 
-		err := capturePassphrase(sshKeyName)
+		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 
 		if err != nil {
 			log.Fatal(err)

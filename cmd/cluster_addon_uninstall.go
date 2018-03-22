@@ -15,9 +15,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"errors"
 	"github.com/spf13/cobra"
 	"log"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
@@ -28,30 +25,7 @@ import (
 var clusterAddonUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "removes an addon to a cluster",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		name, err := cmd.Flags().GetString("name")
-		if err != nil {
-			return nil
-		}
-
-		if name == "" {
-			return errors.New("flag --name is required")
-		}
-
-		idx, _ := AppConf.Config.FindClusterByName(name)
-
-		if idx == -1 {
-			return fmt.Errorf("cluster '%s' not found", name)
-		}
-		if len(args) != 1 {
-			return errors.New("exactly one argument expected")
-		}
-		addonName := args[0]
-		if !AddonExists(addonName) {
-			return fmt.Errorf("addon %s not found", addonName)
-		}
-		return nil
-	},
+	PreRunE: validateAddonSubCommand,
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
 		addonName := args[0]

@@ -163,9 +163,9 @@ func (sshComm *SSHCommunicator) TransformFileOverNode(sourceNode Node, targetNod
 	return err
 }
 
-func (ssh *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey) {
+func (sshComm *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey) {
 	index := -1
-	for i, v := range ssh.sshKeys {
+	for i, v := range sshComm.sshKeys {
 		if v.Name == name {
 			index = i
 			return index, &v
@@ -175,13 +175,13 @@ func (ssh *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey) {
 }
 
 
-func (ssh *SSHCommunicator) capturePassphrase(sshKeyName string) error {
-	index, privateKey := ssh.FindPrivateKeyByName(sshKeyName)
+func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
+	index, privateKey := sshComm.FindPrivateKeyByName(sshKeyName)
 	if index < 0 {
 		return fmt.Errorf("could not find SSH key '%s'", sshKeyName)
 	}
 
-	encrypted, err := ssh.isEncrypted(privateKey)
+	encrypted, err := sshComm.isEncrypted(privateKey)
 
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (ssh *SSHCommunicator) capturePassphrase(sshKeyName string) error {
 		return nil
 	}
 
-	fmt.Print("Enter passphrase for ssh key " + privateKey.PrivateKeyPath + ": ")
+	fmt.Print("Enter passphrase for sshComm key " + privateKey.PrivateKeyPath + ": ")
 	text, err := terminal.ReadPassword(int(syscall.Stdin))
 
 	if err != nil {
@@ -199,26 +199,26 @@ func (ssh *SSHCommunicator) capturePassphrase(sshKeyName string) error {
 	}
 
 	fmt.Print("\n")
-	ssh.passPhrases[privateKey.PrivateKeyPath] = text
+	sshComm.passPhrases[privateKey.PrivateKeyPath] = text
 
 	// check that the captured password is correct
-	_, err = ssh.getPrivateSshKey(sshKeyName)
+	_, err = sshComm.getPrivateSshKey(sshKeyName)
 	if err != nil {
-		delete(ssh.passPhrases, privateKey.PrivateKeyPath)
+		delete(sshComm.passPhrases, privateKey.PrivateKeyPath)
 	}
 
 	return err
 }
 
-func (ssh *SSHCommunicator) getPassphrase(privateKeyPath string) ([]byte, error) {
-	if phrase, ok := ssh.passPhrases[privateKeyPath]; ok {
+func (sshComm *SSHCommunicator) getPassphrase(privateKeyPath string) ([]byte, error) {
+	if phrase, ok := sshComm.passPhrases[privateKeyPath]; ok {
 		return phrase, nil
 	}
 
 	return nil, errors.New("passphrase not found")
 }
 
-func (ssh *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
+func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
 		return false, err
@@ -226,7 +226,7 @@ func (ssh *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
-		return false, errors.New("ssh: no key found")
+		return false, errors.New("sshComm: no key found")
 
 	}
 
@@ -254,7 +254,7 @@ func (sshComm *SSHCommunicator) getPrivateSshKey(sshKeyName string) (ssh.Signer,
 		passPhrase, err := sshComm.getPassphrase(privateKey.PrivateKeyPath)
 		if err != nil {
 			// Fallback as sometimes the cache with the passphrases is not set, i.e. on program start
-			err = sshComm.capturePassphrase(sshKeyName)
+			err = sshComm.CapturePassphrase(sshKeyName)
 			if err != nil {
 				return nil, fmt.Errorf("error capturing passphrase:%v", err)
 			}
