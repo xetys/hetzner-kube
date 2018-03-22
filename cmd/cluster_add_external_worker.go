@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
 	"strings"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command

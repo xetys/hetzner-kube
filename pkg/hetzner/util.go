@@ -3,8 +3,8 @@ package hetzner
 import (
 	"context"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"time"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"time"
 )
 
 func ProviderAndManager(cluster clustermanager.Cluster, client *hcloud.Client, context context.Context, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService, token string) (*Provider, *clustermanager.Manager) {

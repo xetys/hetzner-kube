@@ -11,7 +11,6 @@ import (
 
 var sshPassPhrases = make(map[string][]byte)
 
-
 func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Action) (<-chan error, <-chan int) {
 	errCh := make(chan error, 1)
 	progressCh := make(chan int)

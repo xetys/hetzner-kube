@@ -8,12 +8,12 @@ import (
 	"github.com/go-kit/kit/log/term"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/thcyron/uiprogress"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 var DefaultConfigPath string
@@ -21,7 +21,6 @@ var AppConf AppConfig = AppConfig{}
 
 type AppSSHClient struct {
 }
-
 
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
@@ -180,7 +179,7 @@ func init() {
 	}
 
 	AppConf = AppConfig{
-		Context:   context.Background(),
+		Context: context.Background(),
 	}
 
 	makeConfigIfNotExists()

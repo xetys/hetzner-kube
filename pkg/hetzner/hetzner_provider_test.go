@@ -1,9 +1,9 @@
 package hetzner
 
 import (
-	"testing"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/magiconair/properties/assert"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"testing"
 )
 
 func getDefaultProviderWithNodes() ([]clustermanager.Node, Provider) {
@@ -82,4 +82,3 @@ func TestProvider_GetAllNodes(t *testing.T) {
 	allNodes := provider.GetAllNodes()
 	assert.Equal(t, allNodes, nodes)
 }
-

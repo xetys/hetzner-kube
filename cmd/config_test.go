@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"testing"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"testing"
 )
 
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {

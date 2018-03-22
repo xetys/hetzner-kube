@@ -16,15 +16,15 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"log"
 	"github.com/xetys/hetzner-kube/pkg/addons"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	"log"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
 var clusterAddonInstallCmd = &cobra.Command{
-	Use:   "install",
-	Short: "installs an addon to a cluster",
+	Use:     "install",
+	Short:   "installs an addon to a cluster",
 	PreRunE: validateAddonSubCommand,
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")

@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"fmt"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"github.com/xetys/hetzner-kube/pkg/addons"
 	"errors"
+	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/addons"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddonCmd represents the cluster addon command
@@ -36,28 +36,28 @@ func init() {
 
 }
 func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
-		name, err := cmd.Flags().GetString("name")
-		if err != nil {
-			return nil
-		}
-
-		if name == "" {
-			return errors.New("flag --name is required")
-		}
-
-		idx, cluster := AppConf.Config.FindClusterByName(name)
-
-		if idx == -1 {
-			return fmt.Errorf("cluster '%s' not found", name)
-		}
-		if len(args) != 1 {
-			return errors.New("exactly one argument expected")
-		}
-		addonName := args[0]
-		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
-		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
-		if !addonService.AddonExists(addonName) {
-			return fmt.Errorf("addon %s not found", addonName)
-		}
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
 		return nil
 	}
+
+	if name == "" {
+		return errors.New("flag --name is required")
+	}
+
+	idx, cluster := AppConf.Config.FindClusterByName(name)
+
+	if idx == -1 {
+		return fmt.Errorf("cluster '%s' not found", name)
+	}
+	if len(args) != 1 {
+		return errors.New("exactly one argument expected")
+	}
+	addonName := args[0]
+	provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+	addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
+	if !addonService.AddonExists(addonName) {
+		return fmt.Errorf("addon %s not found", addonName)
+	}
+	return nil
+}

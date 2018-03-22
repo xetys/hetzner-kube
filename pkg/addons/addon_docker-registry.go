@@ -1,12 +1,12 @@
 package addons
 
 import (
-	"log"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"log"
 )
 
 type DockerregistryAddon struct {
-	masterNode *clustermanager.Node
+	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 }
 
@@ -16,7 +16,7 @@ func NewDockerregistryAddon(provider clustermanager.ClusterProvider, communicato
 	return &DockerregistryAddon{masterNode: masterNode, communicator: communicator}
 }
 
-func (addon *DockerregistryAddon) Install(args ... string) {
+func (addon *DockerregistryAddon) Install(args ...string) {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm install --set persistence.enabled=true stable/docker-registry")
 	FatalOnError(err)

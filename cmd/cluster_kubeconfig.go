@@ -15,16 +15,16 @@
 package cmd
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/user"
 	"strings"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"bufio"
-	"log"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -38,7 +38,7 @@ Example 2: hetzner-kube cluster kubeconfig -n my-cluster -b # saves the existing
 Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the contents of kubeonfig to console
 Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeonfig into a custom file
 	`,
-	Args: cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(1),
 	PreRunE: validateKubeconfigCmd,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -62,7 +62,6 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 			fmt.Println(kubeConfigContent)
 		} else {
 			fmt.Println("create file")
-
 
 			usr, _ := user.Current()
 			dir := usr.HomeDir

@@ -12,12 +12,12 @@ type Node struct {
 }
 
 type Cluster struct {
-	Name             string `json:"name"`
-	Nodes            []Node `json:"nodes"`
-	HaEnabled        bool   `json:"ha_enabled"`
-	IsolatedEtcd     bool   `json:"isolated_etcd"`
-	SelfHosted       bool   `json:"self_hosted"`
-	CloudInitFile    string `json:"cloud_init_file"`
+	Name          string `json:"name"`
+	Nodes         []Node `json:"nodes"`
+	HaEnabled     bool   `json:"ha_enabled"`
+	IsolatedEtcd  bool   `json:"isolated_etcd"`
+	SelfHosted    bool   `json:"self_hosted"`
+	CloudInitFile string `json:"cloud_init_file"`
 }
 
 type NodeCommand struct {

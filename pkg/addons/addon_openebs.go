@@ -6,7 +6,7 @@ import (
 )
 
 type OpenEBSAddon struct {
-	masterNode *clustermanager.Node
+	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 }
 

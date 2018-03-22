@@ -26,7 +26,7 @@ import (
 var clusterDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "removes a cluster and deletes the associated nodes",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 
 		name := args[0]

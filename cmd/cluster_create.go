@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
 	"os"
 	"time"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -48,7 +48,7 @@ This tool supports these levels of kubernetes HA:
 
 	`,
 	PreRunE: validateClusterCreateFlags,
-	Run: RunClusterCreate,
+	Run:     RunClusterCreate,
 }
 
 func RunClusterCreate(cmd *cobra.Command, args []string) {
@@ -72,7 +72,6 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	masterServerType, _ := cmd.Flags().GetString("master-server-type")
 	workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
-
 
 	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context, AppConf.CurrentContext.Token)
 
@@ -105,7 +104,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
 	coordinator := pkg.NewProgressCoordinator()
 
-	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit,false)
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
 	cluster := clusterManager.Cluster()
 	RenderProgressBars(&cluster, coordinator)
 

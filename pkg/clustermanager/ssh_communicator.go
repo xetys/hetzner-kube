@@ -1,18 +1,18 @@
 package clustermanager
 
 import (
-	"golang.org/x/crypto/ssh"
-	"time"
 	"bytes"
-	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
-	"syscall"
-	"io/ioutil"
 	"encoding/pem"
-	"strings"
 	"errors"
+	"fmt"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
+	"io/ioutil"
 	"log"
 	"path"
+	"strings"
+	"syscall"
+	"time"
 )
 
 type SSHKey struct {
@@ -21,7 +21,7 @@ type SSHKey struct {
 	PublicKeyPath  string `json:"public_key_path"`
 }
 type SSHCommunicator struct {
-	sshKeys []SSHKey
+	sshKeys     []SSHKey
 	passPhrases map[string][]byte
 }
 
@@ -32,7 +32,6 @@ func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 		sshKeys: sshKeys,
 	}
 }
-
 
 func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string, err error) {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
@@ -173,7 +172,6 @@ func (sshComm *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey)
 	}
 	return index, nil
 }
-
 
 func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 	index, privateKey := sshComm.FindPrivateKeyByName(sshKeyName)

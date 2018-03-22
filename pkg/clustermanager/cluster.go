@@ -1,10 +1,10 @@
 package clustermanager
 
 import (
-	"github.com/xetys/hetzner-kube/pkg"
-	"time"
 	"fmt"
+	"github.com/xetys/hetzner-kube/pkg"
 	"strings"
+	"time"
 )
 
 type Manager struct {
@@ -30,35 +30,35 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
 		clusterProvider:  provider,
-		nodes: provider.GetAllNodes(),
+		nodes:            provider.GetAllNodes(),
 	}
 
 	return manager
 }
 
-func NewClusterManagerFromCluster(cluster Cluster,provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService) *Manager {
+func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService) *Manager {
 	return &Manager{
-		clusterName: cluster.Name,
-		haEnabled: cluster.HaEnabled,
-		isolatedEtcd: cluster.IsolatedEtcd,
-		cloudInitFile: cluster.CloudInitFile,
-		selfHosted: cluster.SelfHosted,
-		eventService: eventService,
+		clusterName:      cluster.Name,
+		haEnabled:        cluster.HaEnabled,
+		isolatedEtcd:     cluster.IsolatedEtcd,
+		cloudInitFile:    cluster.CloudInitFile,
+		selfHosted:       cluster.SelfHosted,
+		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
-		clusterProvider: provider,
-		nodes: cluster.Nodes,
+		clusterProvider:  provider,
+		nodes:            cluster.Nodes,
 	}
 }
 
 // creates a Cluster object for further processing
 func (manager *Manager) Cluster() Cluster {
 	return Cluster{
-		Name: manager.clusterName,
-		Nodes: manager.nodes,
-		HaEnabled: manager.haEnabled,
-		IsolatedEtcd: manager.isolatedEtcd,
+		Name:          manager.clusterName,
+		Nodes:         manager.nodes,
+		HaEnabled:     manager.haEnabled,
+		IsolatedEtcd:  manager.isolatedEtcd,
 		CloudInitFile: manager.cloudInitFile,
-		SelfHosted: manager.selfHosted,
+		SelfHosted:    manager.selfHosted,
 	}
 }
 

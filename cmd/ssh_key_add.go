@@ -22,13 +22,13 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command

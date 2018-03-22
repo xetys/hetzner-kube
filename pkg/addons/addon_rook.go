@@ -2,12 +2,12 @@ package addons
 
 import (
 	"fmt"
-	"time"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"time"
 )
 
 type RookAddon struct {
-	masterNode *clustermanager.Node
+	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 }
 
@@ -30,7 +30,7 @@ func (addon RookAddon) Install(args ...string) {
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl patch storageclass rook-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
 	FatalOnError(err)
-	
+
 	fmt.Println("Rook installed")
 }
 

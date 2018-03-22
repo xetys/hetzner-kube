@@ -8,7 +8,7 @@ type ClusterAddon interface {
 }
 
 type ClusterAddonService struct {
-	provider clustermanager.ClusterProvider
+	provider         clustermanager.ClusterProvider
 	nodeCommunicator clustermanager.NodeCommunicator
 }
 

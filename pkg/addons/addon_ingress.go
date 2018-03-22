@@ -1,12 +1,12 @@
 package addons
 
 import (
-	"log"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"log"
 )
 
 type IngressAddon struct {
-	masterNode *clustermanager.Node
+	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 }
 
