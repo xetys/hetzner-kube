@@ -89,7 +89,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if err := hetznerProvider.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount, isolatedEtcd); err != nil {
+	if err := hetznerProvider.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount, !isolatedEtcd); err != nil {
 		log.Println(err)
 	}
 
