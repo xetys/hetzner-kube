@@ -12,6 +12,7 @@ type Manager struct {
 	haEnabled        bool
 	isolatedEtcd     bool
 	cloudInitFile    string
+	installFileURL   string
 	selfHosted       bool
 	nodes            []Node
 	eventService     EventService
@@ -20,12 +21,13 @@ type Manager struct {
 	wait             bool
 }
 
-func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool) *Manager {
+func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool, installFileURL string) *Manager {
 	manager := &Manager{
 		clusterName:      name,
 		haEnabled:        haEnabled,
 		isolatedEtcd:     isolatedEtcd,
 		cloudInitFile:    cloudInitFile,
+		installFileURL:   installFileURL,
 		selfHosted:       selfHosted,
 		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
@@ -71,7 +73,8 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 		numProcs++
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
-			_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+			_, err := manager.nodeCommunicator.RunCmd(node,
+				fmt.Sprintf("wget -cO- %s | bash -", manager.installFileURL))
 
 			if err != nil {
 				errChan <- err

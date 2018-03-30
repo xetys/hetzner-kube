@@ -56,6 +56,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	masterCount, _ := cmd.Flags().GetInt("master-count")
 	etcdCount, _ := cmd.Flags().GetInt("etcd-count")
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
+	installFileURL, _ := cmd.Flags().GetString("install-file-url")
 	if !haEnabled {
 		masterCount = 1
 	}
@@ -104,10 +105,10 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		time.Sleep(30 * time.Second)
 	}
 
-
 	coordinator := pkg.NewProgressCoordinator()
 
-	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled,
+		isolatedEtcd, cloudInit, false, installFileURL)
 	cluster := clusterManager.Cluster()
 	RenderProgressBars(&cluster, coordinator)
 
@@ -291,5 +292,6 @@ func init() {
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
+	clusterCreateCmd.Flags().StringP("install-file-url", "", "https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh", "URL of the install file that should be used")
 	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
 }
