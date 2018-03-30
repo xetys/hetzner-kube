@@ -48,6 +48,8 @@ $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
 ```
 
 This will provision a brand new kubernetes cluster in latest version!
+
+For a full list of options that can be passed to the ```cluster create``` command, see the [Cluster Create Guide](docs/cluster-create.md) for more information.
 ## HA-clusters
 
 You can built high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
