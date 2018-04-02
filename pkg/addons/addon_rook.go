@@ -9,11 +9,12 @@ import (
 type RookAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
+	nodes        []clustermanager.Node
 }
 
 func NewRookAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
-	return &RookAddon{masterNode: masterNode, communicator: communicator}
+	return &RookAddon{masterNode: masterNode, communicator: communicator, nodes: provider.GetAllNodes()}
 }
 
 func (addon RookAddon) Install(args ...string) {
@@ -21,10 +22,19 @@ func (addon RookAddon) Install(args ...string) {
 
 	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-operator.yaml")
 	FatalOnError(err)
-	time.Sleep(15 * time.Second)
+	fmt.Println("waiting until rook is installed")
+	for {
+		_, err := addon.communicator.RunCmd(node, "kubectl get cluster")
+
+		if err == nil {
+			break
+		}
+	}
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-cluster.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-storageclass.yaml")
+	FatalOnError(err)
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-tools.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl get storageclass | grep -v 'NAME' | awk '{print$1}' | xargs kubectl patch storageclass -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'")
 	FatalOnError(err)
@@ -36,26 +46,20 @@ func (addon RookAddon) Install(args ...string) {
 
 func (addon RookAddon) Uninstall() {
 	node := *addon.masterNode
-	_, err := addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete -n kube-system secret rook-admin")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete thirdpartyresources cluster.rook.io pool.rook.io objectstore.rook.io filesystem.rook.io volumeattachment.rook.io # ignore errors if on K8s 1.7+")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete -n rook-system daemonset rook-agent")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete -f rook-operator.yaml")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete clusterroles rook-agent")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete clusterrolebindings rook-agent")
-	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl delete namespace rook")
-	FatalOnError(err)
+	addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
+	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
+	addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
+	addon.communicator.RunCmd(node, "kubectl delete -n rook-system daemonset rook-agent")
+	addon.communicator.RunCmd(node, "kubectl delete -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-operator.yaml")
+	addon.communicator.RunCmd(node, "kubectl delete clusterroles rook-agent")
+	addon.communicator.RunCmd(node, "kubectl delete clusterrolebindings rook-agent")
+	time.Sleep(20 * time.Second)
+	addon.communicator.RunCmd(node, "kubectl delete namespace rook")
+
+	for _, node := range addon.nodes {
+		fmt.Printf("deleting rook on node %s\n", node.Name)
+		addon.communicator.RunCmd(node, "rm -rf /var/lib/rook")
+	}
 
 	fmt.Println("Rook uninstalled")
 }
