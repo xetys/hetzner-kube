@@ -29,7 +29,7 @@ var _ NodeCommunicator = &SSHCommunicator{}
 
 func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 	return &SSHCommunicator{
-		sshKeys: sshKeys,
+		sshKeys:     sshKeys,
 		passPhrases: make(map[string][]byte),
 	}
 }
