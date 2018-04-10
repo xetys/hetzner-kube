@@ -36,8 +36,8 @@ var clusterKubeconfigCmd = &cobra.Command{
 
 Example 1: hetzner-kube cluster kubeconfig -n my-cluster # installs the kubeconfig of the cluster "my-cluster"
 Example 2: hetzner-kube cluster kubeconfig -n my-cluster -b # saves the existing before installing
-Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the contents of kubeonfig to console
-Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeonfig into a custom file
+Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the contents of kubeconfig to console
+Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeconfig into a custom file
 	`,
 	Args:    cobra.ExactArgs(1),
 	PreRunE: validateKubeconfigCmd,
