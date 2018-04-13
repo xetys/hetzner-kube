@@ -76,7 +76,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 
 			// check if there already is an existing config
 			kubeconfigPath := fmt.Sprintf("%s/config", path)
-			if _, err := os.Stat(path); !force && err == nil {
+			if _, err := os.Stat(kubeconfigPath); !force && err == nil {
 				fmt.Println("There already exists a kubeconfig. Overwrite? (use -f to supress this question) [yN]:")
 				r := bufio.NewReader(os.Stdin)
 				answer, err := r.ReadString('\n')
