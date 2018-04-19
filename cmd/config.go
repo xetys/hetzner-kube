@@ -134,6 +134,7 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 	return nil, fmt.Errorf("context '%s' not found", name)
 }
 
+// DeleteContextByName deletes a context by name from the current config
 func (app *AppConfig) DeleteContextByName(name string) error {
 
 	for idx, ctx := range app.Config.Contexts {
