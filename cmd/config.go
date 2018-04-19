@@ -134,6 +134,19 @@ func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 	return nil, fmt.Errorf("context '%s' not found", name)
 }
 
+// DeleteContextByName deletes a context by name from the current config
+func (app *AppConfig) DeleteContextByName(name string) error {
+
+	for idx, ctx := range app.Config.Contexts {
+		if ctx.Name == name {
+			app.Config.Contexts = append(app.Config.Contexts[:idx], app.Config.Contexts[idx+1:]...)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("context '%s' not found", name)
+}
+
 // deprecated
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
 	errCh, progressCh := waitAction(ctx, app.Client, action)

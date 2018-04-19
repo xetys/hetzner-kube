@@ -17,9 +17,9 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/addons"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
