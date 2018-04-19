@@ -23,7 +23,7 @@ import (
 var contextDeleteCmd = &cobra.Command{
 	Use:   "delete <NAME>",
 	Short: "deletes a new context",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 

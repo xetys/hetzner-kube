@@ -104,7 +104,6 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		time.Sleep(30 * time.Second)
 	}
 
-
 	coordinator := pkg.NewProgressCoordinator()
 
 	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
