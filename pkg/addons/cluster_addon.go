@@ -2,6 +2,7 @@ package addons
 
 import "github.com/xetys/hetzner-kube/pkg/clustermanager"
 
+//ClusterAddon describes what functions a cluster addon should provide, so the addon system can use it for the cmd
 type ClusterAddon interface {
 	Name() string
 	Requires() []string
@@ -11,6 +12,7 @@ type ClusterAddon interface {
 	Uninstall()
 }
 
+//ClusterAddonInitializer is a function creating ClusterAddon instances from given parameters
 type ClusterAddonInitializer func(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon
 
 var addonInitializers = make([]ClusterAddonInitializer, 0)
