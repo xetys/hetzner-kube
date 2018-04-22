@@ -13,7 +13,7 @@ type ClusterAddon interface {
 
 type ClusterAddonInitializer func(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon
 
-var addonInitializers []ClusterAddonInitializer = make([]ClusterAddonInitializer, 0)
+var addonInitializers = make([]ClusterAddonInitializer, 0)
 
 func addAddon(clusterAddon ClusterAddonInitializer) {
 	addonInitializers = append(addonInitializers, clusterAddon)

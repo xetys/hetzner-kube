@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+//IngressAddon installs an ingress controller
 type IngressAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//RookAddon installs rook
 type RookAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator

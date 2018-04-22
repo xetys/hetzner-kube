@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+//DockerregistryAddon installs a private container registry
 type DockerregistryAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator

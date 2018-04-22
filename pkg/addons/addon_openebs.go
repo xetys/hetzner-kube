@@ -5,6 +5,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
+//OpenEBSAddon installs OpenEBS
 type OpenEBSAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator

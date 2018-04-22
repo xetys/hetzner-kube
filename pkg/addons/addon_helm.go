@@ -5,6 +5,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
+//HelmAddon installs helm
 type HelmAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator

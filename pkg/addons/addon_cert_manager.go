@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+//CertmanagerAddon installs cert-manager
 type CertmanagerAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
@@ -49,6 +50,7 @@ func (addon *CertmanagerAddon) Install(args ...string) {
 	log.Println("cert-manager installed")
 }
 
+//Uninstall performs all steps to remove the addon
 func (addon *CertmanagerAddon) Uninstall() {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm delete --purge cert-manager")
