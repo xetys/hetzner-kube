@@ -10,6 +10,7 @@ type HelmAddon struct {
 	communicator clustermanager.NodeCommunicator
 }
 
+//NewHelmAddon installs helm to the cluster
 func NewHelmAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
 	return HelmAddon{masterNode: masterNode, communicator: communicator}
@@ -19,22 +20,27 @@ func init() {
 	addAddon(NewHelmAddon)
 }
 
+//Name returns the addons name
 func (addon HelmAddon) Name() string {
 	return "helm"
 }
 
+//Requires returns a slice with the name of required addons
 func (addon HelmAddon) Requires() []string {
 	return []string{}
 }
 
+//Description returns the addons description
 func (addon HelmAddon) Description() string {
 	return "Kuberntes Package Manager"
 }
 
+//URL returns the URL of the addons underlying project
 func (addon HelmAddon) URL() string {
 	return "https://helm.sh"
 }
 
+//Install performs all steps to install the addon
 func (addon HelmAddon) Install(args ...string) {
 
 	node := *addon.masterNode
@@ -70,6 +76,7 @@ subjects:
 	fmt.Println("Helm installed")
 }
 
+//Uninstall performs all steps to remove the addon
 func (addon HelmAddon) Uninstall() {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm reset --force")

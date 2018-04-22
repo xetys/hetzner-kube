@@ -15,14 +15,14 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"text/tabwriter"
-	"os"
 	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/addons"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"github.com/xetys/hetzner-kube/pkg/addons"
+	"os"
 	"strings"
+	"text/tabwriter"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command

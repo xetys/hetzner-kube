@@ -39,6 +39,10 @@ func (addon *NginxAddon) Name() string {
 	return "nginx"
 }
 
+func (addon *NginxAddon) Requires() []string {
+	return []string{}
+}
+
 func (addon *NginxAddon) Description() string {
 	return "a simple nginx deployment"
 }

@@ -25,6 +25,7 @@ type ClusterAddonService struct {
 	addons           []ClusterAddon
 }
 
+//NewClusterAddonService creates an instance of the cluster addon service
 func NewClusterAddonService(provider clustermanager.ClusterProvider, nodeComm clustermanager.NodeCommunicator) *ClusterAddonService {
 	clusterAddons := []ClusterAddon{}
 	for _, initializer := range addonInitializers {
@@ -33,6 +34,7 @@ func NewClusterAddonService(provider clustermanager.ClusterProvider, nodeComm cl
 	return &ClusterAddonService{provider: provider, nodeCommunicator: nodeComm, addons: clusterAddons}
 }
 
+//AddonExists return true, if an addon with the requested name exists
 func (addonService *ClusterAddonService) AddonExists(addonName string) bool {
 	for _, addon := range addonService.addons {
 		if addon.Name() == addonName {
@@ -42,6 +44,7 @@ func (addonService *ClusterAddonService) AddonExists(addonName string) bool {
 	return false
 }
 
+//GetAddon returns the ClusterAddon instance given by name, or nil if not found
 func (addonService *ClusterAddonService) GetAddon(addonName string) ClusterAddon {
 	for _, addon := range addonService.addons {
 		if addon.Name() == addonName {
@@ -52,6 +55,7 @@ func (addonService *ClusterAddonService) GetAddon(addonName string) ClusterAddon
 	return nil
 }
 
+//Addons returns a list of all addons
 func (addonService *ClusterAddonService) Addons() []ClusterAddon {
 	return addonService.addons
 }
