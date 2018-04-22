@@ -16,6 +16,22 @@ func NewDockerregistryAddon(provider clustermanager.ClusterProvider, communicato
 	return &DockerregistryAddon{masterNode: masterNode, communicator: communicator}
 }
 
+func init() {
+	addAddon(NewDockerregistryAddon)
+}
+
+func (addon *DockerregistryAddon) Name() string {
+	return "docker-registry"
+}
+
+func (addon *DockerregistryAddon) Description() string {
+	return "Private container registry"
+}
+
+func (addon *DockerregistryAddon) URL() string {
+	return ""
+}
+
 func (addon *DockerregistryAddon) Install(args ...string) {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm install --set persistence.enabled=true stable/docker-registry")

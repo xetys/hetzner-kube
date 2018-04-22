@@ -15,6 +15,22 @@ func NewOpenEBSAddon(provider clustermanager.ClusterProvider, communicator clust
 	return &OpenEBSAddon{masterNode: masterNode, communicator: communicator}
 }
 
+func init() {
+	addAddon(NewOpenEBSAddon)
+}
+
+func (addon OpenEBSAddon) Name() string {
+	return "OpenEBS"
+}
+
+func (addon OpenEBSAddon) Description() string {
+	return "Simple scalable block storage provider"
+}
+
+func (addon OpenEBSAddon) URL() string {
+	return "https://openebs.io/"
+}
+
 func (addon OpenEBSAddon) Install(args ...string) {
 	node := *addon.masterNode
 

@@ -17,6 +17,22 @@ func NewRookAddon(provider clustermanager.ClusterProvider, communicator clusterm
 	return &RookAddon{masterNode: masterNode, communicator: communicator, nodes: provider.GetAllNodes()}
 }
 
+func init() {
+	addAddon(NewRookAddon)
+}
+
+func (addon RookAddon) Name() string {
+	return "rook"
+}
+
+func (addon RookAddon) Description() string {
+	return "File, Block and Object Storage provider"
+}
+
+func (addon RookAddon) URL() string {
+	return "https://rook.io"
+}
+
 func (addon RookAddon) Install(args ...string) {
 	node := *addon.masterNode
 

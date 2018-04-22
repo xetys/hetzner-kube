@@ -15,6 +15,22 @@ func NewHelmAddon(provider clustermanager.ClusterProvider, communicator clusterm
 	return HelmAddon{masterNode: masterNode, communicator: communicator}
 }
 
+func init() {
+	addAddon(NewHelmAddon)
+}
+
+func (addon HelmAddon) Name() string {
+	return "helm"
+}
+
+func (addon HelmAddon) Description() string {
+	return "Kuberntes Package Manager"
+}
+
+func (addon HelmAddon) URL() string {
+	return "https://helm.sh"
+}
+
 func (addon HelmAddon) Install(args ...string) {
 
 	node := *addon.masterNode

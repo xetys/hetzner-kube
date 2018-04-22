@@ -16,40 +16,35 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg/addons"
+	"text/tabwriter"
+	"os"
+	"fmt"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"log"
+	"github.com/xetys/hetzner-kube/pkg/addons"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
-var clusterAddonInstallCmd = &cobra.Command{
-	Use:     "install",
-	Short:   "installs an addon to a cluster",
-	PreRunE: validateAddonSubCommand,
+var clusterAddonListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list the currently available addons",
 	Run: func(cmd *cobra.Command, args []string) {
-		name, _ := cmd.Flags().GetString("name")
-		addonName := args[0]
+		tw := new(tabwriter.Writer)
+		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		fmt.Fprintln(tw, "NAME\tREQUIRES\tDESCRIPTION\tURL")
 
-		_, cluster := AppConf.Config.FindClusterByName(name)
-
-		log.Printf("installing addon %s", addonName)
+		cluster := &clustermanager.Cluster{Nodes: []clustermanager.Node{clustermanager.Node{IsMaster: true}}}
 		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
-		masterNode, err := provider.GetMasterNode()
-		FatalOnError(err)
+		for _, addon := range addonService.Addons() {
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t", addon.Name(), "-", addon.Description(), addon.URL())
+			fmt.Fprintln(tw)
+		}
 
-		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
-		FatalOnError(err)
-
-		addon := addonService.GetAddon(addonName)
-		addon.Install()
-
-		log.Printf("addon %s successfully installed", addonName)
+		tw.Flush()
 	},
 }
 
 func init() {
-	clusterAddonCmd.AddCommand(clusterAddonInstallCmd)
-	clusterAddonInstallCmd.Flags().StringP("name", "n", "", "Name of the cluster")
+	clusterAddonCmd.AddCommand(clusterAddonListCmd)
 }
