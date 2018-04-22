@@ -24,12 +24,16 @@ func (addon *DockerregistryAddon) Name() string {
 	return "docker-registry"
 }
 
+func (addon *DockerregistryAddon) Requires() []string {
+	return []string{"helm"}
+}
+
 func (addon *DockerregistryAddon) Description() string {
 	return "Private container registry"
 }
 
 func (addon *DockerregistryAddon) URL() string {
-	return ""
+	return "https://github.com/kubernetes/charts/tree/master/stable/docker-registry"
 }
 
 func (addon *DockerregistryAddon) Install(args ...string) {

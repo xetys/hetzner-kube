@@ -23,6 +23,10 @@ func (addon HelmAddon) Name() string {
 	return "helm"
 }
 
+func (addon HelmAddon) Requires() []string {
+	return []string{}
+}
+
 func (addon HelmAddon) Description() string {
 	return "Kuberntes Package Manager"
 }

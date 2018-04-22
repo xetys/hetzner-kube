@@ -4,6 +4,7 @@ import "github.com/xetys/hetzner-kube/pkg/clustermanager"
 
 type ClusterAddon interface {
 	Name() string
+	Requires() []string
 	Description() string
 	URL() string
 	Install(args ...string)

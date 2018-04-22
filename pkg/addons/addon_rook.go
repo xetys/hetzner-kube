@@ -25,6 +25,10 @@ func (addon RookAddon) Name() string {
 	return "rook"
 }
 
+func (addon RookAddon) Requires() []string {
+	return []string{}
+}
+
 func (addon RookAddon) Description() string {
 	return "File, Block and Object Storage provider"
 }

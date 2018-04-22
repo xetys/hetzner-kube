@@ -23,6 +23,10 @@ func (addon OpenEBSAddon) Name() string {
 	return "OpenEBS"
 }
 
+func (addon OpenEBSAddon) Requires() []string {
+	return []string{}
+}
+
 func (addon OpenEBSAddon) Description() string {
 	return "Simple scalable block storage provider"
 }

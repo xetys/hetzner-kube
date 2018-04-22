@@ -24,6 +24,10 @@ func (addon *IngressAddon) Name() string {
 	return "nginx ingress controller"
 }
 
+func (addon *IngressAddon) Requires() []string {
+	return []string{"helm"}
+}
+
 func (addon *IngressAddon) Description() string {
 	return "an ingress based load balancer for K8S"
 }

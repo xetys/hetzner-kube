@@ -24,6 +24,10 @@ func (addon *CertmanagerAddon) Name() string {
 	return "cert-manager"
 }
 
+func (addon *CertmanagerAddon) Requires() []string {
+	return []string{"helm"}
+}
+
 func (addon *CertmanagerAddon) Description() string {
 	return "Auto-TLS provisioning & management"
 }

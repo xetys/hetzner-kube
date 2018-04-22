@@ -22,6 +22,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"github.com/xetys/hetzner-kube/pkg/addons"
+	"strings"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
@@ -30,14 +31,19 @@ var clusterAddonListCmd = &cobra.Command{
 	Short: "list the currently available addons",
 	Run: func(cmd *cobra.Command, args []string) {
 		tw := new(tabwriter.Writer)
-		tw.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		tw.Init(os.Stdout, 0, 8, 2, '\t', 0)
 		fmt.Fprintln(tw, "NAME\tREQUIRES\tDESCRIPTION\tURL")
 
 		cluster := &clustermanager.Cluster{Nodes: []clustermanager.Node{clustermanager.Node{IsMaster: true}}}
 		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		for _, addon := range addonService.Addons() {
-			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t", addon.Name(), "-", addon.Description(), addon.URL())
+			requires := "-"
+			if len(addon.Requires()) > 0 {
+				requires = strings.Join(addon.Requires(), ", ")
+			}
+
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t", addon.Name(), requires, addon.Description(), addon.URL())
 			fmt.Fprintln(tw)
 		}
 
