@@ -2,44 +2,62 @@ package addons
 
 import "github.com/xetys/hetzner-kube/pkg/clustermanager"
 
+//ClusterAddon describes what functions a cluster addon should provide, so the addon system can use it for the cmd
 type ClusterAddon interface {
+	Name() string
+	Requires() []string
+	Description() string
+	URL() string
 	Install(args ...string)
 	Uninstall()
+}
+
+//ClusterAddonInitializer is a function creating ClusterAddon instances from given parameters
+type ClusterAddonInitializer func(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon
+
+var addonInitializers = make([]ClusterAddonInitializer, 0)
+
+func addAddon(clusterAddon ClusterAddonInitializer) {
+	addonInitializers = append(addonInitializers, clusterAddon)
 }
 
 type ClusterAddonService struct {
 	provider         clustermanager.ClusterProvider
 	nodeCommunicator clustermanager.NodeCommunicator
+	addons           []ClusterAddon
 }
 
+//NewClusterAddonService creates an instance of the cluster addon service
 func NewClusterAddonService(provider clustermanager.ClusterProvider, nodeComm clustermanager.NodeCommunicator) *ClusterAddonService {
-	return &ClusterAddonService{provider: provider, nodeCommunicator: nodeComm}
+	clusterAddons := []ClusterAddon{}
+	for _, initializer := range addonInitializers {
+		clusterAddons = append(clusterAddons, initializer(provider, nodeComm))
+	}
+	return &ClusterAddonService{provider: provider, nodeCommunicator: nodeComm, addons: clusterAddons}
 }
 
-func (ClusterAddonService) AddonExists(addonName string) bool {
-	switch addonName {
-	case "helm", "rook", "ingress", "openebs", "cert-manager", "docker-registry":
-		return true
-	default:
-		return false
+//AddonExists return true, if an addon with the requested name exists
+func (addonService *ClusterAddonService) AddonExists(addonName string) bool {
+	for _, addon := range addonService.addons {
+		if addon.Name() == addonName {
+			return true
+		}
 	}
+	return false
 }
 
-func (addonService ClusterAddonService) GetAddon(addonName string) ClusterAddon {
-	switch addonName {
-	case "helm":
-		return NewHelmAddon(addonService.provider, addonService.nodeCommunicator)
-	case "rook":
-		return NewRookAddon(addonService.provider, addonService.nodeCommunicator)
-	case "ingress":
-		return NewIngressAddon(addonService.provider, addonService.nodeCommunicator)
-	case "openebs":
-		return NewOpenEBSAddon(addonService.provider, addonService.nodeCommunicator)
-	case "cert-manager":
-		return NewCertmanagerAddon(addonService.provider, addonService.nodeCommunicator)
-	case "docker-registry":
-		return NewDockerregistryAddon(addonService.provider, addonService.nodeCommunicator)
-	default:
-		return nil
+//GetAddon returns the ClusterAddon instance given by name, or nil if not found
+func (addonService *ClusterAddonService) GetAddon(addonName string) ClusterAddon {
+	for _, addon := range addonService.addons {
+		if addon.Name() == addonName {
+			return addon
+		}
 	}
+
+	return nil
+}
+
+//Addons returns a list of all addons
+func (addonService *ClusterAddonService) Addons() []ClusterAddon {
+	return addonService.addons
 }

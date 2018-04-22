@@ -27,14 +27,14 @@ $ go get -u github.com/xetys/hetzner-kube
 
 In your [Hetzner Console](https://console.hetzner.cloud) generate an API token and
 
-```
+```bash
 $ hetzner-kube context add my-project
 Token: <PASTE-TOKEN-HERE>
 ```
 
 Then you need to add an SSH key:
 
-```
+```bash
 $ hetzner-kube ssh-key add -n my-key
 ```
 
@@ -42,7 +42,7 @@ This assumes, you already have a SSH keypair `~/.ssh/id_rsa` and `~/.ssh/id_rsa.
 
 And finally you can create a cluster by running:
 
-```
+```bash
 $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
 
 ```
@@ -59,19 +59,15 @@ further information.
 
 ## addons
 
-You can install some addons to your cluster using the `cluster addon` sub-command. Currently these are the supported first addons:
+You can install some addons to your cluster using the `cluster addon` sub-command. Get a list of addons using:
 
-* helm
-* [Rook](https://rook.io)
-* OpenEBS
-* NGinx ingress controller (requires helm)
-* [cert-manager](https://github.com/jetstack/cert-manager) (requires helm)
-* [docker-registry](https://github.com/kubernetes/charts/tree/master/stable/docker-registry) (requires PVC)
+```bash
+$ hetzner-kube cluster addon list
+```
 
 ### contributing new addons
 
-Feel free to contribute cluster addons. You can simply create one by implementing the `ClusterAddon` interface and 
-adding it to the addons.
+You want to add some cool stuff to hetzner-kube? It's quite easy! Learn how to add new addons in the [Developing Addons](docs/cluster-addons.md) documentation.
 
 ## cloud-init
 
