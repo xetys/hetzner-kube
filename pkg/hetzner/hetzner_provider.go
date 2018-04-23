@@ -205,15 +205,17 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
 
 	return []clustermanager.NodeCommand{
-		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
-		{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", provider.token)},
-		{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
 }
 
 // MustWait returns true, if we have to wait after creation for some time
 func (provider *Provider) MustWait() bool {
 	return provider.wait
+}
+
+// Token returns the hcloud token
+func (provider *Provider) Token() string {
+	return provider.token
 }
 
 func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
