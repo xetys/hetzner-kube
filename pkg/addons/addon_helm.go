@@ -33,7 +33,7 @@ func (addon HelmAddon) Requires() []string {
 
 //Description returns the addons description
 func (addon HelmAddon) Description() string {
-	return "Kuberntes Package Manager"
+	return "Kubernetes Package Manager"
 }
 
 //URL returns the URL of the addons underlying project

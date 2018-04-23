@@ -214,7 +214,7 @@ func RenderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProg
 			}
 		}
 
-		coordinator.StartProgress(node.Name, steps+6)
+		coordinator.StartProgress(node.Name, steps+9)
 	}
 }
 

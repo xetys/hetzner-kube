@@ -71,8 +71,8 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 		numProcs++
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
-			_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
-
+			//_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
+			err := Provision(node, manager.nodeCommunicator, manager.eventService)
 			if err != nil {
 				errChan <- err
 			}
