@@ -53,9 +53,8 @@ func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator
 
 	if strings.TrimSpace(out) == "0" {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func (provisioner *NodeProvisioner) prepareAndInstall() error {
