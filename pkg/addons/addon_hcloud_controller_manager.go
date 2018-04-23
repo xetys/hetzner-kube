@@ -1,8 +1,8 @@
 package addons
 
 import (
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"fmt"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 

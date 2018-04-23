@@ -204,8 +204,7 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 // GetAdditionalMasterInstallCommands
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
 
-	return []clustermanager.NodeCommand{
-	}
+	return []clustermanager.NodeCommand{}
 }
 
 // MustWait returns true, if we have to wait after creation for some time
