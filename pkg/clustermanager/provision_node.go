@@ -1,6 +1,9 @@
 package clustermanager
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 const maxErrors = 3
 
@@ -78,7 +81,11 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 func (provisioner *NodeProvisioner) installTransportTools() error {
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing transport tools")
-	_, err := provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common")
+	var err error
+	for i := 0; i < 10; i++ {
+		time.Sleep(2 * time.Second)
+		_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common")
+	}
 	if err != nil {
 		return err
 	}

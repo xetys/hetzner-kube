@@ -140,7 +140,7 @@ An external server must meet the following requirements:
 
 		FatalOnError(err)
 
-		RenderProgressBars(cluster, coordinator)
+		renderProgressBars(cluster, coordinator)
 		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 

@@ -51,6 +51,7 @@ This tool supports these levels of kubernetes HA:
 	Run:     RunClusterCreate,
 }
 
+// RunClusterCreate executes the cluster creation
 func RunClusterCreate(cmd *cobra.Command, args []string) {
 	workerCount, _ := cmd.Flags().GetInt("worker-count")
 	masterCount, _ := cmd.Flags().GetInt("master-count")
@@ -100,15 +101,16 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	}
 
 	if hetznerProvider.MustWait() {
-		log.Println("sleep for 30s...")
-		time.Sleep(30 * time.Second)
+		log.Println("sleep for 10s...")
+		time.Sleep(5 * time.Second)
 	}
 
 	coordinator := pkg.NewProgressCoordinator()
 
 	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
 	cluster := clusterManager.Cluster()
-	RenderProgressBars(&cluster, coordinator)
+	saveCluster(&cluster)
+	renderProgressBars(&cluster, coordinator)
 
 	// provision nodes
 	tries := 0
@@ -167,7 +169,7 @@ func saveCluster(cluster *clustermanager.Cluster) {
 	AppConf.Config.WriteCurrentConfig()
 }
 
-func RenderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
+func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
 	nodes := cluster.Nodes
 	provisionSteps := 5
 	netWorkSetupSteps := 2
