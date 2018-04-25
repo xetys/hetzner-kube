@@ -51,6 +51,7 @@ This tool supports these levels of kubernetes HA:
 	Run:     RunClusterCreate,
 }
 
+// RunClusterCreate executes the cluster creation
 func RunClusterCreate(cmd *cobra.Command, args []string) {
 	workerCount, _ := cmd.Flags().GetInt("worker-count")
 	masterCount, _ := cmd.Flags().GetInt("master-count")
@@ -66,7 +67,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		clusterName = name
 	}
 
-	log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
+	log.Printf("Creating new cluster\n\nNAME:%s\nMASTERS: %d\nWORKERS: %d\nETCD NODES: %d\nHA: %t\nISOLATED ETCD: %t", clusterName, masterCount, workerCount, etcdCount, haEnabled, isolatedEtcd)
 
 	sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 	masterServerType, _ := cmd.Flags().GetString("master-server-type")
@@ -100,15 +101,16 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	}
 
 	if hetznerProvider.MustWait() {
-		log.Println("sleep for 30s...")
-		time.Sleep(30 * time.Second)
+		log.Println("sleep for 10s...")
+		time.Sleep(5 * time.Second)
 	}
 
 	coordinator := pkg.NewProgressCoordinator()
 
 	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
 	cluster := clusterManager.Cluster()
-	RenderProgressBars(&cluster, coordinator)
+	saveCluster(&cluster)
+	renderProgressBars(&cluster, coordinator)
 
 	// provision nodes
 	tries := 0
@@ -167,55 +169,63 @@ func saveCluster(cluster *clustermanager.Cluster) {
 	AppConf.Config.WriteCurrentConfig()
 }
 
-func RenderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
+func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
 	nodes := cluster.Nodes
 	provisionSteps := 5
 	netWorkSetupSteps := 2
 	etcdSteps := 4
 	masterInstallSteps := 2
-	masterFirstSteps := 4
-	masterHaNonFirstSteps := 1
-	masterHaSteps := 4
-	workerHaSteps := 1
-	nodeInstallSteps := 1
 	numMaster := 0
 	for _, node := range nodes {
 		steps := provisionSteps + netWorkSetupSteps
 		if node.IsEtcd {
 			steps += etcdSteps
 		}
+
 		if node.IsMaster {
 			numMaster++
-			// the InstallMasters routine has 9 events
 			steps += masterInstallSteps
-			if numMaster == 1 {
-				steps += masterFirstSteps
-			}
-
-			if numMaster > 1 && cluster.HaEnabled {
-				steps += masterHaNonFirstSteps
-			}
-
-			if cluster.HaEnabled {
-				steps += masterHaSteps
-			}
-
-			// and one more, it's got tainted
-			if len(cluster.Nodes) == 1 {
-				steps += 1
-			}
+			steps += computeMasterSteps(numMaster, cluster)
 		}
 
 		if !node.IsEtcd && !node.IsMaster {
-			steps += nodeInstallSteps
-
-			if cluster.HaEnabled {
-				steps += workerHaSteps
-			}
+			steps = computeWorkerSteps(steps, cluster)
 		}
 
 		coordinator.StartProgress(node.Name, steps+6)
 	}
+}
+
+func computeWorkerSteps(steps int, cluster *clustermanager.Cluster) int {
+	workerHaSteps := 1
+	nodeInstallSteps := 1
+	steps += nodeInstallSteps
+	if cluster.HaEnabled {
+		steps += workerHaSteps
+	}
+	return steps
+}
+
+func computeMasterSteps(numMaster int, cluster *clustermanager.Cluster) int {
+	masterFirstSteps := 4
+	masterHaNonFirstSteps := 1
+	masterHaSteps := 4
+	steps := 0
+	// the InstallMasters routine has 9 events
+	if numMaster == 1 {
+		steps += masterFirstSteps
+	}
+	if numMaster > 1 && cluster.HaEnabled {
+		steps += masterHaNonFirstSteps
+	}
+	if cluster.HaEnabled {
+		steps += masterHaSteps
+	}
+	// and one more, it's got tainted
+	if len(cluster.Nodes) == 1 {
+		steps += 1
+	}
+	return steps
 }
 
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {

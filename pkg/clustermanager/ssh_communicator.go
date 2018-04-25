@@ -15,11 +15,14 @@ import (
 	"time"
 )
 
+// SSHKey represents a keypair with the paths to the keys
 type SSHKey struct {
 	Name           string `json:"name"`
 	PrivateKeyPath string `json:"private_key_path"`
 	PublicKeyPath  string `json:"public_key_path"`
 }
+
+// SSHCommunicator implements NodeCommunicator as a SSH client
 type SSHCommunicator struct {
 	sshKeys     []SSHKey
 	passPhrases map[string][]byte
@@ -27,6 +30,7 @@ type SSHCommunicator struct {
 
 var _ NodeCommunicator = &SSHCommunicator{}
 
+// NewSSHCommunicator creates an instance of SSHCommunicator
 func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 	return &SSHCommunicator{
 		sshKeys:     sshKeys,
@@ -34,11 +38,30 @@ func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 	}
 }
 
+// RunCmd runs a bash command on the given node
 func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string, err error) {
+	session, connection, err := sshComm.newSession(node)
+	defer connection.Close()
+
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+
+	err = session.Run(command)
+
+	if err != nil {
+		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
+	}
+	session.Close()
+	return stdoutBuf.String(), nil
+}
+
+func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client, error) {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
 
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
 
 	config := &ssh.ClientConfig{
@@ -50,40 +73,25 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed:%v", err)
+			//log.Printf("dial failed:%v", err)
 			if try > 10 {
-				return "", err
+				return nil, nil, err
 			}
 		} else {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
-	defer connection.Close()
 	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
 	if err != nil {
-		log.Fatalf("session failed:%v", err)
+		return nil, nil, fmt.Errorf("session failed:%v", err)
 	}
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
 
-	err = session.Run(command)
-
-	if err != nil {
-		log.Println(stderrBuf.String())
-		log.Printf("> %s", command)
-		log.Println()
-		log.Printf("%s", stdoutBuf.String())
-		return "", fmt.Errorf("run failed:%v", err)
-	}
-	// log.Println("Command execution succeeded!")
-	session.Close()
-	return stdoutBuf.String(), nil
+	return session, connection, nil
 }
 
+// WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
 func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, executable bool) error {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
 
@@ -143,10 +151,12 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	return nil
 }
 
+// CopyFileOverNode copies a file from a node to another. Does not work with directories.
 func (sshComm *SSHCommunicator) CopyFileOverNode(sourceNode Node, targetNode Node, filePath string) error {
 	return sshComm.TransformFileOverNode(sourceNode, targetNode, filePath, nil)
 }
 
+// TransformFileOverNode works like CopyFileOverNode, with the addition of changing the file contents using a func(string) string function
 func (sshComm *SSHCommunicator) TransformFileOverNode(sourceNode Node, targetNode Node, filePath string, manipulator func(string) string) error {
 	// get the file
 	fileContent, err := sshComm.RunCmd(sourceNode, "cat "+filePath)
@@ -163,7 +173,8 @@ func (sshComm *SSHCommunicator) TransformFileOverNode(sourceNode Node, targetNod
 	return err
 }
 
-func (sshComm *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey) {
+// findPrivateKeyByName returns a SSH key from its store
+func (sshComm *SSHCommunicator) findPrivateKeyByName(name string) (int, *SSHKey) {
 	index := -1
 	for i, v := range sshComm.sshKeys {
 		if v.Name == name {
@@ -174,8 +185,9 @@ func (sshComm *SSHCommunicator) FindPrivateKeyByName(name string) (int, *SSHKey)
 	return index, nil
 }
 
+// CapturePassphrase asks the user to enter a private keys passphrase
 func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
-	index, privateKey := sshComm.FindPrivateKeyByName(sshKeyName)
+	index, privateKey := sshComm.findPrivateKeyByName(sshKeyName)
 	if index < 0 {
 		return fmt.Errorf("could not find SSH key '%s'", sshKeyName)
 	}
@@ -190,7 +202,7 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 		return nil
 	}
 
-	fmt.Print("Enter passphrase for sshComm key " + privateKey.PrivateKeyPath + ": ")
+	fmt.Print("Enter passphrase for SSH key " + privateKey.PrivateKeyPath + ": ")
 	text, err := terminal.ReadPassword(int(syscall.Stdin))
 
 	if err != nil {
@@ -225,7 +237,7 @@ func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
-		return false, errors.New("sshComm: no key found")
+		return false, errors.New("SSH: no key found")
 
 	}
 
@@ -233,7 +245,7 @@ func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 }
 
 func (sshComm *SSHCommunicator) getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
-	index, privateKey := sshComm.FindPrivateKeyByName(sshKeyName)
+	index, privateKey := sshComm.findPrivateKeyByName(sshKeyName)
 	if index < 0 {
 		return nil, fmt.Errorf("cound not find SSH key '%s'", sshKeyName)
 	}

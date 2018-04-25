@@ -104,7 +104,7 @@ You can specify the worker server type as in cluster create.`,
 		log.Println("sleep for 30s...")
 		time.Sleep(30 * time.Second)
 
-		RenderProgressBars(cluster, coordinator)
+		renderProgressBars(cluster, coordinator)
 		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 
