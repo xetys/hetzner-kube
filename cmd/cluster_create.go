@@ -175,30 +175,30 @@ func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProg
 	netWorkSetupSteps := 2
 	etcdSteps := 4
 	masterInstallSteps := 2
-	masterFirstSteps := 4
-	masterHaNonFirstSteps := 1
-	masterHaSteps := 4
-	workerHaSteps := 1
-	nodeInstallSteps := 1
 	numMaster := 0
 	for _, node := range nodes {
 		steps := provisionSteps + netWorkSetupSteps
 		if node.IsEtcd {
 			steps += etcdSteps
 		}
+
 		if node.IsMaster {
-			steps = computeEtcdSteps(numMaster, steps, masterInstallSteps, masterFirstSteps, cluster, masterHaNonFirstSteps, masterHaSteps)
+			numMaster++
+			steps += masterInstallSteps
+			steps += computeMasterSteps(numMaster, cluster)
 		}
 
 		if !node.IsEtcd && !node.IsMaster {
-			steps = computeMasterSteps(steps, nodeInstallSteps, cluster, workerHaSteps)
+			steps = computeWorkerSteps(steps, cluster)
 		}
 
 		coordinator.StartProgress(node.Name, steps+6)
 	}
 }
 
-func computeMasterSteps(steps int, nodeInstallSteps int, cluster *clustermanager.Cluster, workerHaSteps int) int {
+func computeWorkerSteps(steps int, cluster *clustermanager.Cluster) int {
+	workerHaSteps := 1
+	nodeInstallSteps := 1
 	steps += nodeInstallSteps
 	if cluster.HaEnabled {
 		steps += workerHaSteps
@@ -206,10 +206,12 @@ func computeMasterSteps(steps int, nodeInstallSteps int, cluster *clustermanager
 	return steps
 }
 
-func computeEtcdSteps(numMaster int, steps int, masterInstallSteps int, masterFirstSteps int, cluster *clustermanager.Cluster, masterHaNonFirstSteps int, masterHaSteps int) int {
-	numMaster++
+func computeMasterSteps(numMaster int, cluster *clustermanager.Cluster) int {
+	masterFirstSteps := 4
+	masterHaNonFirstSteps := 1
+	masterHaSteps := 4
+	steps := 0
 	// the InstallMasters routine has 9 events
-	steps += masterInstallSteps
 	if numMaster == 1 {
 		steps += masterFirstSteps
 	}

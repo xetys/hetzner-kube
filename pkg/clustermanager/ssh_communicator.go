@@ -90,6 +90,7 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 
 	return session, connection, nil
 }
+
 // WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
 func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, executable bool) error {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
