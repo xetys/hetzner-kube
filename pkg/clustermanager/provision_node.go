@@ -83,7 +83,7 @@ func (provisioner *NodeProvisioner) installTransportTools() error {
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing transport tools")
 	var err error
 	for i := 0; i < 10; i++ {
-		time.Sleep(2 * time.Second)
+		time.Sleep(3 * time.Second)
 		_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common")
 	}
 	if err != nil {

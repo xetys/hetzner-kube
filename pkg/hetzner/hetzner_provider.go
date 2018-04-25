@@ -261,6 +261,7 @@ func (provider *Provider) actionProgress(action *hcloud.Action) error {
 
 		progress.Start()
 		bar := progress.AddBar(100).AppendCompleted().PrependElapsed()
+		bar.Width = 40
 		bar.Empty = ' '
 
 		for {

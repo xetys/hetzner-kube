@@ -67,7 +67,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		clusterName = name
 	}
 
-	log.Printf("Creating new cluster %s with %d master(s), %d worker(s), HA: %t", clusterName, masterCount, workerCount, haEnabled)
+	log.Printf("Creating new cluster\n\nNAME:%s\nMASTERS: %d\nWORKERS: %d\nETCD NODES: %d\nHA: %t\nISOLATED ETCD: %t", clusterName, masterCount, workerCount, etcdCount, haEnabled, isolatedEtcd)
 
 	sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 	masterServerType, _ := cmd.Flags().GetString("master-server-type")
@@ -187,37 +187,43 @@ func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProg
 			steps += etcdSteps
 		}
 		if node.IsMaster {
-			numMaster++
-			// the InstallMasters routine has 9 events
-			steps += masterInstallSteps
-			if numMaster == 1 {
-				steps += masterFirstSteps
-			}
-
-			if numMaster > 1 && cluster.HaEnabled {
-				steps += masterHaNonFirstSteps
-			}
-
-			if cluster.HaEnabled {
-				steps += masterHaSteps
-			}
-
-			// and one more, it's got tainted
-			if len(cluster.Nodes) == 1 {
-				steps += 1
-			}
+			steps = computeEtcdSteps(numMaster, steps, masterInstallSteps, masterFirstSteps, cluster, masterHaNonFirstSteps, masterHaSteps)
 		}
 
 		if !node.IsEtcd && !node.IsMaster {
-			steps += nodeInstallSteps
-
-			if cluster.HaEnabled {
-				steps += workerHaSteps
-			}
+			steps = computeMasterSteps(steps, nodeInstallSteps, cluster, workerHaSteps)
 		}
 
 		coordinator.StartProgress(node.Name, steps+6)
 	}
+}
+
+func computeMasterSteps(steps int, nodeInstallSteps int, cluster *clustermanager.Cluster, workerHaSteps int) int {
+	steps += nodeInstallSteps
+	if cluster.HaEnabled {
+		steps += workerHaSteps
+	}
+	return steps
+}
+
+func computeEtcdSteps(numMaster int, steps int, masterInstallSteps int, masterFirstSteps int, cluster *clustermanager.Cluster, masterHaNonFirstSteps int, masterHaSteps int) int {
+	numMaster++
+	// the InstallMasters routine has 9 events
+	steps += masterInstallSteps
+	if numMaster == 1 {
+		steps += masterFirstSteps
+	}
+	if numMaster > 1 && cluster.HaEnabled {
+		steps += masterHaNonFirstSteps
+	}
+	if cluster.HaEnabled {
+		steps += masterHaSteps
+	}
+	// and one more, it's got tainted
+	if len(cluster.Nodes) == 1 {
+		steps += 1
+	}
+	return steps
 }
 
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {

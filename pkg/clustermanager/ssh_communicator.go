@@ -40,10 +40,28 @@ func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 
 // RunCmd runs a bash command on the given node
 func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string, err error) {
+	session, connection, err := sshComm.newSession(node)
+	defer connection.Close()
+
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+
+	err = session.Run(command)
+
+	if err != nil {
+		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
+	}
+	session.Close()
+	return stdoutBuf.String(), nil
+}
+
+func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client, error) {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
 
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
 
 	config := &ssh.ClientConfig{
@@ -57,34 +75,21 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 		if err != nil {
 			//log.Printf("dial failed:%v", err)
 			if try > 10 {
-				return "", err
+				return nil, nil, err
 			}
 		} else {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
-	defer connection.Close()
 	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("session failed:%v", err)
+		return nil, nil, fmt.Errorf("session failed:%v", err)
 	}
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
 
-	err = session.Run(command)
-
-	if err != nil {
-		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
-	}
-	// log.Println("Command execution succeeded!")
-	session.Close()
-	return stdoutBuf.String(), nil
+	return session, connection, nil
 }
-
 // WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
 func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, executable bool) error {
 	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
@@ -196,7 +201,7 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 		return nil
 	}
 
-	fmt.Print("Enter passphrase for sshComm key " + privateKey.PrivateKeyPath + ": ")
+	fmt.Print("Enter passphrase for SSH key " + privateKey.PrivateKeyPath + ": ")
 	text, err := terminal.ReadPassword(int(syscall.Stdin))
 
 	if err != nil {
@@ -231,7 +236,7 @@ func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
-		return false, errors.New("sshComm: no key found")
+		return false, errors.New("SSH: no key found")
 
 	}
 
