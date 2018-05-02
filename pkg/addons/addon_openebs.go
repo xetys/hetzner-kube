@@ -23,7 +23,7 @@ func init() {
 
 //Name returns the addons name
 func (addon OpenEBSAddon) Name() string {
-	return "OpenEBS"
+	return "openebs"
 }
 
 //Requires returns a slice with the name of required addons

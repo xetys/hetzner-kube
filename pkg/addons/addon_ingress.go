@@ -24,7 +24,7 @@ func init() {
 
 //Name returns the addons name
 func (addon *IngressAddon) Name() string {
-	return "nginx ingress controller"
+	return "nginx-ingress-controller"
 }
 
 //Requires returns a slice with the name of required addons
