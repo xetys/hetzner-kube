@@ -102,7 +102,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 
 	if hetznerProvider.MustWait() {
 		log.Println("sleep for 10s...")
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	coordinator := pkg.NewProgressCoordinator()
