@@ -14,7 +14,20 @@ This is my very first tool written in Go.
 
 Get the linux binary from releases page.
 
-[Download version 0.2.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.2.1/hetzner-kube)
+[Download version 0.3 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube)
+
+[Download version 0.3 - linux-386](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-linux-386)
+
+[Download version 0.3 - linux-arm](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-linux-arm)
+
+[Download version 0.3 - linux-arm64](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-linux-arm64)
+
+### experimental binaries (not tested yet)
+[Download version 0.3 - darwin-386](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-darwin-386)
+
+[Download version 0.3 - darwin-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-darwin-amd64)
+
+[Download version 0.3 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-win64)
 
 
 or get it from source:
