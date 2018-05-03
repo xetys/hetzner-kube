@@ -26,9 +26,14 @@ type Provider struct {
 }
 
 // NewHetznerProvider returns an instance of hetzner.Provider
-func NewHetznerProvider(clusterName string, client *hcloud.Client, context context.Context, token string, nodeCidr string) *Provider {
+func NewHetznerProvider(context context.Context, client *hcloud.Client, token string) *Provider {
 
-	return &Provider{client: client, context: context, clusterName: clusterName, token: token, nodeCidr: nodeCidr}
+	return &Provider{client: client, context: context, token: token}
+}
+
+func (provider *Provider) InitCluster(clusterName, nodeCidr string) {
+	provider.clusterName = clusterName
+	provider.nodeCidr = nodeCidr
 }
 
 // SetCloudInitFile sets cloud init file for node provisioning
@@ -95,7 +100,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 				privateIpLastBlock += 10
 			}
 		}
-		cidrPrefix := clustermanager.PrivateIpPrefix(provider.nodeCidr)
+		cidrPrefix := clustermanager.PrivateIPPrefix(provider.nodeCidr)
 		privateIpAddress := fmt.Sprintf("%s.%d", cidrPrefix, privateIpLastBlock)
 
 		node := clustermanager.Node{
@@ -255,7 +260,6 @@ func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hclou
 		return &hcloud.ServerCreateResult{Server: server}, nil
 	}
 }
-
 
 func (provider *Provider) actionProgress(action *hcloud.Action) error {
 	errCh, progressCh := waitAction(provider.context, provider.client, action)

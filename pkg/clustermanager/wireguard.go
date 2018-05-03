@@ -55,6 +55,8 @@ Endpoint = %s:51820
 
 	return output
 }
-func PrivateIpPrefix(ip string) string {
+
+// PrivateIPPrefix extracts the first 3 digits of an IPv4 address
+func PrivateIPPrefix(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".")
 }
