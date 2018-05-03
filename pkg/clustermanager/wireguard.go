@@ -3,6 +3,7 @@ package clustermanager
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type WgKeyPair struct {
@@ -53,4 +54,9 @@ Endpoint = %s:51820
 	}
 
 	return output
+}
+
+// PrivateIPPrefix extracts the first 3 digits of an IPv4 address
+func PrivateIPPrefix(ip string) string {
+	return strings.Join(strings.Split(ip, ".")[:3], ".")
 }

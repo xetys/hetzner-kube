@@ -22,6 +22,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
+	"net"
 	"os"
 	"time"
 )
@@ -73,8 +74,10 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	masterServerType, _ := cmd.Flags().GetString("master-server-type")
 	workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
+	nodeCidr, _ := cmd.Flags().GetString("node-cidr")
 
-	hetznerProvider := hetzner.NewHetznerProvider(clusterName, AppConf.Client, AppConf.Context, AppConf.CurrentContext.Token)
+	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, AppConf.CurrentContext.Token)
+	hetznerProvider.InitCluster(clusterName, nodeCidr)
 	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
 	err := sshClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 	FatalOnError(err)
@@ -246,6 +249,14 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 		return errors.New("flag --worker_server_type is required")
 	}
 
+	if nodeCidr, _ := cmd.Flags().GetString("node-cidr"); nodeCidr != "10.0.1.0/24" {
+		_, _, err := net.ParseCIDR(nodeCidr)
+
+		if err != nil {
+			return fmt.Errorf("could not parse cidr: %v", err)
+		}
+	}
+
 	if cloud_init, _ = cmd.Flags().GetString("cloud-init"); cloud_init != "" {
 		if _, err := os.Stat(cloud_init); os.IsNotExist(err) {
 			return errors.New("cloud-init file not found")
@@ -300,5 +311,6 @@ func init() {
 	clusterCreateCmd.Flags().Bool("self-hosted", false, "If true, the kubernetes control plane will be hosted on itself")
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
+	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
 	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
 }

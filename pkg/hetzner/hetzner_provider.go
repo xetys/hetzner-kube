@@ -22,12 +22,19 @@ type Provider struct {
 	cloudInitFile string
 	wait          bool
 	token         string
+	nodeCidr      string
 }
 
 // NewHetznerProvider returns an instance of hetzner.Provider
-func NewHetznerProvider(clusterName string, client *hcloud.Client, context context.Context, token string) *Provider {
+func NewHetznerProvider(context context.Context, client *hcloud.Client, token string) *Provider {
 
-	return &Provider{client: client, context: context, clusterName: clusterName, token: token}
+	return &Provider{client: client, context: context, token: token}
+}
+
+// InitCluster provides cluster information for further creation
+func (provider *Provider) InitCluster(clusterName, nodeCidr string) {
+	provider.clusterName = clusterName
+	provider.nodeCidr = nodeCidr
 }
 
 // SetCloudInitFile sets cloud init file for node provisioning
@@ -87,14 +94,15 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 		log.Printf("Created node '%s' with IP %s", server.Server.Name, ipAddress)
 
 		// render private IP address
-		privateIpLastBlock := nodeNumber
+		privateIPLastBlock := nodeNumber
 		if !template.IsEtcd {
-			privateIpLastBlock += 10
+			privateIPLastBlock += 10
 			if !template.IsMaster {
-				privateIpLastBlock += 10
+				privateIPLastBlock += 10
 			}
 		}
-		privateIpAddress := fmt.Sprintf("10.0.1.%d", privateIpLastBlock)
+		cidrPrefix := clustermanager.PrivateIPPrefix(provider.nodeCidr)
+		privateIPAddress := fmt.Sprintf("%s.%d", cidrPrefix, privateIPLastBlock)
 
 		node := clustermanager.Node{
 			Name:             serverOpts.Name,
@@ -102,7 +110,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 			IsMaster:         template.IsMaster,
 			IsEtcd:           template.IsEtcd,
 			IPAddress:        ipAddress,
-			PrivateIPAddress: privateIpAddress,
+			PrivateIPAddress: privateIPAddress,
 			SSHKeyName:       template.SSHKeyName,
 		}
 		nodes = append(nodes, node)
@@ -196,8 +204,9 @@ func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
 func (provider *Provider) GetCluster() clustermanager.Cluster {
 
 	return clustermanager.Cluster{
-		Name:  provider.clusterName,
-		Nodes: provider.nodes,
+		Name:     provider.clusterName,
+		Nodes:    provider.nodes,
+		NodeCIDR: provider.nodeCidr,
 	}
 }
 

@@ -20,12 +20,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "0.3"
+// Version The current version of hetzner-kube.
+// the '-SNAPSHOT' suffix signals the current version is not a released version, and most likely built from source
+const Version = "0.3.1-SNAPSHOT"
+
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
-	Use:   "version",
+	Use:     "version",
 	Aliases: []string{"v"},
-	Short: "prints the current version",
+	Short:   "prints the current version",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(Version)
 	},
