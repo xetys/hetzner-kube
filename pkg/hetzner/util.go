@@ -8,7 +8,8 @@ import (
 )
 
 func ProviderAndManager(cluster clustermanager.Cluster, client *hcloud.Client, context context.Context, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService, token string) (*Provider, *clustermanager.Manager) {
-	provider := NewHetznerProvider(cluster.Name, client, context, token, cluster.NodeCIDR)
+	provider := NewHetznerProvider(context, client, token)
+	provider.InitCluster(cluster.Name, cluster.NodeCIDR)
 	provider.SetNodes(cluster.Nodes)
 	manager := clustermanager.NewClusterManagerFromCluster(cluster, provider, nc, eventService)
 
