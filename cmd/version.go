@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The current version of hetzner-kube.
+// Version The current version of hetzner-kube.
 // the '-SNAPSHOT' suffix signals the current version is not a released version, and most likely built from source
 const Version = "0.3.1-SNAPSHOT"
 

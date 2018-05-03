@@ -31,6 +31,7 @@ func NewHetznerProvider(context context.Context, client *hcloud.Client, token st
 	return &Provider{client: client, context: context, token: token}
 }
 
+// InitCluster provides cluster information for further creation
 func (provider *Provider) InitCluster(clusterName, nodeCidr string) {
 	provider.clusterName = clusterName
 	provider.nodeCidr = nodeCidr
@@ -93,15 +94,15 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 		log.Printf("Created node '%s' with IP %s", server.Server.Name, ipAddress)
 
 		// render private IP address
-		privateIpLastBlock := nodeNumber
+		privateIPLastBlock := nodeNumber
 		if !template.IsEtcd {
-			privateIpLastBlock += 10
+			privateIPLastBlock += 10
 			if !template.IsMaster {
-				privateIpLastBlock += 10
+				privateIPLastBlock += 10
 			}
 		}
 		cidrPrefix := clustermanager.PrivateIPPrefix(provider.nodeCidr)
-		privateIpAddress := fmt.Sprintf("%s.%d", cidrPrefix, privateIpLastBlock)
+		privateIPAddress := fmt.Sprintf("%s.%d", cidrPrefix, privateIPLastBlock)
 
 		node := clustermanager.Node{
 			Name:             serverOpts.Name,
@@ -109,7 +110,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 			IsMaster:         template.IsMaster,
 			IsEtcd:           template.IsEtcd,
 			IPAddress:        ipAddress,
-			PrivateIPAddress: privateIpAddress,
+			PrivateIPAddress: privateIPAddress,
 			SSHKeyName:       template.SSHKeyName,
 		}
 		nodes = append(nodes, node)
