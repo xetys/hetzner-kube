@@ -12,7 +12,7 @@ This is my very first tool written in Go.
 
 ## How to install
 
-Get the linux binary from releases page.
+Get the Linux binary from releases page.
 
 [Download version 0.3 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube)
 
@@ -29,12 +29,19 @@ Get the linux binary from releases page.
 
 [Download version 0.3 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3/hetzner-kube-win64)
 
+### From source
 
-or get it from source:
+hetzner-kube is written in [Go](https://golang.org/). To install Go please follow the instructions on its homepage.
+
+To get and build hetzner-kube from source run this command:
 
 ```
 $ go get -u github.com/xetys/hetzner-kube
 ```
+
+The project source will now be in your `$GOPATH` directory (`$GOPATH/src/github.com/xetys/hetzner-kube`) and the binary will be in `$GOPATH/bin`.
+
+If you want to build it yourself later, you can change into the source directory and run `go build` or `go install`.
 
 ## Usage
 
@@ -53,7 +60,7 @@ $ hetzner-kube ssh-key add -n my-key
 
 This assumes, you already have a SSH keypair `~/.ssh/id_rsa` and `~/.ssh/id_rsa.pub`
 
-And finally you can create a cluster by running:
+And finally, you can create a cluster by running:
 
 ```bash
 $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
@@ -65,7 +72,7 @@ This will provision a brand new kubernetes cluster in latest version!
 For a full list of options that can be passed to the ```cluster create``` command, see the [Cluster Create Guide](docs/cluster-create.md) for more information.
 ## HA-clusters
 
-You can built high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
+You can build high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
 further information.
 
 # Custom Options 
@@ -84,7 +91,7 @@ You want to add some cool stuff to hetzner-kube? It's quite easy! Learn how to a
 
 ## cloud-init
 
-If you like to run some scripts or install some additional packages while provisioning new servers you can use cloud-init
+If you like to run some scripts or install some additional packages while provisioning new servers, you can use cloud-init
 ```
 $ hetzner-kube cluster create --name my-cluster --nodes 3 --ssh-key my-key --cloud-init <PATH-TO-FILE>
 ```
