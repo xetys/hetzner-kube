@@ -55,4 +55,11 @@ func TestClusterCmdValidate(t *testing.T) {
 	if err == nil {
 		t.Error("no errors occurred with provided etcd count without --isolated-etcd, but should")
 	}
+
+	cmd.ParseFlags([]string{"cluster", "create", "--ha-enabled", "--ssh-key", "test", "--node-cidr", "bullshit"})
+	err = validateClusterCreateFlags(cmd, []string{})
+
+	if err == nil {
+		t.Error("no errors occurred with a senseless node CIDR, but should")
+	}
 }

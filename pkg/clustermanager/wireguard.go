@@ -3,6 +3,7 @@ package clustermanager
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type WgKeyPair struct {
@@ -53,4 +54,7 @@ Endpoint = %s:51820
 	}
 
 	return output
+}
+func PrivateIpPrefix(ip string) string {
+	return strings.Join(strings.Split(ip, ".")[:3], ".")
 }
