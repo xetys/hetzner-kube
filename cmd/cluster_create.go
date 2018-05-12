@@ -264,7 +264,7 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if index, _ := AppConf.Config.FindSSHKeyByName(sshKey); index == -1 {
+	if _, err := AppConf.Config.FindSSHKeyByName(sshKey); err != nil {
 		return fmt.Errorf("SSH key '%s' not found", sshKey)
 	}
 

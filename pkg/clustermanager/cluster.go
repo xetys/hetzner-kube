@@ -315,9 +315,9 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				output, err := manager.nodeCommunicator.RunCmd(node, "kubeadm token create --print-join-command")
 				if tries < 10 && err != nil {
 					return err
-				} else {
-					time.Sleep(2 * time.Second)
 				}
+				time.Sleep(2 * time.Second)
+
 				joinCommand = output
 				break
 			}

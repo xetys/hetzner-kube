@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"testing"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
@@ -20,16 +21,16 @@ func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			idx, _ := config.FindSSHKeyByName(test.name)
+			_, err := config.FindSSHKeyByName(test.name)
 
 			// I know this can be done more general, but this one is fast
 			switch test.name {
 			case "test-key1", "test-key2":
-				if idx < 0 {
+				if err != nil {
 					t.Errorf("SSH key %s exists but not found", test.name)
 				}
 			default:
-				if idx > -1 {
+				if err == nil {
 					t.Errorf("SSH key %s not exists but found", test.name)
 				}
 			}

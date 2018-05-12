@@ -56,10 +56,9 @@ func (config *HetznerConfig) AddSSHKey(key clustermanager.SSHKey) {
 //DeleteSSHKey remove the SSH key from config
 func (config *HetznerConfig) DeleteSSHKey(name string) error {
 
-	index, _ := config.FindSSHKeyByName(name)
-
-	if index == -1 {
-		return errors.New("ssh key not found")
+	index, err := config.FindSSHKeyByName(name)
+	if err != nil {
+		return err
 	}
 
 	config.SSHKeys = append(config.SSHKeys[:index], config.SSHKeys[index+1:]...)
@@ -68,15 +67,14 @@ func (config *HetznerConfig) DeleteSSHKey(name string) error {
 }
 
 //FindSSHKeyByName find a SSH key in config by name
-func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *clustermanager.SSHKey) {
-	index := -1
+func (config *HetznerConfig) FindSSHKeyByName(name string) (int, error) {
 	for i, v := range config.SSHKeys {
 		if v.Name == name {
-			index = i
-			return index, &v
+			return i, nil
 		}
 	}
-	return index, nil
+
+	return -1, fmt.Errorf("unable to find '%s' SSH key", name)
 }
 
 //AddCluster add a cluster in config
