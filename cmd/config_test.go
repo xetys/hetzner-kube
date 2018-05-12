@@ -6,32 +6,27 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
+type testCases []string
+
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
-	config := HetznerConfig{
-		SSHKeys: []clustermanager.SSHKey{
-			{Name: "test-key1"},
-			{Name: "test-key2"},
-		},
-	}
-	tests := []struct {
-		name string
-	}{
-		{"test-key1"},
-		{"non-existing"},
+	config := getCloudProvider()
+	tests := testCases{
+		"test-key1",
+		"non-existing",
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := config.FindSSHKeyByName(test.name)
+		t.Run(test, func(t *testing.T) {
+			_, err := config.FindSSHKeyByName(test)
 
 			// I know this can be done more general, but this one is fast
-			switch test.name {
+			switch test {
 			case "test-key1", "test-key2":
 				if err != nil {
-					t.Errorf("SSH key %s exists but not found", test.name)
+					t.Errorf("SSH key %s exists but not found", test)
 				}
 			default:
 				if err == nil {
-					t.Errorf("SSH key %s not exists but found", test.name)
+					t.Errorf("SSH key %s not exists but found", test)
 				}
 			}
 		})
@@ -40,24 +35,22 @@ func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
 
 func TestAppConfig_FindContextByName(t *testing.T) {
 	config := getAppConfig()
-	tests := []struct {
-		name string
-	}{
-		{"first-context"},
-		{"non-existing"},
+	tests := testCases{
+		"first-context",
+		"non-existing",
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := config.FindContextByName(test.name)
+		t.Run(test, func(t *testing.T) {
+			_, err := config.FindContextByName(test)
 
-			switch test.name {
+			switch test {
 			case "first-context", "second-context":
 				if err != nil {
-					t.Errorf("unexpected error for context %s", test.name)
+					t.Errorf("unexpected error for context %s", test)
 				}
 			default:
 				if err == nil {
-					t.Errorf("no error for non-existing context %s", test.name)
+					t.Errorf("no error for non-existing context %s", test)
 				}
 			}
 		})
@@ -74,7 +67,7 @@ func TestAppConfig_SwitchContextByName(t *testing.T) {
 }
 
 func getAppConfig() AppConfig {
-	config := AppConfig{
+	return AppConfig{
 		Config: &HetznerConfig{
 			Contexts: []HetznerContext{
 				{Name: "first-context"},
@@ -82,5 +75,13 @@ func getAppConfig() AppConfig {
 			},
 		},
 	}
-	return config
+}
+
+func getCloudProvider() HetznerConfig {
+	return HetznerConfig{
+		SSHKeys: []clustermanager.SSHKey{
+			{Name: "test-key1"},
+			{Name: "test-key2"},
+		},
+	}
 }
