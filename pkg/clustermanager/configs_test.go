@@ -1,8 +1,9 @@
 package clustermanager
 
 import (
-	"github.com/andreyvit/diff"
 	"testing"
+
+	"github.com/andreyvit/diff"
 )
 
 func TestGenerateMasterConfiguration(t *testing.T) {

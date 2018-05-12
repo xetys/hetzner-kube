@@ -17,9 +17,10 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"os"
 	"text/tabwriter"
+
+	"github.com/spf13/cobra"
 )
 
 // clusterListCmd represents the clusterList command
@@ -34,14 +35,14 @@ var clusterListCmd = &cobra.Command{
 
 		for _, cluster := range AppConf.Config.Clusters {
 			nodes := len(cluster.Nodes)
-			var masterIp string
+			var masterIP string
 			for _, node := range cluster.Nodes {
 				if node.IsMaster {
-					masterIp = node.IPAddress
+					masterIP = node.IPAddress
 					break
 				}
 			}
-			fmt.Fprintf(tw, "%s\t%d\t%s", cluster.Name, nodes, masterIp)
+			fmt.Fprintf(tw, "%s\t%d\t%s", cluster.Name, nodes, masterIP)
 			fmt.Fprintln(tw)
 		}
 

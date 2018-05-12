@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-kit/kit/log/term"
-	"github.com/gosuri/uiprogress"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/go-kit/kit/log/term"
+	"github.com/gosuri/uiprogress"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
+//Provider contains provider information
 type Provider struct {
 	client        *hcloud.Client
 	context       context.Context
@@ -134,7 +136,7 @@ func (provider *Provider) CreateMasterNodes(sshKeyName string, masterServerType 
 	return err
 }
 
-// CreateWorkerNodes
+// CreateWorkerNodes create new worker node on provider
 func (provider *Provider) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
 	nodes, err := provider.CreateNodes("worker", template, datacenters, count, offset)
@@ -147,7 +149,7 @@ func (provider *Provider) GetAllNodes() []clustermanager.Node {
 	return provider.nodes
 }
 
-// SetNodes
+// SetNodes set list of cluster nodes for this provider
 func (provider *Provider) SetNodes(nodes []clustermanager.Node) {
 	provider.nodes = nodes
 }
@@ -210,7 +212,7 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 	}
 }
 
-// GetAdditionalMasterInstallCommands
+// GetAdditionalMasterInstallCommands return the list of node command to execute on the cluster
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
 
 	return []clustermanager.NodeCommand{}
@@ -256,10 +258,10 @@ func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hclou
 		provider.wait = true
 
 		return &result, nil
-	} else {
-		log.Printf("loading server '%s'...", opts.Name)
-		return &hcloud.ServerCreateResult{Server: server}, nil
 	}
+
+	log.Printf("loading server '%s'...", opts.Name)
+	return &hcloud.ServerCreateResult{Server: server}, nil
 }
 
 func (provider *Provider) actionProgress(action *hcloud.Action) error {

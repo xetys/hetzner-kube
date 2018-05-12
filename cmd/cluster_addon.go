@@ -17,6 +17,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/addons"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
@@ -54,7 +55,7 @@ func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
 		return errors.New("exactly one argument expected")
 	}
 	addonName := args[0]
-	provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+	provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 	addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 	if !addonService.AddonExists(addonName) {
 		return fmt.Errorf("addon %s not found", addonName)

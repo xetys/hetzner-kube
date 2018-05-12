@@ -10,4 +10,5 @@ before_install:
   - go get -v github.com/golang/lint/golint
 
 script:
+  - golint cmd/ pkg/
   - go test -v ./...

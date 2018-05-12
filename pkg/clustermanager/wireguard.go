@@ -6,11 +6,13 @@ import (
 	"strings"
 )
 
+//WgKeyPair containse key pairs
 type WgKeyPair struct {
 	Private string `json:"private"`
 	Public  string `json:"public"`
 }
 
+//GenerateKeyPairs generate key pairs
 func (manager *Manager) GenerateKeyPairs(node Node, count int) []WgKeyPair {
 	genKeyPairs := fmt.Sprintf(`echo "[" ;for i in {1..%d}; do pk=$(wg genkey); pubk=$(echo $pk | wg pubkey);echo "{\"private\":\"$pk\",\"public\":\"$pubk\"},"; done; echo "]";`, count)
 	// gives an invalid JSON back
@@ -26,6 +28,7 @@ func (manager *Manager) GenerateKeyPairs(node Node, count int) []WgKeyPair {
 	return keyPairs
 }
 
+//GenerateWireguardConf generate wireguard configuration file
 func GenerateWireguardConf(node Node, nodes []Node) string {
 	var output string
 	// print header block

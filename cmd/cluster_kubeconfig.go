@@ -18,14 +18,15 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -45,7 +46,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		name := args[0]
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
-		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)
 

@@ -2,11 +2,12 @@ package addons
 
 import (
 	"fmt"
+
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
-// PrometheusAddon provides cluster monitoring using prometheus operator
+//PrometheusAddon provides cluster monitoring using prometheus operator
 type PrometheusAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
@@ -14,6 +15,7 @@ type PrometheusAddon struct {
 	provider     *hetzner.Provider
 }
 
+//NewPrometheusAddon create a new prometheus addon
 func NewPrometheusAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := provider.GetMasterNode()
 	FatalOnError(err)
