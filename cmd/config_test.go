@@ -6,11 +6,9 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
-type testCases []string
-
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
 	config := getCloudProvider()
-	tests := testCases{
+	tests := []string{
 		"test-key1",
 		"non-existing",
 	}
@@ -33,9 +31,39 @@ func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
 	}
 }
 
+func TestHetznerConfig_AddSSHKey(t *testing.T) {
+	config := getCloudProvider()
+
+	config.AddSSHKey(clustermanager.SSHKey{Name: "test-key3"})
+
+	if len(config.SSHKeys) != 3 {
+		t.Errorf("After adding SSH key size seems not valid")
+	}
+}
+
+func TestHetznerConfig_DeleteSSHKey(t *testing.T) {
+	config := getCloudProvider()
+
+	config.DeleteSSHKey("test-key1")
+
+	if len(config.SSHKeys) != 1 {
+		t.Errorf("After removing SSH key size seems not valid")
+	}
+}
+
+func TestHetznerConfig_DeleteNonExistingSSHKey(t *testing.T) {
+	config := getCloudProvider()
+
+	err := config.DeleteSSHKey("non-existing")
+
+	if err == nil {
+		t.Errorf("After removing non existing SSH key we should receive an error")
+	}
+}
+
 func TestAppConfig_FindContextByName(t *testing.T) {
 	config := getAppConfig()
-	tests := testCases{
+	tests := []string{
 		"first-context",
 		"non-existing",
 	}
