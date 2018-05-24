@@ -77,7 +77,7 @@ systemctl restart kubelet`
 	}
 
 	// get the repo
-	addon.run("git clone https://github.com/coreos/prometheus-operator")
+	addon.run("git clone --branch release-0.19 --depth 1 https://github.com/coreos/prometheus-operator")
 	// get the customized manifests
 	addon.run("cd /root/prometheus-operator/contrib/kube-prometheus/example-dist && git clone https://github.com/xetys/hetzner-kube-prometheus")
 	// install the operator
