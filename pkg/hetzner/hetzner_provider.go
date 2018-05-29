@@ -50,6 +50,10 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 		return nil, err
 	}
 
+	if sshKey == nil {
+		return nil, errors.New(fmt.Sprintf("we got some problem with the SSH-Key '%s', are you in the right context?", template.SSHKeyName))
+	}
+
 	serverNameTemplate := fmt.Sprintf("%s-%s-@idx", provider.clusterName, suffix)
 	serverOptsTemplate := hcloud.ServerCreateOpts{
 		Name: serverNameTemplate,
@@ -227,7 +231,6 @@ func (provider *Provider) Token() string {
 }
 
 func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
-
 	log.Printf("creating server '%s'...", opts.Name)
 	server, _, err := provider.client.Server.GetByName(provider.context, opts.Name)
 	if err != nil {
