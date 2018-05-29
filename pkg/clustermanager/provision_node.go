@@ -3,9 +3,15 @@ package clustermanager
 import (
 	"strings"
 	"time"
+	"fmt"
+	"flag"
 )
 
 const maxErrors = 3
+
+// K8sVersion is the version that will be used to install kubernetes
+var K8sVersion = flag.String("k8s-version","1.9.6-00",
+	"The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
@@ -162,7 +168,9 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get install -y docker-ce kubelet kubeadm kubectl wireguard linux-headers-$(uname -r) linux-headers-virtual")
+	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s wireguard linux-headers-$(uname -r) linux-headers-virtual",
+		*K8sVersion, *K8sVersion, *K8sVersion)
+	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {
 		return err
 	}
