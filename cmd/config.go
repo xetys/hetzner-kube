@@ -17,12 +17,15 @@ import (
 )
 
 var DefaultConfigPath string
-var AppConf = NewAppSSHClient()
 
-type AppSSHClient struct {
-}
+// Default AppConfig from the local system.
+var AppConf = NewAppConfig()
 
-func NewAppSSHClient() AppConfig {
+type AppSSHClient struct {}
+
+// Creates a new AppConfig struct using the locally saved configuration file. If no local configuration file is found
+// a new config will be created.
+func NewAppConfig() AppConfig {
 	usr, err := user.Current()
 	if err != nil {
 		return AppConfig{}
