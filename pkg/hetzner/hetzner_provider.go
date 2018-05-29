@@ -51,7 +51,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 	}
 
 	if sshKey == nil {
-		return nil, errors.New(fmt.Sprintf("we got some problem with the SSH-Key '%s', are you in the right context?", template.SSHKeyName))
+		return nil, fmt.Errorf("we got some problem with the SSH-Key '%s', chances are you are in the wrong context", template.SSHKeyName)
 	}
 
 	serverNameTemplate := fmt.Sprintf("%s-%s-@idx", provider.clusterName, suffix)
