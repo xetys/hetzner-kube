@@ -62,7 +62,7 @@ func (manager *Manager) Cluster() Cluster {
 	}
 }
 
-// AddNodes can be used to append nodes to the cluster after initialization
+// AppendNodes can be used to append nodes to the cluster after initialization
 func (manager *Manager) AppendNodes(nodes []Node) {
 	manager.nodes = append(manager.nodes, nodes...)
 }
