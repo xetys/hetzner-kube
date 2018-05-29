@@ -16,15 +16,14 @@ import (
 	"path/filepath"
 )
 
+// DefaultConfigPath is the path where the default config is located
 var DefaultConfigPath string
 
-// Default AppConfig from the local system.
+// AppConf is the default configuration from the local system.
 var AppConf = NewAppConfig()
 
-type AppSSHClient struct {}
-
-// Creates a new AppConfig struct using the locally saved configuration file. If no local configuration file is found
-// a new config will be created.
+// NewAppConfig creates a new AppConfig struct using the locally saved configuration file. If no local
+// configuration file is found a new config will be created.
 func NewAppConfig() AppConfig {
 	usr, err := user.Current()
 	if err != nil {
