@@ -71,6 +71,7 @@ You can specify the worker server type as in cluster create.`,
 		for _, node := range cluster.Nodes {
 			if node.IsMaster {
 				sshKeyName = node.SSHKeyName
+				break
 			}
 		}
 
