@@ -62,6 +62,11 @@ func (manager *Manager) Cluster() Cluster {
 	}
 }
 
+// AppendNodes can be used to append nodes to the cluster after initialization
+func (manager *Manager) AppendNodes(nodes []Node) {
+	manager.nodes = append(manager.nodes, nodes...)
+}
+
 // install packages for the nodes
 func (manager *Manager) ProvisionNodes(nodes []Node) error {
 	errChan := make(chan error)
@@ -125,9 +130,11 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 		}(node)
 	}
 
-	waitOrError(trueChan, errChan, &numProc)
+	err := waitOrError(trueChan, errChan, &numProc)
+	if err != nil {
+		return err
+	}
 	manager.clusterProvider.SetNodes(manager.nodes)
-
 	return nil
 }
 
@@ -303,8 +310,7 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 // installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
 	var joinCommand string
-	// var masterNode Node
-	// find master
+	// create join command
 	for _, node := range manager.nodes {
 		if node.IsMaster {
 			for tries := 0; ; tries++ {
@@ -317,7 +323,6 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				joinCommand = output
 				break
 			}
-			// masterNode = node
 			break
 		}
 	}
@@ -325,10 +330,8 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	// now let the nodes join
 	for _, node := range nodes {
 		if !node.IsMaster && !node.IsEtcd {
+
 			manager.eventService.AddEvent(node.Name, "registering node")
-			if manager.haEnabled {
-				// joinCommand = strings.Replace(joinCommand, "https://" + masterNode.IPAddress + ":6443", "https://127.0.0.1:16443", 1)
-			}
 			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset && "+joinCommand)
 			if err != nil {
 				return err

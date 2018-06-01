@@ -16,10 +16,30 @@ import (
 	"path/filepath"
 )
 
+// DefaultConfigPath is the path where the default config is located
 var DefaultConfigPath string
-var AppConf AppConfig = AppConfig{}
 
-type AppSSHClient struct {
+// AppConf is the default configuration from the local system.
+var AppConf = NewAppConfig()
+
+// NewAppConfig creates a new AppConfig struct using the locally saved configuration file. If no local
+// configuration file is found a new config will be created.
+func NewAppConfig() AppConfig {
+	usr, err := user.Current()
+	if err != nil {
+		return AppConfig{}
+	}
+	if usr.HomeDir != "" {
+		DefaultConfigPath = filepath.Join(usr.HomeDir, ".hetzner-kube")
+	}
+
+	appConf := AppConfig{
+		Context: context.Background(),
+	}
+
+	makeConfigIfNotExists(&appConf)
+	appConf.SSHClient = clustermanager.NewSSHCommunicator(appConf.Config.SSHKeys)
+	return appConf
 }
 
 func (config HetznerConfig) WriteCurrentConfig() {
@@ -117,7 +137,7 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 		hcloud.WithToken(ctx.Token),
 	}
 
-	AppConf.Client = hcloud.NewClient(opts...)
+	app.Client = hcloud.NewClient(opts...)
 
 	return nil
 }
@@ -182,24 +202,7 @@ func (app *AppConfig) assertActiveContext() error {
 	return nil
 }
 
-func init() {
-	usr, err := user.Current()
-	if err != nil {
-		return
-	}
-	if usr.HomeDir != "" {
-		DefaultConfigPath = filepath.Join(usr.HomeDir, ".hetzner-kube")
-	}
-
-	AppConf = AppConfig{
-		Context: context.Background(),
-	}
-
-	makeConfigIfNotExists()
-	AppConf.SSHClient = clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
-}
-
-func makeConfigIfNotExists() {
+func makeConfigIfNotExists(appConf *AppConfig) {
 	if _, err := os.Stat(DefaultConfigPath); os.IsNotExist(err) {
 		os.MkdirAll(DefaultConfigPath, 0755)
 	}
@@ -214,8 +217,8 @@ func makeConfigIfNotExists() {
 			log.Fatal(err)
 		}
 
-		AppConf.Config = new(HetznerConfig)
-		AppConf.Config.WriteCurrentConfig()
+		appConf.Config = new(HetznerConfig)
+		appConf.Config.WriteCurrentConfig()
 
 	} else {
 		configFileContent, err := ioutil.ReadFile(configFileName)
@@ -224,9 +227,9 @@ func makeConfigIfNotExists() {
 			log.Fatal(err)
 		}
 
-		json.Unmarshal(configFileContent, &AppConf.Config)
-		if AppConf.Config.ActiveContextName > "" {
-			if err := AppConf.SwitchContextByName(AppConf.Config.ActiveContextName); err != nil {
+		json.Unmarshal(configFileContent, &appConf.Config)
+		if appConf.Config.ActiveContextName > "" {
+			if err := appConf.SwitchContextByName(appConf.Config.ActiveContextName); err != nil {
 				log.Fatal(err)
 			}
 		}
