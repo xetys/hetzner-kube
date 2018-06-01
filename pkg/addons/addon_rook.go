@@ -47,7 +47,7 @@ func (addon RookAddon) URL() string {
 func (addon RookAddon) Install(args ...string) {
 	node := *addon.masterNode
 
-	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-operator.yaml")
+	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")
 	FatalOnError(err)
 	fmt.Println("waiting until rook is installed")
 	for {
@@ -57,11 +57,11 @@ func (addon RookAddon) Install(args ...string) {
 			break
 		}
 	}
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-cluster.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-storageclass.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/storageclass.yaml")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-tools.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl get storageclass | grep -v 'NAME' | awk '{print$1}' | xargs kubectl patch storageclass -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'")
 	FatalOnError(err)
@@ -78,7 +78,7 @@ func (addon RookAddon) Uninstall() {
 	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
 	addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
 	addon.communicator.RunCmd(node, "kubectl delete -n rook-system daemonset rook-agent")
-	addon.communicator.RunCmd(node, "kubectl delete -f https://github.com/rook/rook/raw/master/cluster/examples/kubernetes/rook-operator.yaml")
+	addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")
 	addon.communicator.RunCmd(node, "kubectl delete clusterroles rook-agent")
 	addon.communicator.RunCmd(node, "kubectl delete clusterrolebindings rook-agent")
 	time.Sleep(20 * time.Second)
