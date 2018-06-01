@@ -85,6 +85,9 @@ func (addon RookAddon) Uninstall() {
 	addon.communicator.RunCmd(node, "kubectl delete namespace rook")
 
 	for _, node := range addon.nodes {
+		if node.IsEtcd || node.IsMaster {
+			continue
+		}
 		fmt.Printf("deleting rook on node %s\n", node.Name)
 		addon.communicator.RunCmd(node, "rm -rf /var/lib/rook")
 	}
