@@ -65,7 +65,7 @@ func (addon RookAddon) Install(args ...string) {
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl get storageclass | grep -v 'NAME' | awk '{print$1}' | xargs kubectl patch storageclass -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl patch storageclass rook-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
+	_, err = addon.communicator.RunCmd(node, "kubectl patch storageclass rook-ceph-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
 	FatalOnError(err)
 
 	fmt.Println("Rook installed")
@@ -75,7 +75,7 @@ func (addon RookAddon) Install(args ...string) {
 func (addon RookAddon) Uninstall() {
 	node := *addon.masterNode
 	addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
-	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
+	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-ceph-block")
 	addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
 	addon.communicator.RunCmd(node, "kubectl delete -n rook-system daemonset rook-agent")
 	addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")
