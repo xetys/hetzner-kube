@@ -146,9 +146,11 @@ An external server must meet the following requirements:
 		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 
+		cluster.Nodes = append(cluster.Nodes, externalNode)
 		saveCluster(cluster)
 
-		cluster.Nodes = append(cluster.Nodes, externalNode)
+		// Is needed to the right wireguard config is created including the new nodes
+		clusterManager.AppendNodes(nodes)
 
 		// re-generate network encryption
 		err = clusterManager.SetupEncryptedNetwork()
