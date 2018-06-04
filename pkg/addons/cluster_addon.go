@@ -21,6 +21,7 @@ func addAddon(clusterAddon ClusterAddonInitializer) {
 	addonInitializers = append(addonInitializers, clusterAddon)
 }
 
+//ClusterAddonService provide the addon service
 type ClusterAddonService struct {
 	provider         clustermanager.ClusterProvider
 	nodeCommunicator clustermanager.NodeCommunicator

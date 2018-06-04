@@ -2,6 +2,7 @@ package addons
 
 import (
 	"fmt"
+
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 

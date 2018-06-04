@@ -2,48 +2,53 @@ package pkg
 
 import (
 	"fmt"
+	"os"
+	"sync"
+
 	"github.com/go-kit/kit/log/term"
 	"github.com/gosuri/uiprogress"
 	"github.com/gosuri/uiprogress/util/strutil"
-	"os"
-	"sync"
 )
 
+//CompletedEvent indicate the process completed
 const CompletedEvent = "complete!"
 
-type UiProgressCoordinator struct {
+//UIProgressCoordinator coortinate display of progress in UI
+type UIProgressCoordinator struct {
 	group      sync.WaitGroup
 	progresses map[string]*Progress
 }
 
+//RenderProgressBars indicate if we need to display progress in UI
 var RenderProgressBars bool
 
-func NewProgressCoordinator() *UiProgressCoordinator {
-	if isUiEnabled() {
+//NewProgressCoordinator create a new progress coordinator UI
+func NewProgressCoordinator() *UIProgressCoordinator {
+	if isUIEnabled() {
 		uiprogress.Start()
 	}
-	pc := new(UiProgressCoordinator)
+	pc := new(UIProgressCoordinator)
 	pc.progresses = make(map[string]*Progress)
 
 	return pc
 }
 
-func isUiEnabled() bool {
+func isUIEnabled() bool {
 	if RenderProgressBars {
 		return term.IsTerminal(os.Stdout)
-	} else {
-		return false
 	}
+	return false
 }
 func shortLeftPadRight(s string, padWidth int) string {
 	if len(s) > padWidth {
 		l := len(s)
 		return "..." + s[(l-(padWidth-2)):(l-1)]
-	} else {
-		return strutil.PadRight(s, padWidth, ' ')
 	}
+	return strutil.PadRight(s, padWidth, ' ')
 }
-func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
+
+//StartProgress start the progress UI
+func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
 		Bar:     uiprogress.AddBar(steps),
 		State:   "starting",
@@ -64,7 +69,7 @@ func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
 	go func(progress *Progress) {
 		for {
 			event := <-progress.channel
-			if !isUiEnabled() {
+			if !isUIEnabled() {
 				fmt.Printf("%s: %s (%d)", progress.Name, event, progress.Bar.Current()+1)
 				fmt.Println()
 			}
@@ -83,15 +88,17 @@ func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
 	}(progress)
 }
 
-func (c *UiProgressCoordinator) AddEvent(progressName string, eventName string) {
+//AddEvent add an new event in the progress UI
+func (c *UIProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
 	}
 }
 
-func (c *UiProgressCoordinator) Wait() {
+//Wait temporary stop the progress UI
+func (c *UIProgressCoordinator) Wait() {
 	c.group.Wait()
-	if isUiEnabled() {
+	if isUIEnabled() {
 		uiprogress.Stop()
 	}
 }

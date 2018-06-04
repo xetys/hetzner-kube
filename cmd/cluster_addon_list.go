@@ -16,13 +16,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/tabwriter"
+
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/addons"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"os"
-	"strings"
-	"text/tabwriter"
 )
 
 // clusterAddonInstallCmd represents the clusterAddonInstall command
@@ -35,7 +36,7 @@ var clusterAddonListCmd = &cobra.Command{
 		fmt.Fprintln(tw, "NAME\tREQUIRES\tDESCRIPTION\tURL")
 
 		cluster := &clustermanager.Cluster{Nodes: []clustermanager.Node{clustermanager.Node{IsMaster: true}}}
-		provider, _ := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		for _, addon := range addonService.Addons() {
 			requires := "-"

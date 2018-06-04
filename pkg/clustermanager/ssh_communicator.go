@@ -5,14 +5,15 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"log"
 	"path"
 	"strings"
 	"syscall"
 	"time"
+
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // SSHKey represents a keypair with the paths to the keys
@@ -58,7 +59,7 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 }
 
 func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client, error) {
-	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
+	signer, err := sshComm.getPrivateSSHKey(node.SSHKeyName)
 
 	if err != nil {
 		return nil, nil, err
@@ -93,7 +94,7 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 
 // WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
 func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, executable bool) error {
-	signer, err := sshComm.getPrivateSshKey(node.SSHKeyName)
+	signer, err := sshComm.getPrivateSSHKey(node.SSHKeyName)
 
 	if err != nil {
 		return err
@@ -213,7 +214,7 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 	sshComm.passPhrases[privateKey.PrivateKeyPath] = text
 
 	// check that the captured password is correct
-	_, err = sshComm.getPrivateSshKey(sshKeyName)
+	_, err = sshComm.getPrivateSSHKey(sshKeyName)
 	if err != nil {
 		delete(sshComm.passPhrases, privateKey.PrivateKeyPath)
 	}
@@ -244,49 +245,62 @@ func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
 }
 
-func (sshComm *SSHCommunicator) getPrivateSshKey(sshKeyName string) (ssh.Signer, error) {
-	index, privateKey := sshComm.findPrivateKeyByName(sshKeyName)
-	if index < 0 {
-		return nil, fmt.Errorf("cound not find SSH key '%s'", sshKeyName)
-	}
-
-	encrypted, err := sshComm.isEncrypted(privateKey)
-
+func (sshComm *SSHCommunicator) getPrivateSSHKey(sshKeyName string) (ssh.Signer, error) {
+	privateKey, isEncrypted, pemBytes, err := sshComm.getInfoFromPrivateSSHKey(sshKeyName)
 	if err != nil {
 		return nil, err
+	}
+
+	if isEncrypted {
+		return sshComm.getSignerFromEncrypthedPrivateSSHKey(sshKeyName, privateKey, pemBytes)
+	}
+
+	signer, err := ssh.ParsePrivateKey(pemBytes)
+	if err != nil {
+		return nil, fmt.Errorf("parse key failed:%v", err)
+	}
+
+	return signer, err
+}
+
+func (sshComm *SSHCommunicator) getInfoFromPrivateSSHKey(sshKeyName string) (*SSHKey, bool, []byte, error) {
+	index, privateKey := sshComm.findPrivateKeyByName(sshKeyName)
+	if index < 0 {
+		return nil, false, nil, fmt.Errorf("cound not find SSH key '%s'", sshKeyName)
+	}
+
+	isEncrypted, err := sshComm.isEncrypted(privateKey)
+
+	if err != nil {
+		return nil, false, nil, err
 	}
 
 	pemBytes, err := ioutil.ReadFile(privateKey.PrivateKeyPath)
 	if err != nil {
-		return nil, err
+		return nil, false, nil, err
 	}
 
-	if encrypted {
-		passPhrase, err := sshComm.getPassphrase(privateKey.PrivateKeyPath)
-		if err != nil {
-			// Fallback as sometimes the cache with the passphrases is not set, i.e. on program start
-			err = sshComm.CapturePassphrase(sshKeyName)
-			if err != nil {
-				return nil, fmt.Errorf("error capturing passphrase:%v", err)
-			}
-			passPhrase, err = sshComm.getPassphrase(privateKey.PrivateKeyPath)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("parse key failed:%v", err)
-		}
+	return privateKey, isEncrypted, pemBytes, nil
+}
 
-		signer, err := ssh.ParsePrivateKeyWithPassphrase(pemBytes, passPhrase)
+func (sshComm *SSHCommunicator) getSignerFromEncrypthedPrivateSSHKey(sshKeyName string, privateKey *SSHKey, pemBytes []byte) (ssh.Signer, error) {
+	passPhrase, err := sshComm.getPassphrase(privateKey.PrivateKeyPath)
+	if err != nil {
+		// Fallback as sometimes the cache with the passphrases is not set, i.e. on program start
+		err = sshComm.CapturePassphrase(sshKeyName)
 		if err != nil {
-			return nil, fmt.Errorf("parse key failed:%v", err)
+			return nil, fmt.Errorf("error capturing passphrase:%v", err)
 		}
-
-		return signer, err
-	} else {
-		signer, err := ssh.ParsePrivateKey(pemBytes)
-		if err != nil {
-			return nil, fmt.Errorf("parse key failed:%v", err)
-		}
-
-		return signer, err
+		passPhrase, err = sshComm.getPassphrase(privateKey.PrivateKeyPath)
 	}
+	if err != nil {
+		return nil, fmt.Errorf("parse key failed:%v", err)
+	}
+
+	signer, err := ssh.ParsePrivateKeyWithPassphrase(pemBytes, passPhrase)
+	if err != nil {
+		return nil, fmt.Errorf("parse key failed:%v", err)
+	}
+
+	return signer, err
 }

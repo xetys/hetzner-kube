@@ -1,9 +1,10 @@
 package hetzner
 
 import (
+	"testing"
+
 	"github.com/magiconair/properties/assert"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"testing"
 )
 
 func getDefaultProviderWithNodes() ([]clustermanager.Node, Provider) {

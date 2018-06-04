@@ -17,14 +17,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -92,7 +93,7 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
+		hetznerProvider, clusterManager := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
 		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 		if err != nil {
 			log.Fatal(err)
