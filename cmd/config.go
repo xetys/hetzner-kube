@@ -23,7 +23,6 @@ var DefaultConfigPath string
 // AppConf is the default configuration from the local system.
 var AppConf = NewAppConfig()
 
-
 //AppSSHClient is the SSH client
 type AppSSHClient struct {
 }
