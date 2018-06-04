@@ -72,6 +72,7 @@ You can specify the worker server type as in cluster create.`,
 		for _, node := range cluster.Nodes {
 			if node.IsMaster {
 				sshKeyName = node.SSHKeyName
+				break
 			}
 		}
 
@@ -100,7 +101,12 @@ You can specify the worker server type as in cluster create.`,
 
 		nodes, err := hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 		FatalOnError(err)
+
+		cluster.Nodes = append(cluster.Nodes, nodes...)
 		saveCluster(cluster)
+
+		// Is needed to the right wireguard config is created including the new nodes
+		clusterManager.AppendNodes(nodes)
 
 		log.Println("sleep for 30s...")
 		time.Sleep(30 * time.Second)
