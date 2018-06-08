@@ -312,5 +312,5 @@ func init() {
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
 	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
-	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
+	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8", "hel1-dc2"}, "Can be used to filter datacenters by their name")
 }
