@@ -97,7 +97,7 @@ func (c *UIProgressCoordinator) AddEvent(progressName string, eventName string) 
 }
 
 // CompleteProgress sends an completed event
-func (c *UiProgressCoordinator) CompleteProgress(noeName string) {
+func (c *UiProgressCoordinator) CompleteProgress(nodeName string) {
 	if progress, isPresent := c.progresses[nodeName]; isPresent {
 		progress.channel <- CompletedEvent
 	}
