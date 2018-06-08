@@ -101,6 +101,8 @@ You can specify the worker server type as in cluster create.`,
 		nodes, err := hetznerProvider.CreateWorkerNodes(sshKeyName, workerServerType, datacenters, nodeCount, maxNo)
 		FatalOnError(err)
 
+		existingNodes := cluster.Nodes
+
 		cluster.Nodes = append(cluster.Nodes, nodes...)
 		saveCluster(cluster)
 
@@ -119,6 +121,11 @@ You can specify the worker server type as in cluster create.`,
 		FatalOnError(err)
 		saveCluster(cluster)
 
+		// all work on the already existing nodes is completed by now
+		for _, node := range existingNodes {
+			coordinator.CompleteProgress(node.Name)
+		}
+
 		if cluster.HaEnabled {
 			err = clusterManager.DeployLoadBalancer(nodes)
 			FatalOnError(err)
@@ -130,6 +137,7 @@ You can specify the worker server type as in cluster create.`,
 		log.Println("workers created successfully")
 	},
 }
+
 
 func init() {
 	clusterCmd.AddCommand(clusterAddWorkerCmd)

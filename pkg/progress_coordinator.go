@@ -35,6 +35,7 @@ func isUiEnabled() bool {
 		return false
 	}
 }
+
 func shortLeftPadRight(s string, padWidth int) string {
 	if len(s) > padWidth {
 		l := len(s)
@@ -43,6 +44,7 @@ func shortLeftPadRight(s string, padWidth int) string {
 		return strutil.PadRight(s, padWidth, ' ')
 	}
 }
+
 func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
 		Bar:     uiprogress.AddBar(steps),
@@ -86,6 +88,12 @@ func (c *UiProgressCoordinator) StartProgress(name string, steps int) {
 func (c *UiProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
+	}
+}
+
+func (c *UiProgressCoordinator) CompleteProgress(nodeName string) {
+	if progress, isPresent := c.progresses[nodeName]; isPresent {
+		progress.channel <- CompletedEvent
 	}
 }
 

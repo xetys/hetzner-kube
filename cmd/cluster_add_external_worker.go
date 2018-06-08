@@ -146,6 +146,8 @@ An external server must meet the following requirements:
 		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 
+		existingNodes := cluster.Nodes
+
 		cluster.Nodes = append(cluster.Nodes, externalNode)
 		saveCluster(cluster)
 
@@ -156,6 +158,11 @@ An external server must meet the following requirements:
 		err = clusterManager.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
+
+		// all work on the already existing nodes is completed by now
+		for _, node := range existingNodes {
+			coordinator.CompleteProgress(node.Name)
+		}
 
 		if cluster.HaEnabled {
 			err = clusterManager.DeployLoadBalancer(nodes)
