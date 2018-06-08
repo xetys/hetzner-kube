@@ -139,7 +139,6 @@ You can specify the worker server type as in cluster create.`,
 	},
 }
 
-
 func init() {
 	clusterCmd.AddCommand(clusterAddWorkerCmd)
 	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to add the workers to")
