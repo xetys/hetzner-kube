@@ -28,7 +28,7 @@ func (addon MongoDbAddon) Name() string {
 
 //Requires returns a slice with the name of required addons
 func (addon MongoDbAddon) Requires() []string {
-	return []string{}
+	return []string{"openebs"}
 }
 
 //Description returns the addons description
