@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-kit/kit/log/term"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/thcyron/uiprogress"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"github.com/go-kit/kit/log/term"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/thcyron/uiprogress"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // DefaultConfigPath is the path where the default config is located
@@ -21,6 +22,10 @@ var DefaultConfigPath string
 
 // AppConf is the default configuration from the local system.
 var AppConf = NewAppConfig()
+
+//AppSSHClient is the SSH client
+type AppSSHClient struct {
+}
 
 // NewAppConfig creates a new AppConfig struct using the locally saved configuration file. If no local
 // configuration file is found a new config will be created.
@@ -42,12 +47,13 @@ func NewAppConfig() AppConfig {
 	return appConf
 }
 
+//WriteCurrentConfig write the configuration to file
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
-	configJson, err := json.Marshal(&config)
+	configJSON, err := json.Marshal(&config)
 
 	if err == nil {
-		err = ioutil.WriteFile(configFileName, configJson, 0666)
+		err = ioutil.WriteFile(configFileName, configJSON, 0666)
 
 		if err != nil {
 			log.Fatal(err)
@@ -57,20 +63,22 @@ func (config HetznerConfig) WriteCurrentConfig() {
 	}
 }
 
+//AddContext add context to config
 func (config *HetznerConfig) AddContext(context HetznerContext) {
 	config.Contexts = append(config.Contexts, context)
 }
 
+//AddSSHKey add a new SSH key to config
 func (config *HetznerConfig) AddSSHKey(key clustermanager.SSHKey) {
 	config.SSHKeys = append(config.SSHKeys, key)
 }
 
+//DeleteSSHKey remove the SSH key from config
 func (config *HetznerConfig) DeleteSSHKey(name string) error {
 
-	index, _ := config.FindSSHKeyByName(name)
-
-	if index == -1 {
-		return errors.New("ssh key not found")
+	index, err := config.FindSSHKeyByName(name)
+	if err != nil {
+		return err
 	}
 
 	config.SSHKeys = append(config.SSHKeys[:index], config.SSHKeys[index+1:]...)
@@ -78,17 +86,18 @@ func (config *HetznerConfig) DeleteSSHKey(name string) error {
 	return nil
 }
 
-func (config *HetznerConfig) FindSSHKeyByName(name string) (int, *clustermanager.SSHKey) {
-	index := -1
+//FindSSHKeyByName find a SSH key in config by name
+func (config *HetznerConfig) FindSSHKeyByName(name string) (int, error) {
 	for i, v := range config.SSHKeys {
 		if v.Name == name {
-			index = i
-			return index, &v
+			return i, nil
 		}
 	}
-	return index, nil
+
+	return -1, fmt.Errorf("unable to find '%s' SSH key", name)
 }
 
+//AddCluster add a cluster in config
 func (config *HetznerConfig) AddCluster(cluster clustermanager.Cluster) {
 	for i, v := range config.Clusters {
 		if v.Name == cluster.Name {
@@ -100,6 +109,7 @@ func (config *HetznerConfig) AddCluster(cluster clustermanager.Cluster) {
 	config.Clusters = append(config.Clusters, cluster)
 }
 
+//DeleteCluster remove cluster from config
 func (config *HetznerConfig) DeleteCluster(name string) error {
 
 	index, _ := config.FindClusterByName(name)
@@ -113,6 +123,7 @@ func (config *HetznerConfig) DeleteCluster(name string) error {
 	return nil
 }
 
+//FindClusterByName find a cluster by name in config
 func (config *HetznerConfig) FindClusterByName(name string) (int, *clustermanager.Cluster) {
 	for i, cluster := range config.Clusters {
 		if cluster.Name == name {
@@ -123,6 +134,7 @@ func (config *HetznerConfig) FindClusterByName(name string) (int, *clustermanage
 	return -1, nil
 }
 
+//SwitchContextByName switch to context with a specific name in app
 func (app *AppConfig) SwitchContextByName(name string) error {
 	ctx, err := app.FindContextByName(name)
 
@@ -142,6 +154,7 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 	return nil
 }
 
+//FindContextByName find a context using name
 func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 
 	for _, ctx := range app.Config.Contexts {
@@ -167,7 +180,7 @@ func (app *AppConfig) DeleteContextByName(name string) error {
 	return fmt.Errorf("context '%s' not found", name)
 }
 
-// deprecated
+// ActionProgress (deprecated)
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
 	errCh, progressCh := waitAction(ctx, app.Client, action)
 

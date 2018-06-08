@@ -2,12 +2,14 @@ package hetzner
 
 import (
 	"context"
+	"time"
+
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"time"
 )
 
-func ProviderAndManager(cluster clustermanager.Cluster, client *hcloud.Client, context context.Context, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService, token string) (*Provider, *clustermanager.Manager) {
+//ProviderAndManager get the provider and the manager for the cluster
+func ProviderAndManager(context context.Context, cluster clustermanager.Cluster, client *hcloud.Client, nc clustermanager.NodeCommunicator, eventService clustermanager.EventService, token string) (*Provider, *clustermanager.Manager) {
 	provider := NewHetznerProvider(context, client, token)
 	provider.InitCluster(cluster.Name, cluster.NodeCIDR)
 	provider.SetNodes(cluster.Nodes)

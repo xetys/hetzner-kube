@@ -17,14 +17,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -92,7 +93,7 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider, clusterManager := hetzner.ProviderAndManager(*cluster, AppConf.Client, AppConf.Context, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
+		hetznerProvider, clusterManager := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
 		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 		if err != nil {
 			log.Fatal(err)
@@ -144,5 +145,5 @@ func init() {
 	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to add the workers to")
 	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
-	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
+	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8", "hel1-dc2"}, "Can be used to filter datacenters by their name")
 }

@@ -1,5 +1,6 @@
 package clustermanager
 
+//Node is the structure used to define a node
 type Node struct {
 	Name             string    `json:"name"`
 	Type             string    `json:"type"`
@@ -11,6 +12,7 @@ type Node struct {
 	WireGuardKeyPair WgKeyPair `json:"wire_guard_key_pair"`
 }
 
+//Cluster is the structure used to define a cluster
 type Cluster struct {
 	Name          string `json:"name"`
 	Nodes         []Node `json:"nodes"`
@@ -21,6 +23,7 @@ type Cluster struct {
 	NodeCIDR      string `json:"node_cidr"`
 }
 
+//NodeCommand is the structure used to define acommand to execute on a node
 type NodeCommand struct {
 	EventName string
 	Command   string

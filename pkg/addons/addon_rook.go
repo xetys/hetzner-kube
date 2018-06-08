@@ -2,8 +2,9 @@ package addons
 
 import (
 	"fmt"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"time"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 //RookAddon installs rook
@@ -47,7 +48,7 @@ func (addon RookAddon) URL() string {
 func (addon RookAddon) Install(args ...string) {
 	node := *addon.masterNode
 
-	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")
+	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-operator.yaml")
 	FatalOnError(err)
 	fmt.Println("waiting until rook is installed")
 	for {
@@ -57,15 +58,15 @@ func (addon RookAddon) Install(args ...string) {
 			break
 		}
 	}
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-cluster.yaml")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/storageclass.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-storageclass.yaml")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-tools.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl get storageclass | grep -v 'NAME' | awk '{print$1}' | xargs kubectl patch storageclass -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'")
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(node, "kubectl patch storageclass rook-ceph-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
+	_, err = addon.communicator.RunCmd(node, "kubectl patch storageclass rook-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'")
 	FatalOnError(err)
 
 	fmt.Println("Rook installed")
@@ -75,7 +76,7 @@ func (addon RookAddon) Install(args ...string) {
 func (addon RookAddon) Uninstall() {
 	node := *addon.masterNode
 	addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
-	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-ceph-block")
+	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
 	addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
 	addon.communicator.RunCmd(node, "kubectl delete -n rook-system daemonset rook-agent")
 	addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")

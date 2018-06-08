@@ -17,14 +17,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"github.com/xetys/hetzner-kube/pkg/hetzner"
 	"log"
 	"net"
 	"os"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // clusterCreateCmd represents the clusterCreate command
@@ -172,7 +173,7 @@ func saveCluster(cluster *clustermanager.Cluster) {
 	AppConf.Config.WriteCurrentConfig()
 }
 
-func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UiProgressCoordinator) {
+func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UIProgressCoordinator) {
 	nodes := cluster.Nodes
 	provisionSteps := 5
 	netWorkSetupSteps := 2
@@ -226,7 +227,7 @@ func computeMasterSteps(numMaster int, cluster *clustermanager.Cluster) int {
 	}
 	// and one more, it's got tainted
 	if len(cluster.Nodes) == 1 {
-		steps += 1
+		steps++
 	}
 	return steps
 }
@@ -234,18 +235,18 @@ func computeMasterSteps(numMaster int, cluster *clustermanager.Cluster) int {
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 
 	var (
-		ssh_key, master_server_type, worker_server_type, cloud_init string
+		sshKey, masterServerType, workerServerType, cloudInit string
 	)
 
-	if ssh_key, _ = cmd.Flags().GetString("ssh-key"); ssh_key == "" {
+	if sshKey, _ = cmd.Flags().GetString("ssh-key"); sshKey == "" {
 		return errors.New("flag --ssh-key is required")
 	}
 
-	if master_server_type, _ = cmd.Flags().GetString("master-server-type"); master_server_type == "" {
+	if masterServerType, _ = cmd.Flags().GetString("master-server-type"); masterServerType == "" {
 		return errors.New("flag --master_server_type is required")
 	}
 
-	if worker_server_type, _ = cmd.Flags().GetString("worker-server-type"); worker_server_type == "" {
+	if workerServerType, _ = cmd.Flags().GetString("worker-server-type"); workerServerType == "" {
 		return errors.New("flag --worker_server_type is required")
 	}
 
@@ -257,14 +258,14 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if cloud_init, _ = cmd.Flags().GetString("cloud-init"); cloud_init != "" {
-		if _, err := os.Stat(cloud_init); os.IsNotExist(err) {
+	if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {
+		if _, err := os.Stat(cloudInit); os.IsNotExist(err) {
 			return errors.New("cloud-init file not found")
 		}
 	}
 
-	if index, _ := AppConf.Config.FindSSHKeyByName(ssh_key); index == -1 {
-		return fmt.Errorf("SSH key '%s' not found", ssh_key)
+	if _, err := AppConf.Config.FindSSHKeyByName(sshKey); err != nil {
+		return fmt.Errorf("SSH key '%s' not found", sshKey)
 	}
 
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
@@ -312,5 +313,5 @@ func init() {
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
 	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
-	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8"}, "Can be used to filter datacenters by their name")
+	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8", "hel1-dc2"}, "Can be used to filter datacenters by their name")
 }

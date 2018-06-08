@@ -1,8 +1,9 @@
 package addons
 
 import (
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"log"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 //IngressAddon installs an ingress controller

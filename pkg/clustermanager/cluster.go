@@ -2,11 +2,13 @@ package clustermanager
 
 import (
 	"fmt"
-	"github.com/xetys/hetzner-kube/pkg"
 	"strings"
 	"time"
+
+	"github.com/xetys/hetzner-kube/pkg"
 )
 
+//Manager is the structure used to mange cluster
 type Manager struct {
 	clusterName      string
 	haEnabled        bool
@@ -20,6 +22,7 @@ type Manager struct {
 	wait             bool
 }
 
+//NewClusterManager create a new manager for the cluster
 func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool) *Manager {
 	manager := &Manager{
 		clusterName:      name,
@@ -36,6 +39,7 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 	return manager
 }
 
+//NewClusterManagerFromCluster create a new manager from an existing cluster
 func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService) *Manager {
 	return &Manager{
 		clusterName:      cluster.Name,
@@ -50,7 +54,7 @@ func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nod
 	}
 }
 
-// creates a Cluster object for further processing
+//Cluster creates a Cluster object for further processing
 func (manager *Manager) Cluster() Cluster {
 	return Cluster{
 		Name:          manager.clusterName,
@@ -67,7 +71,7 @@ func (manager *Manager) AppendNodes(nodes []Node) {
 	manager.nodes = append(manager.nodes, nodes...)
 }
 
-// install packages for the nodes
+// ProvisionNodes install packages for the nodes
 func (manager *Manager) ProvisionNodes(nodes []Node) error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -92,7 +96,7 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-// setups an encrypted virtual network using wireguard
+//SetupEncryptedNetwork setups an encrypted virtual network using wireguard
 // modifies the state of manager.Nodes
 func (manager *Manager) SetupEncryptedNetwork() error {
 	nodes := manager.nodes
@@ -138,7 +142,7 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	return nil
 }
 
-// installs the kubernetes control plane to master nodes
+//InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
 
 	commands := []NodeCommand{
@@ -264,7 +268,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 	trueChan <- true
 }
 
-// installs the etcd cluster
+//InstallEtcdNodes installs the etcd cluster
 func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 
 	commands := []NodeCommand{
@@ -307,7 +311,7 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-// installs kubernetes workers to given nodes
+//InstallWorkers installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
 	var joinCommand string
 	// create join command
@@ -317,9 +321,9 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				output, err := manager.nodeCommunicator.RunCmd(node, "kubeadm token create --print-join-command")
 				if tries < 10 && err != nil {
 					return err
-				} else {
-					time.Sleep(2 * time.Second)
 				}
+				time.Sleep(2 * time.Second)
+
 				joinCommand = output
 				break
 			}
@@ -363,7 +367,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	return nil
 }
 
-// installs the high-availability plane to cluster
+//SetupHA installs the high-availability plane to cluster
 func (manager *Manager) SetupHA() error {
 	// copy pki
 	masterNode, err := manager.clusterProvider.GetMasterNode()
@@ -430,7 +434,7 @@ func (manager *Manager) SetupHA() error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-// installs a client based load balancer for the master nodes to given nodes
+//DeployLoadBalancer installs a client based load balancer for the master nodes to given nodes
 func (manager *Manager) DeployLoadBalancer(nodes []Node) error {
 
 	errChan := make(chan error)
