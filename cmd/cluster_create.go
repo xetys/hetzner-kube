@@ -57,12 +57,15 @@ This tool supports these levels of kubernetes HA:
 func RunClusterCreate(cmd *cobra.Command, args []string) {
 	workerCount, _ := cmd.Flags().GetInt("worker-count")
 	masterCount, _ := cmd.Flags().GetInt("master-count")
-	etcdCount, _ := cmd.Flags().GetInt("etcd-count")
+	etcdCount := 0
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
 	if !haEnabled {
 		masterCount = 1
 	}
 	isolatedEtcd, _ := cmd.Flags().GetBool("isolated-etcd")
+	if isolatedEtcd {
+		etcdCount, _ = cmd.Flags().GetInt("etcd-count")
+	}
 
 	clusterName := randomName()
 	if name, _ := cmd.Flags().GetString("name"); name != "" {
