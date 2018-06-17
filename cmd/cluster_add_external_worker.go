@@ -146,14 +146,23 @@ An external server must meet the following requirements:
 		err = clusterManager.ProvisionNodes(nodes)
 		FatalOnError(err)
 
-		saveCluster(cluster)
+		existingNodes := cluster.Nodes
 
 		cluster.Nodes = append(cluster.Nodes, externalNode)
+		saveCluster(cluster)
+
+		// Is needed to the right wireguard config is created including the new nodes
+		clusterManager.AppendNodes(nodes)
 
 		// re-generate network encryption
 		err = clusterManager.SetupEncryptedNetwork()
 		FatalOnError(err)
 		saveCluster(cluster)
+
+		// all work on the already existing nodes is completed by now
+		for _, node := range existingNodes {
+			coordinator.CompleteProgress(node.Name)
+		}
 
 		if cluster.HaEnabled {
 			err = clusterManager.DeployLoadBalancer(nodes)

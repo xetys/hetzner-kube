@@ -39,6 +39,7 @@ func isUIEnabled() bool {
 	}
 	return false
 }
+
 func shortLeftPadRight(s string, padWidth int) string {
 	if len(s) > padWidth {
 		l := len(s)
@@ -92,6 +93,13 @@ func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 func (c *UIProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
+	}
+}
+
+// CompleteProgress sends an completed event
+func (c *UIProgressCoordinator) CompleteProgress(nodeName string) {
+	if progress, isPresent := c.progresses[nodeName]; isPresent {
+		progress.channel <- CompletedEvent
 	}
 }
 
