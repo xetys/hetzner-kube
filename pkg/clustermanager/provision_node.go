@@ -10,7 +10,7 @@ import (
 const maxErrors = 3
 
 // K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.9.11-00",
+var K8sVersion = flag.String("k8s-version", "1.10.5-00",
 	"The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
@@ -51,7 +51,8 @@ func (provisioner *NodeProvisioner) Provision(node Node, communicator NodeCommun
 	}
 
 	eventService.AddEvent(node.Name, "packages installed")
-	return nil
+
+	return provisioner.disableSwap()
 }
 
 func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator NodeCommunicator) bool {
@@ -82,6 +83,18 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 	}
 
 	return nil
+}
+
+func (provisioner *NodeProvisioner) disableSwap() error {
+	provisioner.eventService.AddEvent(provisioner.node.Name, "disabling swap")
+
+	_, err := provisioner.communicator.RunCmd(provisioner.node, "swapoff -a")
+	if err != nil {
+		return err
+	}
+
+	_, err = provisioner.communicator.RunCmd(provisioner.node, "sed -i '/ swap / s/^/#/' /etc/fstab")
+	return err
 }
 
 func (provisioner *NodeProvisioner) installTransportTools() error {
@@ -139,7 +152,7 @@ func (provisioner *NodeProvisioner) prepareDocker() error {
 	// docker-ce
 	aptPreferencesDocker := `
 Package: docker-ce
-Pin: version 17.03.*
+Pin: version 18.03.*
 Pin-Priority: 1000
 	`
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, false)
