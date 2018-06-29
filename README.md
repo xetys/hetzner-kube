@@ -15,7 +15,7 @@ This is my very first tool written in Go.
 
 Get the Linux binary from releases page.
 
-[Download version 0.3.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-amd64)
+[Download version 0.3.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-amd64)
 
 [Download version 0.3.1 - linux-386](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-386)
 
@@ -30,7 +30,7 @@ Get the Linux binary from releases page.
 
 [Download version 0.3.1 - Windows(32Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-386.exe)
 
-[Download version 0.3.1 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-386.exe)
+[Download version 0.3.1 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-amd64.exe)
 
 ### From source
 
