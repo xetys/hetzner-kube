@@ -1,5 +1,7 @@
 .idea
 *.iml
 /hetzner-kube*
+/dist
+
 
 /cmd/test.go
