@@ -323,7 +323,6 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 					return err
 				}
 				time.Sleep(2 * time.Second)
-
 				joinCommand = output
 				break
 			}
@@ -331,40 +330,43 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 		}
 	}
 
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
 	// now let the nodes join
 	for _, node := range nodes {
 		if !node.IsMaster && !node.IsEtcd {
+			numProcs++
+			go func(node Node) {
+				manager.eventService.AddEvent(node.Name, "registering node")
+				_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset && "+joinCommand)
+				if err != nil {
+					errChan <- err
+				}
+				if manager.haEnabled {
+					time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
 
-			manager.eventService.AddEvent(node.Name, "registering node")
-			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset && "+joinCommand)
-			if err != nil {
-				return err
-			}
+					rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
+					kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
 
-			if manager.haEnabled {
-				time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
-
-				rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
-				kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
-
-				manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
-				for _, conf := range kubeConfigs {
-					_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
+					manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
+					for _, conf := range kubeConfigs {
+						_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
+						if err != nil {
+							errChan <- err
+						}
+					}
+					_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
 					if err != nil {
-						return err
+						errChan <- err
 					}
 				}
-				_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
-				if err != nil {
-					return err
-				}
-			}
-
-			manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
+				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
+				trueChan <- true
+			}(node)
 		}
 	}
-
-	return nil
+	return waitOrError(trueChan, errChan, &numProcs)
 }
 
 //SetupHA installs the high-availability plane to cluster
