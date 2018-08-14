@@ -222,6 +222,11 @@ func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.
 	return []clustermanager.NodeCommand{}
 }
 
+// GetNodeCidr returns the CIDR to use for nodes in cluster
+func (provider *Provider) GetNodeCidr() string {
+	return provider.nodeCidr
+}
+
 // MustWait returns true, if we have to wait after creation for some time
 func (provider *Provider) MustWait() bool {
 	return provider.wait

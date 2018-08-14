@@ -23,5 +23,6 @@ type ClusterProvider interface {
 	GetMasterNode() (*Node, error)
 	GetCluster() Cluster
 	GetAdditionalMasterInstallCommands() []NodeCommand
+	GetNodeCidr() string
 	MustWait() bool
 }
