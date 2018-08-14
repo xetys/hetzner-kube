@@ -63,6 +63,7 @@ func (manager *Manager) Cluster() Cluster {
 		IsolatedEtcd:  manager.isolatedEtcd,
 		CloudInitFile: manager.cloudInitFile,
 		SelfHosted:    manager.selfHosted,
+		NodeCIDR:      manager.clusterProvider.GetNodeCidr(),
 	}
 }
 
