@@ -46,6 +46,24 @@ The project source will now be in your `$GOPATH` directory (`$GOPATH/src/github.
 
 If you want to build it yourself later, you can change into the source directory and run `go build` or `go install`.
 
+### Code completion
+
+To load completion for bash env run
+
+    . <(hetzner-kube completion)
+
+To configure your bash shell to load completions for each session add to your `.bashrc` file:
+
+    # ~/.bashrc or ~/.profile
+    . <(hetzner-kube completion)
+
+Or you can add it to your `bash_completition.d` folder:
+
+    # On linux
+    hetzner-kube completion > /etc/bash_completion.d/hetzner-kube
+    # On OSX with completion installed via brew (`brew intall bash-completion`)
+    hetzner-kube completion > /usr/local/etc/bash_completion.d/hetzner-kube
+
 ## Usage
 
 In your [Hetzner Console](https://console.hetzner.cloud) generate an API token and
@@ -73,6 +91,7 @@ $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
 This will provision a brand new kubernetes cluster in latest version!
 
 For a full list of options that can be passed to the ```cluster create``` command, see the [Cluster Create Guide](docs/cluster-create.md) for more information.
+
 ## HA-clusters
 
 You can build high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
