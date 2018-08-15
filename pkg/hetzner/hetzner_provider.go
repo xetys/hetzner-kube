@@ -187,9 +187,10 @@ func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
 // GetCluster returns a template for Cluster
 func (provider *Provider) GetCluster() clustermanager.Cluster {
 	return clustermanager.Cluster{
-		Name:     provider.clusterName,
-		Nodes:    provider.nodes,
-		NodeCIDR: provider.nodeCidr,
+		Name:          provider.clusterName,
+		Nodes:         provider.nodes,
+		CloudInitFile: provider.cloudInitFile,
+		NodeCIDR:      provider.nodeCidr,
 	}
 }
 

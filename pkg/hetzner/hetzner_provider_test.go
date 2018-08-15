@@ -331,3 +331,40 @@ func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 		})
 	}
 }
+
+func TestProviderInitCluster(t *testing.T) {
+	provider := getProviderWithNodes([]clustermanager.Node{})
+
+	provider.InitCluster("cluster-name", "10.0.1.0/24")
+
+	if provider.GetNodeCidr() != "10.0.1.0/24" {
+		t.Error("cluster node cidr is not correctly set")
+	}
+}
+
+func TestProviderGetCluster(t *testing.T) {
+	nodes := []clustermanager.Node{
+		{Name: "kube-etcd-1", IsEtcd: true},
+		{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+		{Name: "kube-etcd-3", IsEtcd: true},
+		{Name: "kube-master-1", IsMaster: true},
+		{Name: "kube-worker-1"},
+	}
+	provider := getProviderWithNodes(nodes)
+
+	provider.InitCluster("cluster-name", "10.0.1.0/24")
+	provider.SetCloudInitFile("cloud/init.file")
+
+	cluster := provider.GetCluster()
+	expectedCluster := clustermanager.Cluster{
+		Name:          "cluster-name",
+		NodeCIDR:      "10.0.1.0/24",
+		HaEnabled:     false,
+		IsolatedEtcd:  false,
+		SelfHosted:    false,
+		CloudInitFile: "cloud/init.file",
+		Nodes:         nodes,
+	}
+
+	assert.Equal(t, cluster, expectedCluster)
+}
