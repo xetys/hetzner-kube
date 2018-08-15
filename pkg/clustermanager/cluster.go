@@ -19,7 +19,6 @@ type Manager struct {
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
-	wait             bool
 }
 
 //NewClusterManager create a new manager for the cluster

@@ -10,8 +10,6 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-var sshPassPhrases = make(map[string][]byte)
-
 func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Action) (<-chan error, <-chan int) {
 	errCh := make(chan error, 1)
 	progressCh := make(chan int)
@@ -88,18 +86,4 @@ func FatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func waitOrError(tc chan bool, ec chan error, numProcPtr *int) error {
-	numProcs := *numProcPtr
-	for numProcs > 0 {
-		select {
-		case err := <-ec:
-			return err
-		case <-tc:
-			numProcs--
-		}
-	}
-
-	return nil
 }
