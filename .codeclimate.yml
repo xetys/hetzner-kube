@@ -6,5 +6,5 @@ plugins:
     enabled: true
   golint:
     enabled: true
-exclude_paths:
+exclude_patterns:
   - vendor/
