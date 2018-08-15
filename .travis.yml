@@ -20,3 +20,4 @@ script:
   - gosimple $(go list ./...)
   - misspell -error $(git ls-files | grep -v vendor/)
   - unparam $(go list ./...)
+  - staticcheck $(go list ./...)
