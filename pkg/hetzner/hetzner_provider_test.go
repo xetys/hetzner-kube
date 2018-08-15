@@ -16,12 +16,24 @@ func getProviderWithNodes(nodes []clustermanager.Node) hetzner.Provider {
 	return provider
 }
 
+type testCase struct {
+	Name         string
+	Nodes        []clustermanager.Node
+	MatchedNodes []string
+}
+
+func getNodeNames(nodes []clustermanager.Node) []string {
+	nodeNames := []string{}
+
+	for _, node := range nodes {
+		nodeNames = append(nodeNames, node.Name)
+	}
+
+	return nodeNames
+}
+
 func TestProviderGetMasterNodes(t *testing.T) {
-	tests := []struct {
-		Name         string
-		Nodes        []clustermanager.Node
-		MatchedNodes []string
-	}{
+	tests := []testCase{
 		{
 			Name: "Single master node",
 			Nodes: []clustermanager.Node{
@@ -65,23 +77,13 @@ func TestProviderGetMasterNodes(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetMasterNodes()
 
-			nodeNames := []string{}
-
-			for _, node := range nodes {
-				nodeNames = append(nodeNames, node.Name)
-			}
-
-			assert.Equal(t, nodeNames, tt.MatchedNodes)
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
 		})
 	}
 }
 
 func TestProviderGetEtcdNodes(t *testing.T) {
-	tests := []struct {
-		Name         string
-		Nodes        []clustermanager.Node
-		MatchedNodes []string
-	}{
+	tests := []testCase{
 		{
 			Name: "Single etcd node",
 			Nodes: []clustermanager.Node{
@@ -126,23 +128,13 @@ func TestProviderGetEtcdNodes(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetEtcdNodes()
 
-			nodeNames := []string{}
-
-			for _, node := range nodes {
-				nodeNames = append(nodeNames, node.Name)
-			}
-
-			assert.Equal(t, nodeNames, tt.MatchedNodes)
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
 		})
 	}
 }
 
 func TestProviderGetWorkerNodes(t *testing.T) {
-	tests := []struct {
-		Name         string
-		Nodes        []clustermanager.Node
-		MatchedNodes []string
-	}{
+	tests := []testCase{
 		{
 			Name: "Single worker node",
 			Nodes: []clustermanager.Node{
@@ -182,23 +174,13 @@ func TestProviderGetWorkerNodes(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetWorkerNodes()
 
-			nodeNames := []string{}
-
-			for _, node := range nodes {
-				nodeNames = append(nodeNames, node.Name)
-			}
-
-			assert.Equal(t, nodeNames, tt.MatchedNodes)
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
 		})
 	}
 }
 
 func TestProviderGetAllNodes(t *testing.T) {
-	tests := []struct {
-		Name         string
-		Nodes        []clustermanager.Node
-		MatchedNodes []string
-	}{
+	tests := []testCase{
 		{
 			Name: "One node per type",
 			Nodes: []clustermanager.Node{
@@ -244,23 +226,13 @@ func TestProviderGetAllNodes(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetAllNodes()
 
-			nodeNames := []string{}
-
-			for _, node := range nodes {
-				nodeNames = append(nodeNames, node.Name)
-			}
-
-			assert.Equal(t, nodeNames, tt.MatchedNodes)
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
 		})
 	}
 }
 
 func TestProviderGetMasterNode(t *testing.T) {
-	tests := []struct {
-		Name        string
-		Nodes       []clustermanager.Node
-		MatchedNode string
-	}{
+	tests := []testCase{
 		{
 			Name: "Single master node",
 			Nodes: []clustermanager.Node{
@@ -268,7 +240,7 @@ func TestProviderGetMasterNode(t *testing.T) {
 				{Name: "kube-etcd-1", IsEtcd: true},
 				{Name: "kube-worker-1"},
 			},
-			MatchedNode: "kube-master-1",
+			MatchedNodes: []string{"kube-master-1"},
 		},
 		{
 			Name: "Two master nodes",
@@ -278,7 +250,7 @@ func TestProviderGetMasterNode(t *testing.T) {
 				{Name: "kube-etcd-1", IsEtcd: true},
 				{Name: "kube-worker-1"},
 			},
-			MatchedNode: "kube-master-1",
+			MatchedNodes: []string{"kube-master-1"},
 		},
 		{
 			Name: "An etcd node that is also master",
@@ -289,7 +261,7 @@ func TestProviderGetMasterNode(t *testing.T) {
 				{Name: "kube-master-1", IsMaster: true},
 				{Name: "kube-worker-1"},
 			},
-			MatchedNode: "kube-etcd-2",
+			MatchedNodes: []string{"kube-etcd-2"},
 		},
 	}
 	for _, tt := range tests {
@@ -297,16 +269,15 @@ func TestProviderGetMasterNode(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			node, _ := provider.GetMasterNode()
 
-			assert.Equal(t, node.Name, tt.MatchedNode)
+			assert.Equal(t, []string{node.Name}, tt.MatchedNodes)
 		})
 	}
 }
 
 func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 	tests := []struct {
-		Name        string
-		Nodes       []clustermanager.Node
-		MatchedNode string
+		Name  string
+		Nodes []clustermanager.Node
 	}{
 		{
 			Name:  "No nodes",
