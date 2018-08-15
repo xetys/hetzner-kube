@@ -10,6 +10,7 @@ before_install:
   - dep ensure
   - go get -v github.com/golang/lint/golint
   - go get -u honnef.co/go/tools/...
+  - go get -u mvdan.cc/unparam
   - go get -u github.com/client9/misspell/cmd/misspell
 
 script:
@@ -18,3 +19,4 @@ script:
   - unused $(go list ./...)
   - gosimple $(go list ./...)
   - misspell -error $(git ls-files | grep -v vendor/)
+  - unparam $(go list ./...)
