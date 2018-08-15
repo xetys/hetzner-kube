@@ -179,13 +179,12 @@ func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
 
 // GetMasterNode returns the first master node or fail, if no master nodes are found
 func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
-	for _, node := range provider.nodes {
-		if node.IsMaster {
-			return &node, nil
-		}
+	nodes := provider.GetMasterNodes()
+	if len(nodes) == 0 {
+		return nil, errors.New("no master node found")
 	}
 
-	return nil, errors.New("no master node found")
+	return &nodes[0], nil
 }
 
 // GetCluster returns a template for Cluster
