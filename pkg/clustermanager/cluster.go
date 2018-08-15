@@ -101,7 +101,10 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 func (manager *Manager) SetupEncryptedNetwork() error {
 	nodes := manager.nodes
 	// render a public/private key pair
-	keyPairs := manager.GenerateKeyPairs(nodes[0], len(nodes))
+	keyPairs, err := manager.GenerateKeyPairs(nodes[0], len(nodes))
+	if err != nil {
+		return fmt.Errorf("unable to setup encrypted network: %v", err)
+	}
 
 	for i, keyPair := range keyPairs {
 		manager.nodes[i].WireGuardKeyPair = keyPair
@@ -134,7 +137,7 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 		}(node)
 	}
 
-	err := waitOrError(trueChan, errChan, &numProc)
+	err = waitOrError(trueChan, errChan, &numProc)
 	if err != nil {
 		return err
 	}
@@ -435,8 +438,12 @@ func (manager *Manager) DeployLoadBalancer(nodes []Node) error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
-	masterNodes := manager.clusterProvider.GetMasterNodes()
-	masterIps := strings.Join(Nodes2IPs(masterNodes), " ")
+	masterNodesIP := []string{}
+	for _, node := range manager.clusterProvider.GetMasterNodes() {
+		masterNodesIP = append(masterNodesIP, node.IPAddress)
+	}
+
+	masterIps := strings.Join(masterNodesIP, " ")
 	for _, node := range nodes {
 		if !node.IsMaster && node.IsEtcd {
 			continue

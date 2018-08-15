@@ -13,19 +13,23 @@ type WgKeyPair struct {
 }
 
 //GenerateKeyPairs generate key pairs
-func (manager *Manager) GenerateKeyPairs(node Node, count int) []WgKeyPair {
+func (manager *Manager) GenerateKeyPairs(node Node, count int) ([]WgKeyPair, error) {
 	genKeyPairs := fmt.Sprintf(`echo "[" ;for i in {1..%d}; do pk=$(wg genkey); pubk=$(echo $pk | wg pubkey);echo "{\"private\":\"$pk\",\"public\":\"$pubk\"},"; done; echo "]";`, count)
 	// gives an invalid JSON back
 	o, err := manager.nodeCommunicator.RunCmd(node, genKeyPairs)
-	FatalOnError(err)
+	if err != nil {
+		return []WgKeyPair{}, fmt.Errorf("unable to generate a key pairs: %v", err)
+	}
 	o = o[0:len(o)-4] + "]"
 	// now it's a valid json
 
 	var keyPairs []WgKeyPair
 	err = json.Unmarshal([]byte(o), &keyPairs)
-	FatalOnError(err)
+	if err != nil {
+		return []WgKeyPair{}, fmt.Errorf("unable to json decode key pairs: %v", err)
+	}
 
-	return keyPairs
+	return keyPairs, nil
 }
 
 //GenerateWireguardConf generate wireguard configuration file
