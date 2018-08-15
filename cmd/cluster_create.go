@@ -92,12 +92,12 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	}
 
 	if haEnabled && isolatedEtcd {
-		if err := hetznerProvider.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
+		if _, err := hetznerProvider.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
 			log.Println(err)
 		}
 	}
 
-	if err := hetznerProvider.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount, !isolatedEtcd); err != nil {
+	if _, err := hetznerProvider.CreateMasterNodes(sshKeyName, masterServerType, datacenters, masterCount, !isolatedEtcd); err != nil {
 		log.Println(err)
 	}
 
