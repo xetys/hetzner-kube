@@ -35,7 +35,7 @@ var clusterAddonUninstallCmd = &cobra.Command{
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
 		log.Printf("removing addon %s", addonName)
-		provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)
 

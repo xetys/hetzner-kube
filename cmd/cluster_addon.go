@@ -55,7 +55,7 @@ func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
 		return errors.New("exactly one argument expected")
 	}
 	addonName := args[0]
-	provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+	provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 	addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 	if !addonService.AddonExists(addonName) {
 		return fmt.Errorf("addon %s not found", addonName)
