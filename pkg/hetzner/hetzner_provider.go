@@ -158,39 +158,23 @@ func (provider *Provider) SetNodes(nodes []clustermanager.Node) {
 
 // GetMasterNodes returns master nodes only
 func (provider *Provider) GetMasterNodes() []clustermanager.Node {
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if node.IsMaster {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return node.IsMaster
+	})
 }
 
 // GetEtcdNodes returns etcd nodes only
 func (provider *Provider) GetEtcdNodes() []clustermanager.Node {
-
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if node.IsEtcd {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return node.IsEtcd
+	})
 }
 
 // GetWorkerNodes returns worker nodes only
 func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if !node.IsMaster && !node.IsEtcd {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return !node.IsMaster && !node.IsEtcd
+	})
 }
 
 // GetMasterNode returns the first master node or fail, if no master nodes are found
@@ -232,6 +216,19 @@ func (provider *Provider) MustWait() bool {
 // Token returns the hcloud token
 func (provider *Provider) Token() string {
 	return provider.token
+}
+
+type nodeFilter func(clustermanager.Node) bool
+
+func (provider *Provider) filterNodes(filter nodeFilter) []clustermanager.Node {
+	nodes := []clustermanager.Node{}
+	for _, node := range provider.nodes {
+		if filter(node) {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
