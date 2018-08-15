@@ -308,8 +308,8 @@ func TestProviderInitCluster(t *testing.T) {
 
 	_, err = provider.GetMasterNode()
 
-	if provider.GetNodeCidr() != "10.0.1.0/24" {
-		t.Error("cluster node cidr is not correctly set")
+	if err == nil {
+		t.Error("no error omitted with no master")
 	}
 }
 
