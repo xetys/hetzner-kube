@@ -29,7 +29,6 @@ type Provider struct {
 
 // NewHetznerProvider returns an instance of hetzner.Provider
 func NewHetznerProvider(context context.Context, client *hcloud.Client, token string) *Provider {
-
 	return &Provider{client: client, context: context, token: token}
 }
 
@@ -149,7 +148,6 @@ func (provider *Provider) CreateWorkerNodes(sshKeyName string, workerServerType 
 
 // GetAllNodes retrieves all nodes
 func (provider *Provider) GetAllNodes() []clustermanager.Node {
-
 	return provider.nodes
 }
 
@@ -208,7 +206,6 @@ func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
 
 // GetCluster returns a template for Cluster
 func (provider *Provider) GetCluster() clustermanager.Cluster {
-
 	return clustermanager.Cluster{
 		Name:     provider.clusterName,
 		Nodes:    provider.nodes,
