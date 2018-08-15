@@ -80,8 +80,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 
 	var nodes []clustermanager.Node
 	for i := 1; i <= count; i++ {
-		var serverOpts hcloud.ServerCreateOpts
-		serverOpts = serverOptsTemplate
+		serverOpts := serverOptsTemplate
 		nodeNumber := i + offset
 		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", nodeNumber), 1)
 		serverOpts.Datacenter = &hcloud.Datacenter{

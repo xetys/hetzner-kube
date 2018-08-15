@@ -306,7 +306,7 @@ func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 func TestProviderInitCluster(t *testing.T) {
 	provider := getProviderWithNodes([]clustermanager.Node{})
 
-	provider.InitCluster("cluster-name", "10.0.1.0/24")
+	_, err = provider.GetMasterNode()
 
 	if provider.GetNodeCidr() != "10.0.1.0/24" {
 		t.Error("cluster node cidr is not correctly set")

@@ -55,7 +55,7 @@ func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Actio
 			switch action.Status {
 			case hcloud.ActionStatusRunning:
 				sendProgress(action.Progress)
-				break
+
 			case hcloud.ActionStatusSuccess:
 				sendProgress(100)
 				errCh <- nil
