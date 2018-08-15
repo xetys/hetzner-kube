@@ -35,9 +35,9 @@ The HA-mode was designed referring to a PoC cluster with the following concepts:
 
 Hetzner-kube uses wireguard, a simple VPN with modern encryption standards to spin up a private network. 
 
-* with etcd only node IPs like 10.0.1.1, 10.0.1.2, ...
-* with master node IPs like 10.0.1.11, 10.0.1.12, ...
-* with worker node IPS like 10.0.1.21, 10.0.1.22, ...
+* with etcd only node IPs like `10.0.1.1`, `10.0.1.2`, ...
+* with master node IPs like `10.0.1.11`, `10.0.1.12`, ...
+* with worker node IPS like `10.0.1.21`, `10.0.1.22`, ...
 
 ### Clientbased master load-balancing
 
@@ -49,7 +49,6 @@ api server on each node. This is done using https://github.com/xetys/k8s-master-
 ```
 
 <img src="k8s-master-lb.png" width="400">
-
 
 The load balancer itself is an nginx with custom rules for passive health checks. More than 1 failure in 10 seconds will 
 temporary kick the failed IP from the balancer. This enables the kubernetes components to operate even if the majority of masters
