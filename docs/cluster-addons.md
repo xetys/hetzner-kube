@@ -23,7 +23,6 @@ To implement an addon which installs a simple nginx deployment, the addon should
 
 
 ```go
-
 type NginxAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
@@ -64,7 +63,6 @@ func (addon *NginxAddon) Uninstall() {
 	FatalOnError(err)
 	log.Println("nginx uninstalled")
 }
-
 ```
 
 The type should have a field with the pointer to the master node (for running `kubectl` or `helm`) and a node communicator 
@@ -77,11 +75,9 @@ type for your addon with custom fields, as long the type still implements `Clust
 In the same file you add these lines:
 
 ```go
-
 func init() {
 	addAddon(NewNginxAddon)
 }
-
 ```
 
 `addAddon` expects a `ClusterAddonInitializer`, which is a function with a provider and node communicator as parameter 
