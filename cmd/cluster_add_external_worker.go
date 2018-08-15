@@ -17,12 +17,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
-	"log"
-	"strings"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command
@@ -138,9 +139,7 @@ An external server must meet the following requirements:
 		}
 		externalNode.PrivateIPAddress = fmt.Sprintf("%s.%d", cidrPrefix, nextNode)
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, AppConf.CurrentContext.Token)
-		hetznerProvider.InitCluster(cluster.Name, cluster.NodeCIDR)
-		hetznerProvider.SetNodes(cluster.Nodes)
+		hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		clusterManager := clustermanager.NewClusterManagerFromCluster(*cluster, hetznerProvider, sshClient, coordinator)
 
 		nodes := []clustermanager.Node{externalNode}
