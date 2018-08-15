@@ -15,6 +15,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/thcyron/uiprogress"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
 // DefaultConfigPath is the path where the default config is located
@@ -182,7 +183,7 @@ func (app *AppConfig) DeleteContextByName(name string) error {
 
 // ActionProgress (deprecated)
 func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
-	errCh, progressCh := waitAction(ctx, app.Client, action)
+	errCh, progressCh := hetzner.WaitAction(ctx, app.Client, action)
 
 	if term.IsTerminal(os.Stdout) {
 		progress := uiprogress.New()

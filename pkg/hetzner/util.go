@@ -18,7 +18,8 @@ func ProviderAndManager(context context.Context, cluster clustermanager.Cluster,
 	return provider, manager
 }
 
-func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Action) (<-chan error, <-chan int) {
+// WaitAction is an helper function used to wait for an action
+func WaitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Action) (<-chan error, <-chan int) {
 	errCh := make(chan error, 1)
 	progressCh := make(chan int)
 
