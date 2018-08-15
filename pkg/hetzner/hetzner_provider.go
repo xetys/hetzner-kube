@@ -263,7 +263,7 @@ func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hclou
 }
 
 func (provider *Provider) actionProgress(action *hcloud.Action) error {
-	errCh, progressCh := WaitAction(provider.context, provider.client, action)
+	progressCh, errCh := provider.client.Action.WatchProgress(provider.context, action)
 
 	if term.IsTerminal(os.Stdout) {
 		progress := uiprogress.New()
