@@ -43,7 +43,6 @@ func waitAction(ctx context.Context, client *hcloud.Client, action *hcloud.Actio
 				errCh <- ctx.Err()
 				return
 			case <-ticker.C:
-				break
 			}
 
 			action, _, err := client.Action.GetByID(ctx, action.ID)

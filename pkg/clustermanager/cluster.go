@@ -165,7 +165,6 @@ func (manager *Manager) InstallMasters() error {
 	numMaster := 0
 
 	for _, node := range manager.nodes {
-
 		if node.IsMaster {
 			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset")
 			if err != nil {
@@ -313,21 +312,15 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 
 //InstallWorkers installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
-	var joinCommand string
+	node, err := manager.clusterProvider.GetMasterNode()
+	if err != nil {
+		return err
+	}
+
 	// create join command
-	for _, node := range manager.nodes {
-		if node.IsMaster {
-			for tries := 0; ; tries++ {
-				output, err := manager.nodeCommunicator.RunCmd(node, "kubeadm token create --print-join-command")
-				if tries < 10 && err != nil {
-					return err
-				}
-				time.Sleep(2 * time.Second)
-				joinCommand = output
-				break
-			}
-			break
-		}
+	joinCommand, err := manager.nodeCommunicator.RunCmd(*node, "kubeadm token create --print-join-command")
+	if err != nil {
+		return err
 	}
 
 	errChan := make(chan error)
