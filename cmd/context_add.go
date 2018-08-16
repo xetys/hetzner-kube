@@ -17,10 +17,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/spf13/cobra"
 )
 
 // addCmd represents the add command
@@ -34,28 +35,32 @@ var addCmd = &cobra.Command{
 	`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		name, token := args[0], ""
-		r := bufio.NewReader(os.Stdin)
-		for {
-			fmt.Printf("Token: ")
-			t, err := r.ReadString('\n')
-			FatalOnError(err)
-			t = strings.TrimSpace(t)
-			if t == "" {
-				continue
+		name := args[0]
+		token, err := cmd.Flags().GetString("token")
+		FatalOnError(err)
+
+		if token == "" {
+			r := bufio.NewReader(os.Stdin)
+			for {
+				fmt.Printf("Token: ")
+				t, err := r.ReadString('\n')
+				FatalOnError(err)
+				t = strings.TrimSpace(t)
+				if t == "" {
+					continue
+				}
+
+				token = t
+				break
 			}
-
-			token = t
-			break
 		}
-
 		// test connection
 		opts := []hcloud.ClientOption{
 			hcloud.WithToken(token),
 		}
 
 		AppConf.Client = hcloud.NewClient(opts...)
-		_, err := AppConf.Client.Server.All(AppConf.Context)
+		_, err = AppConf.Client.Server.All(AppConf.Context)
 
 		FatalOnError(err)
 
@@ -72,14 +77,4 @@ func init() {
 	contextCmd.AddCommand(addCmd)
 
 	addCmd.Flags().StringP("token", "t", "", "token of the context")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
