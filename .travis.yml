@@ -22,6 +22,8 @@ before_install:
 
 script:
   - go test -v ./...
+  - go build
+  - make
 
 jobs:
   include:

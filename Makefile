@@ -1,0 +1,20 @@
+HETZNER_KUBE=${TRAVIS_BUILD_DIR}/hetzner-kube
+
+SSH_KEY_NAME=testing-key
+CONTEXT_NAME=testing-${TRAVIS_BUILD_NUMBER}
+DATACENTER=fsn1-dc8
+CLUSTER_NAME=testing-cluster-${TRAVIS_BUILD_NUMBER}
+SERVER_MASTER_COUNT=1
+SERVER_WORKER_COUNT=1
+
+.PHONY: info
+
+info:
+	${HETZNER_KUBE} help
+	${HETZNER_KUBE} version
+
+context:
+	${HETZNER_KUBE} context add ${CONTEXT_NAME}
+	${HETZNER_KUBE} context use ${CONTEXT_NAME}
+	${HETZNER_KUBE} context list
+	${HETZNER_KUBE} context current
