@@ -24,7 +24,17 @@ context:
 ssh-key:
 	${HETZNER_KUBE} ssh-key add --name ${SSH_KEY_NAME} --private-key-path ${SSH_KEY_PATH_PRIVATE} --public-key-path ${SSH_KEY_PATH_PUBLIC}
 	${HETZNER_KUBE} ssh-key list
-	${HETZNER_KUBE} ssh-key delete --name ${SSH_KEY_NAME}
+	# ${HETZNER_KUBE} ssh-key delete --name ${SSH_KEY_NAME}
+
+cluster:
+	${HETZNER_KUBE} cluster create --worker-count ${SERVER_WORKER_COUNT} --datacenters ${DATACENTER} --ssh-key ${SSH_KEY_NAME} --name ${CLUSTER_NAME}
+	${HETZNER_KUBE} cluster list
+	${HETZNER_KUBE} cluster master-ip ${CLUSTER_NAME}
+	${HETZNER_KUBE} cluster kubeconfig ${CLUSTER_NAME}
+	${HETZNER_KUBE} cluster add-worker --nodes 1 --datacenters ${DATACENTER} --name ${CLUSTER_NAME}
+	# ${HETZNER_KUBE} cluster delete ${CLUSTER_NAME}
 
 cleanup:
+	${HETZNER_KUBE} cluster delete ${CLUSTER_NAME}
+	${HETZNER_KUBE} ssh-key delete --name ${SSH_KEY_NAME}
 	${HETZNER_KUBE} context delete ${CONTEXT_NAME}
