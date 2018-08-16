@@ -13,6 +13,8 @@ go:
 go_import_path: github.com/xetys/hetzner-kube
 
 before_install:
+  - openssl aes-256-cbc -K $ENCRYPTED_IR_RSA_PUB_KEY -iv $ENCRYPTED_IR_RSA_PUB_IV -in tests/id_rsa.pub.enc -out tests/id_rsa.pub -d
+  - openssl aes-256-cbc -K $ENCRYPTED_IR_RSA_PRV_KEY -iv $ENCRYPTED_IR_RSA_PRV_IV -in tests/id_rsa.enc     -out tests/id_rsa     -d
   - go get -u github.com/golang/dep/cmd/dep
   - go get -u golang.org/x/lint/golint
   - go get -u honnef.co/go/tools/...
@@ -26,6 +28,8 @@ script:
   - make
   - make info
   - make context
+  - make ssh-key
+  - make cleanup
 
 jobs:
   include:
