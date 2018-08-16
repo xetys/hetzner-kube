@@ -24,6 +24,8 @@ script:
   - go test -v ./...
   - go build
   - make
+  - make info
+  - make context
 
 jobs:
   include:
