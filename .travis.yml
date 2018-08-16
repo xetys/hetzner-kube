@@ -24,13 +24,6 @@ before_install:
 
 script:
   - go test -v ./...
-  - go build
-  - make
-  - make info
-  - make context
-  - make ssh-key
-  - make cluster
-  - make cleanup
 
 jobs:
   include:
@@ -42,4 +35,14 @@ jobs:
         - misspell -error $(git ls-files | grep -v vendor/)
         - unparam $(go list ./...)
         - staticcheck $(go list ./...)
+      go: 1.11.x
+
+    - stage: e2e test
+      script:
+        - go build
+        - make info
+        - make context
+        - make ssh-key
+        - make cluster
+        - make cleanup
       go: 1.11.x
