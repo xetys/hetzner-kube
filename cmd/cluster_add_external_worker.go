@@ -123,14 +123,19 @@ An external server must meet the following requirements:
 		FatalOnError(err)
 		externalNode.Name = hostname
 
+		cidrPrefix := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
 		// render internal IP address
 		nextNode := 21
-		for _, node := range cluster.Nodes {
-			if !node.IsMaster && !node.IsEtcd {
-				nextNode++
+		outer:
+		for {
+			for _, node := range cluster.Nodes {
+				if node.PrivateIPAddress == fmt.Sprintf("%s.%d", cidrPrefix, nextNode) {
+					nextNode++
+					continue outer
+				}
 			}
+			break
 		}
-		cidrPrefix := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
 		externalNode.PrivateIPAddress = fmt.Sprintf("%s.%d", cidrPrefix, nextNode)
 		coordinator := pkg.NewProgressCoordinator()
 		hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, AppConf.CurrentContext.Token)
