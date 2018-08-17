@@ -126,7 +126,7 @@ An external server must meet the following requirements:
 		cidrPrefix := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
 		// render internal IP address
 		nextNode := 21
-		outer:
+	outer:
 		for {
 			for _, node := range cluster.Nodes {
 				if node.PrivateIPAddress == fmt.Sprintf("%s.%d", cidrPrefix, nextNode) {
