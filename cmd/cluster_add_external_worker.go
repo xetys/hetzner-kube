@@ -187,5 +187,4 @@ func init() {
 	clusterCmd.AddCommand(clusterAddExternalWorkerCmd)
 	clusterAddExternalWorkerCmd.Flags().StringP("name", "n", "", "Name of the cluster to add the workers to")
 	clusterAddExternalWorkerCmd.Flags().StringP("ip", "i", "", "The IP address of the external node")
-
 }

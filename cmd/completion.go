@@ -15,22 +15,32 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
-// clusterCmd represents the cluster command
-var clusterCmd = &cobra.Command{
-	Use:   "cluster",
-	Short: "view and manage kubernetes clusters",
-	Long: `This command bundles several sub-commands to handle with kubernetes clusters, running on Hetzner Cloud.
+var completionCmd = &cobra.Command{
+	Use:   "completion",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
 
-Currently it's only supposed to create simple clusters. Upcoming features like separate etcd nodes, multiple masters, upgrades etc.
-are hopefully coming soon.'`,
+    . <(hetzner-kube completion)
+
+To configure your bash shell to load completions for each session add to your bashrc
+
+    # ~/.bashrc or ~/.profile
+    . <(hetzner-kube completion)
+
+Or you can add it to your bash_completition folder:
+
+    hetzner-kube completion > /usr/local/etc/bash_completion.d/hetzner-kube
+`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Usage()
+		rootCmd.GenBashCompletion(os.Stdout)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(completionCmd)
 }
