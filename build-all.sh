@@ -2,6 +2,7 @@
 
 set -ev
 
+dep ensure
 go build
 VERSION=$(./hetzner-kube version)
 
