@@ -29,7 +29,6 @@ type Provider struct {
 
 // NewHetznerProvider returns an instance of hetzner.Provider
 func NewHetznerProvider(context context.Context, client *hcloud.Client, token string) *Provider {
-
 	return &Provider{client: client, context: context, token: token}
 }
 
@@ -127,29 +126,25 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 }
 
 // CreateEtcdNodes creates nodes with type 'etcd'
-func (provider *Provider) CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) error {
+func (provider *Provider) CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) ([]clustermanager.Node, error) {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsEtcd: true, Type: masterServerType}
-	_, err := provider.CreateNodes("etcd", template, datacenters, count, 0)
-	return err
+	return provider.CreateNodes("etcd", template, datacenters, count, 0)
 }
 
 // CreateMasterNodes creates nodes with type 'master'
-func (provider *Provider) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int, isEtcd bool) error {
+func (provider *Provider) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int, isEtcd bool) ([]clustermanager.Node, error) {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType, IsEtcd: isEtcd}
-	_, err := provider.CreateNodes("master", template, datacenters, count, 0)
-	return err
+	return provider.CreateNodes("master", template, datacenters, count, 0)
 }
 
 // CreateWorkerNodes create new worker node on provider
 func (provider *Provider) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
 	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
-	nodes, err := provider.CreateNodes("worker", template, datacenters, count, offset)
-	return nodes, err
+	return provider.CreateNodes("worker", template, datacenters, count, offset)
 }
 
 // GetAllNodes retrieves all nodes
 func (provider *Provider) GetAllNodes() []clustermanager.Node {
-
 	return provider.nodes
 }
 
@@ -160,59 +155,42 @@ func (provider *Provider) SetNodes(nodes []clustermanager.Node) {
 
 // GetMasterNodes returns master nodes only
 func (provider *Provider) GetMasterNodes() []clustermanager.Node {
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if node.IsMaster {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return node.IsMaster
+	})
 }
 
 // GetEtcdNodes returns etcd nodes only
 func (provider *Provider) GetEtcdNodes() []clustermanager.Node {
-
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if node.IsEtcd {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return node.IsEtcd
+	})
 }
 
 // GetWorkerNodes returns worker nodes only
 func (provider *Provider) GetWorkerNodes() []clustermanager.Node {
-	nodes := []clustermanager.Node{}
-	for _, node := range provider.nodes {
-		if !node.IsMaster && !node.IsEtcd {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes
+	return provider.filterNodes(func(node clustermanager.Node) bool {
+		return !node.IsMaster && !node.IsEtcd
+	})
 }
 
 // GetMasterNode returns the first master node or fail, if no master nodes are found
 func (provider *Provider) GetMasterNode() (*clustermanager.Node, error) {
-	for _, node := range provider.nodes {
-		if node.IsMaster {
-			return &node, nil
-		}
+	nodes := provider.GetMasterNodes()
+	if len(nodes) == 0 {
+		return nil, errors.New("no master node found")
 	}
 
-	return nil, errors.New("no master node found")
+	return &nodes[0], nil
 }
 
 // GetCluster returns a template for Cluster
 func (provider *Provider) GetCluster() clustermanager.Cluster {
-
 	return clustermanager.Cluster{
-		Name:     provider.clusterName,
-		Nodes:    provider.nodes,
-		NodeCIDR: provider.nodeCidr,
+		Name:          provider.clusterName,
+		Nodes:         provider.nodes,
+		CloudInitFile: provider.cloudInitFile,
+		NodeCIDR:      provider.nodeCidr,
 	}
 }
 
@@ -235,6 +213,19 @@ func (provider *Provider) MustWait() bool {
 // Token returns the hcloud token
 func (provider *Provider) Token() string {
 	return provider.token
+}
+
+type nodeFilter func(clustermanager.Node) bool
+
+func (provider *Provider) filterNodes(filter nodeFilter) []clustermanager.Node {
+	nodes := []clustermanager.Node{}
+	for _, node := range provider.nodes {
+		if filter(node) {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {

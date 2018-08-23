@@ -1,85 +1,341 @@
-package hetzner
+package hetzner_test
 
 import (
 	"testing"
 
 	"github.com/magiconair/properties/assert"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
-func getDefaultProviderWithNodes() ([]clustermanager.Node, Provider) {
+func getProviderWithNodes(nodes []clustermanager.Node) hetzner.Provider {
+	provider := hetzner.Provider{}
+
+	provider.SetNodes(nodes)
+
+	return provider
+}
+
+type testCase struct {
+	Name         string
+	Nodes        []clustermanager.Node
+	MatchedNodes []string
+}
+
+func getNodeNames(nodes []clustermanager.Node) []string {
+	nodeNames := []string{}
+
+	for _, node := range nodes {
+		nodeNames = append(nodeNames, node.Name)
+	}
+
+	return nodeNames
+}
+
+func TestProviderGetMasterNodes(t *testing.T) {
+	tests := []testCase{
+		{
+			Name: "Single master node",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-master-1",
+			},
+		},
+		{
+			Name: "Two master nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-master-2", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-master-1",
+				"kube-master-2",
+			},
+		},
+		{
+			Name: "Two etcd node that are also master",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-etcd-1", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-3", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-etcd-1",
+				"kube-etcd-2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			nodes := provider.GetMasterNodes()
+
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
+		})
+	}
+}
+
+func TestProviderGetEtcdNodes(t *testing.T) {
+	tests := []testCase{
+		{
+			Name: "Single etcd node",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-etcd-1",
+			},
+		},
+		{
+			Name: "Two etcd nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-etcd-2", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-etcd-1",
+				"kube-etcd-2",
+			},
+		},
+		{
+			Name: "Three etcd node some of them are also master",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-etcd-1", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-3", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-etcd-1",
+				"kube-etcd-2",
+				"kube-etcd-3",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			nodes := provider.GetEtcdNodes()
+
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
+		})
+	}
+}
+
+func TestProviderGetWorkerNodes(t *testing.T) {
+	tests := []testCase{
+		{
+			Name: "Single worker node",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-worker-1",
+			},
+		},
+		{
+			Name: "Two worker nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+				{Name: "kube-worker-2"},
+			},
+			MatchedNodes: []string{
+				"kube-worker-1",
+				"kube-worker-2",
+			},
+		},
+		{
+			Name: "No worker nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-etcd-1", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-3", IsEtcd: true},
+			},
+			MatchedNodes: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			nodes := provider.GetWorkerNodes()
+
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
+		})
+	}
+}
+
+func TestProviderGetAllNodes(t *testing.T) {
+	tests := []testCase{
+		{
+			Name: "One node per type",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{
+				"kube-master-1",
+				"kube-etcd-1",
+				"kube-worker-1",
+			},
+		},
+		{
+			Name: "Multiple node per type",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-master-2", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-etcd-2", IsEtcd: true},
+				{Name: "kube-worker-1"},
+				{Name: "kube-worker-2"},
+				{Name: "kube-worker-3"},
+			},
+			MatchedNodes: []string{
+				"kube-master-1",
+				"kube-master-2",
+				"kube-etcd-1",
+				"kube-etcd-2",
+				"kube-worker-1",
+				"kube-worker-2",
+				"kube-worker-3",
+			},
+		},
+		{
+			Name:         "No nodes",
+			Nodes:        []clustermanager.Node{},
+			MatchedNodes: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			nodes := provider.GetAllNodes()
+
+			assert.Equal(t, getNodeNames(nodes), tt.MatchedNodes)
+		})
+	}
+}
+
+func TestProviderGetMasterNode(t *testing.T) {
+	tests := []testCase{
+		{
+			Name: "Single master node",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{"kube-master-1"},
+		},
+		{
+			Name: "Two master nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-master-2", IsMaster: true},
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{"kube-master-1"},
+		},
+		{
+			Name: "An etcd node that is also master",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+				{Name: "kube-etcd-3", IsEtcd: true},
+				{Name: "kube-master-1", IsMaster: true},
+				{Name: "kube-worker-1"},
+			},
+			MatchedNodes: []string{"kube-etcd-2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			node, _ := provider.GetMasterNode()
+
+			assert.Equal(t, []string{node.Name}, tt.MatchedNodes)
+		})
+	}
+}
+
+func TestProviderGetMasterNodeIsMissing(t *testing.T) {
+	tests := []struct {
+		Name  string
+		Nodes []clustermanager.Node
+	}{
+		{
+			Name:  "No nodes",
+			Nodes: []clustermanager.Node{},
+		},
+		{
+			Name: "No master nodes",
+			Nodes: []clustermanager.Node{
+				{Name: "kube-etcd-1", IsEtcd: true},
+				{Name: "kube-worker-1"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			provider := getProviderWithNodes(tt.Nodes)
+			_, err := provider.GetMasterNode()
+
+			if err == nil {
+				t.Error("no error ommited with no master")
+			}
+		})
+	}
+}
+
+func TestProviderInitCluster(t *testing.T) {
+	provider := getProviderWithNodes([]clustermanager.Node{})
+
+	provider.InitCluster("cluster-name", "10.0.1.0/24")
+
+	if provider.GetNodeCidr() != "10.0.1.0/24" {
+		t.Error("cluster node cidr is not correctly set")
+	}
+}
+
+func TestProviderGetCluster(t *testing.T) {
 	nodes := []clustermanager.Node{
-		{Name: "kube1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.1.11", IsEtcd: true},
-		{Name: "kube2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.1.12", IsMaster: true},
-		{Name: "kube3", IPAddress: "1.1.1.3", PrivateIPAddress: "10.0.1.13"},
+		{Name: "kube-etcd-1", IsEtcd: true},
+		{Name: "kube-etcd-2", IsMaster: true, IsEtcd: true},
+		{Name: "kube-etcd-3", IsEtcd: true},
+		{Name: "kube-master-1", IsMaster: true},
+		{Name: "kube-worker-1"},
 	}
-	provider := Provider{nodes: nodes}
-	return nodes, provider
-}
+	provider := getProviderWithNodes(nodes)
 
-func TestCluster_CreateEtcdNodes(t *testing.T) {
-	nodes, provider := getDefaultProviderWithNodes()
-	etcdNodes := provider.GetEtcdNodes()
+	provider.InitCluster("cluster-name", "10.0.1.0/24")
+	provider.SetCloudInitFile("cloud/init.file")
 
-	if len(etcdNodes) != 1 {
-		t.Error("found more than one etcd node")
-	}
-
-	if etcdNodes[0].Name != nodes[0].Name {
-		t.Error("wrong node found")
-	}
-}
-
-func TestProvider_GetMasterNodes(t *testing.T) {
-	nodes, provider := getDefaultProviderWithNodes()
-	masterNodes := provider.GetMasterNodes()
-
-	if len(masterNodes) != 1 {
-		t.Error("found more than one maser node")
+	cluster := provider.GetCluster()
+	expectedCluster := clustermanager.Cluster{
+		Name:          "cluster-name",
+		NodeCIDR:      "10.0.1.0/24",
+		HaEnabled:     false,
+		IsolatedEtcd:  false,
+		SelfHosted:    false,
+		CloudInitFile: "cloud/init.file",
+		Nodes:         nodes,
 	}
 
-	if masterNodes[0].Name != nodes[1].Name {
-		t.Error("wrong node found")
-	}
-}
-
-func TestProvider_CreateWorkerNodes(t *testing.T) {
-	nodes, provider := getDefaultProviderWithNodes()
-	workerNodes := provider.GetWorkerNodes()
-
-	if len(workerNodes) != 1 {
-		t.Error("found more than one worker node")
-	}
-
-	if workerNodes[0].Name != nodes[2].Name {
-		t.Error("wrong node found")
-	}
-}
-
-func TestProvider_GetMasterNode(t *testing.T) {
-	nodes, provider := getDefaultProviderWithNodes()
-
-	masterNode, err := provider.GetMasterNode()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if masterNode.Name != nodes[1].Name {
-		t.Error("master node not found")
-	}
-
-	provider.SetNodes([]clustermanager.Node{})
-
-	masterNode, err = provider.GetMasterNode()
-
-	if err == nil {
-		t.Error("no error ommited with no master")
-	}
-}
-
-func TestProvider_GetAllNodes(t *testing.T) {
-	nodes, provider := getDefaultProviderWithNodes()
-	allNodes := provider.GetAllNodes()
-	assert.Equal(t, allNodes, nodes)
+	assert.Equal(t, cluster, expectedCluster)
 }
