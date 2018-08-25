@@ -183,17 +183,12 @@ ExecStart=/sbin/ethtool -K %I tx off
 		return err
 	}
 
-	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/systemd/system/flannel-created@.service", flannelSystemd, false)
+	err = provisioner.communicator.WriteFile(provisioner.node, "/etc/systemd/system/flannel-created@.service", flannelSystemd, false)
 	if err != nil {
 		return err
 	}
 
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl daemon-reload")
-	if err != nil {
-		return err
-	}
-
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl restart systemd-udevd.service")
+	_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl daemon-reload; systemctl restart systemd-udevd.service")
 	if err != nil {
 		return err
 	}
