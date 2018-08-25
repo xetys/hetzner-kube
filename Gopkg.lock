@@ -221,14 +221,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d2a36ba38f4f6871cd4346b5b3c327873c3b8da0a4c915ae82fba65c67a9a40c"
-  name = "github.com/thcyron/uiprogress"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "25e98ffb0e98b5192b475d8f2fd78083bfe9a67e"
-
-[[projects]]
-  branch = "master"
   digest = "1:10e257965f5774c1ef03b258130a6caa8dddbfe03041f69d7c16a00463dece62"
   name = "golang.org/x/crypto"
   packages = [
@@ -292,7 +284,6 @@
     "github.com/mitchellh/go-homedir",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
-    "github.com/thcyron/uiprogress",
     "golang.org/x/crypto/ssh",
     "golang.org/x/crypto/ssh/terminal",
   ]

@@ -121,10 +121,11 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	defer connection.Close()
 	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
-	defer session.Close()
 	if err != nil {
 		log.Fatalf("session failed:%v", err)
 	}
+	defer session.Close()
+
 	permission := "C0644"
 	if executable {
 		permission = "C0755"

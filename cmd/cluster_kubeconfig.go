@@ -46,7 +46,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		name := args[0]
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
-		provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)
 

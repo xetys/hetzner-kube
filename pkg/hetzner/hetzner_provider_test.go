@@ -1,8 +1,10 @@
 package hetzner_test
 
 import (
+	"context"
 	"testing"
 
+	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/magiconair/properties/assert"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
@@ -297,7 +299,7 @@ func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 			_, err := provider.GetMasterNode()
 
 			if err == nil {
-				t.Error("no error ommited with no master")
+				t.Error("no error omitted with no master")
 			}
 		})
 	}
@@ -306,10 +308,10 @@ func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 func TestProviderInitCluster(t *testing.T) {
 	provider := getProviderWithNodes([]clustermanager.Node{})
 
-	provider.InitCluster("cluster-name", "10.0.1.0/24")
+	_, err := provider.GetMasterNode()
 
-	if provider.GetNodeCidr() != "10.0.1.0/24" {
-		t.Error("cluster node cidr is not correctly set")
+	if err == nil {
+		t.Error("no error omitted with no master")
 	}
 }
 
@@ -321,10 +323,19 @@ func TestProviderGetCluster(t *testing.T) {
 		{Name: "kube-master-1", IsMaster: true},
 		{Name: "kube-worker-1"},
 	}
-	provider := getProviderWithNodes(nodes)
 
-	provider.InitCluster("cluster-name", "10.0.1.0/24")
-	provider.SetCloudInitFile("cloud/init.file")
+	provider := hetzner.NewHetznerProvider(
+		context.Background(),
+		&hcloud.Client{},
+		clustermanager.Cluster{
+			Name:          "cluster-name",
+			NodeCIDR:      "10.0.1.0/24",
+			CloudInitFile: "cloud/init.file",
+		},
+		"token-string",
+	)
+
+	provider.SetNodes(nodes)
 
 	cluster := provider.GetCluster()
 	expectedCluster := clustermanager.Cluster{

@@ -35,7 +35,7 @@ var clusterAddonInstallCmd = &cobra.Command{
 		_, cluster := AppConf.Config.FindClusterByName(name)
 
 		log.Printf("installing addon %s", addonName)
-		provider, _ := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, nil, AppConf.CurrentContext.Token)
+		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		masterNode, err := provider.GetMasterNode()
 		FatalOnError(err)

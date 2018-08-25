@@ -11,9 +11,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/go-kit/kit/log/term"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/thcyron/uiprogress"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
@@ -178,34 +176,6 @@ func (app *AppConfig) DeleteContextByName(name string) error {
 	}
 
 	return fmt.Errorf("context '%s' not found", name)
-}
-
-// ActionProgress (deprecated)
-func (app *AppConfig) ActionProgress(ctx context.Context, action *hcloud.Action) error {
-	errCh, progressCh := waitAction(ctx, app.Client, action)
-
-	if term.IsTerminal(os.Stdout) {
-		progress := uiprogress.New()
-
-		progress.Start()
-		bar := progress.AddBar(100).AppendCompleted().PrependElapsed()
-		bar.Empty = ' '
-
-		for {
-			select {
-			case err := <-errCh:
-				if err == nil {
-					bar.Set(100)
-				}
-				progress.Stop()
-				return err
-			case p := <-progressCh:
-				bar.Set(p)
-			}
-		}
-	} else {
-		return <-errCh
-	}
 }
 
 func (app *AppConfig) assertActiveContext() error {

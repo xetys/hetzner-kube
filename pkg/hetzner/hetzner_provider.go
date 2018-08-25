@@ -28,19 +28,16 @@ type Provider struct {
 }
 
 // NewHetznerProvider returns an instance of hetzner.Provider
-func NewHetznerProvider(context context.Context, client *hcloud.Client, token string) *Provider {
-	return &Provider{client: client, context: context, token: token}
-}
-
-// InitCluster provides cluster information for further creation
-func (provider *Provider) InitCluster(clusterName, nodeCidr string) {
-	provider.clusterName = clusterName
-	provider.nodeCidr = nodeCidr
-}
-
-// SetCloudInitFile sets cloud init file for node provisioning
-func (provider *Provider) SetCloudInitFile(cloudInitFile string) {
-	provider.cloudInitFile = cloudInitFile
+func NewHetznerProvider(context context.Context, client *hcloud.Client, cluster clustermanager.Cluster, token string) *Provider {
+	return &Provider{
+		client:        client,
+		context:       context,
+		token:         token,
+		nodeCidr:      cluster.NodeCIDR,
+		clusterName:   cluster.Name,
+		cloudInitFile: cluster.CloudInitFile,
+		nodes:         cluster.Nodes,
+	}
 }
 
 // CreateNodes creates hetzner nodes
@@ -80,8 +77,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 
 	var nodes []clustermanager.Node
 	for i := 1; i <= count; i++ {
-		var serverOpts hcloud.ServerCreateOpts
-		serverOpts = serverOptsTemplate
+		serverOpts := serverOptsTemplate
 		nodeNumber := i + offset
 		serverOpts.Name = strings.Replace(serverNameTemplate, "@idx", fmt.Sprintf("%.02d", nodeNumber), 1)
 		serverOpts.Datacenter = &hcloud.Datacenter{
@@ -264,7 +260,7 @@ func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hclou
 }
 
 func (provider *Provider) actionProgress(action *hcloud.Action) error {
-	errCh, progressCh := waitAction(provider.context, provider.client, action)
+	progressCh, errCh := provider.client.Action.WatchProgress(provider.context, action)
 
 	if term.IsTerminal(os.Stdout) {
 		progress := uiprogress.New()

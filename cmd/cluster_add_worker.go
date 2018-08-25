@@ -93,7 +93,8 @@ You can specify the worker server type as in cluster create.`,
 		}
 
 		coordinator := pkg.NewProgressCoordinator()
-		hetznerProvider, clusterManager := hetzner.ProviderAndManager(AppConf.Context, *cluster, AppConf.Client, AppConf.SSHClient, coordinator, AppConf.CurrentContext.Token)
+		hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
+		clusterManager := clustermanager.NewClusterManagerFromCluster(*cluster, hetznerProvider, AppConf.SSHClient, coordinator)
 		err := AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 		if err != nil {
 			log.Fatal(err)

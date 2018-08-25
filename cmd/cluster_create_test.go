@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"testing"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 func TestClusterCmdValidate(t *testing.T) {

@@ -19,7 +19,6 @@ type Manager struct {
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
-	wait             bool
 }
 
 //NewClusterManager create a new manager for the cluster
@@ -102,7 +101,10 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 func (manager *Manager) SetupEncryptedNetwork() error {
 	nodes := manager.nodes
 	// render a public/private key pair
-	keyPairs := manager.GenerateKeyPairs(nodes[0], len(nodes))
+	keyPairs, err := manager.GenerateKeyPairs(nodes[0], len(nodes))
+	if err != nil {
+		return fmt.Errorf("unable to setup encrypted network: %v", err)
+	}
 
 	for i, keyPair := range keyPairs {
 		manager.nodes[i].WireGuardKeyPair = keyPair
@@ -135,7 +137,7 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 		}(node)
 	}
 
-	err := waitOrError(trueChan, errChan, &numProc)
+	err = waitOrError(trueChan, errChan, &numProc)
 	if err != nil {
 		return err
 	}
@@ -166,7 +168,6 @@ func (manager *Manager) InstallMasters() error {
 	numMaster := 0
 
 	for _, node := range manager.nodes {
-
 		if node.IsMaster {
 			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset")
 			if err != nil {
@@ -314,21 +315,15 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 
 //InstallWorkers installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
-	var joinCommand string
+	node, err := manager.clusterProvider.GetMasterNode()
+	if err != nil {
+		return err
+	}
+
 	// create join command
-	for _, node := range manager.nodes {
-		if node.IsMaster {
-			for tries := 0; ; tries++ {
-				output, err := manager.nodeCommunicator.RunCmd(node, "kubeadm token create --print-join-command")
-				if tries < 10 && err != nil {
-					return err
-				}
-				time.Sleep(2 * time.Second)
-				joinCommand = output
-				break
-			}
-			break
-		}
+	joinCommand, err := manager.nodeCommunicator.RunCmd(*node, "kubeadm token create --print-join-command")
+	if err != nil {
+		return err
 	}
 
 	errChan := make(chan error)
@@ -443,8 +438,12 @@ func (manager *Manager) DeployLoadBalancer(nodes []Node) error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
-	masterNodes := manager.clusterProvider.GetMasterNodes()
-	masterIps := strings.Join(Nodes2IPs(masterNodes), " ")
+	masterNodesIP := []string{}
+	for _, node := range manager.clusterProvider.GetMasterNodes() {
+		masterNodesIP = append(masterNodesIP, node.IPAddress)
+	}
+
+	masterIps := strings.Join(masterNodesIP, " ")
 	for _, node := range nodes {
 		if !node.IsMaster && node.IsEtcd {
 			continue

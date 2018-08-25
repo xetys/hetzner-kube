@@ -79,17 +79,17 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 	nodeCidr, _ := cmd.Flags().GetString("node-cidr")
+	cloudInit, _ := cmd.Flags().GetString("cloud-init")
 
-	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, AppConf.CurrentContext.Token)
-	hetznerProvider.InitCluster(clusterName, nodeCidr)
+	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, clustermanager.Cluster{
+		Name:          clusterName,
+		NodeCIDR:      nodeCidr,
+		CloudInitFile: cloudInit,
+	}, AppConf.CurrentContext.Token)
+
 	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
 	err := sshClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 	FatalOnError(err)
-
-	var cloudInit string
-	if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {
-		hetznerProvider.SetCloudInitFile(cloudInit)
-	}
 
 	if haEnabled && isolatedEtcd {
 		if _, err := hetznerProvider.CreateEtcdNodes(sshKeyName, masterServerType, datacenters, etcdCount); err != nil {
