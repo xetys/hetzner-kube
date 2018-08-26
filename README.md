@@ -32,6 +32,22 @@ Get the Linux binary from releases page.
 
 [Download version 0.3.1 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-amd64.exe)
 
+### Docker
+
+Get the Docker Image (e.g. for your CI Builds) here:
+
+[DockerHub](https://hub.docker.com/r/raynigon/hetzner-kube/)
+
+Examples:
+
+`docker pull raynigon/hetzner-kube`
+
+`docker run -ti raynigon/hetzner-kube hetzner-kube version`
+
+For a detailed instruction on how to use this image in your CI Build take a look here:
+
+[Instruction](https://github.com/raynigon/hetzner-kube-ci/blob/master/README.md)
+
 ### From source
 
 hetzner-kube is written in [Go](https://golang.org/). To install Go please follow the instructions on its homepage.
