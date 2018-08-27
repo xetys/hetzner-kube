@@ -156,6 +156,7 @@ Pin-Priority: 1000
 }
 
 func (provisioner *NodeProvisioner) prepareNetwork() error {
+
 	provisioner.eventService.AddEvent(provisioner.node.Name, "prepare network")
 
 	err := provisioner.prepareFlannel()
