@@ -76,12 +76,12 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 	if err != nil {
 		return err
 	}
-	err = provisioner.updateAndInstall()
+	err = provisioner.prepareNetwork()
 	if err != nil {
 		return err
 	}
-
-	return nil
+	err = provisioner.updateAndInstall()
+	return err
 }
 
 func (provisioner *NodeProvisioner) installTransportTools() error {
@@ -112,19 +112,9 @@ func (provisioner *NodeProvisioner) preparePackages() error {
 		return err
 	}
 
-	err = provisioner.prepareFlannel()
-	if err != nil {
-		return err
-	}
-
-	// wireguard
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "add-apt-repository ppa:wireguard/wireguard -y")
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
+
 func (provisioner *NodeProvisioner) prepareKubernetes() error {
 	// kubernetes
 	_, err := provisioner.communicator.RunCmd(provisioner.node, "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -")
@@ -165,6 +155,22 @@ Pin-Priority: 1000
 	return nil
 }
 
+func (provisioner *NodeProvisioner) prepareNetwork() error {
+	provisioner.eventService.AddEvent(provisioner.node.Name, "prepare network")
+
+	err := provisioner.prepareFlannel()
+	if err != nil {
+		return err
+	}
+
+	err = provisioner.prepareWireguard()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (provisioner *NodeProvisioner) prepareFlannel() error {
 	// udev action to run systemd service on each flannel interface add
 	flannelUdevRules := `
@@ -189,6 +195,16 @@ ExecStart=/sbin/ethtool -K %I tx off
 	}
 
 	_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl daemon-reload; systemctl restart systemd-udevd.service")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (provisioner *NodeProvisioner) prepareWireguard() error {
+
+	_, err := provisioner.communicator.RunCmd(provisioner.node, "add-apt-repository ppa:wireguard/wireguard -y")
 	if err != nil {
 		return err
 	}
