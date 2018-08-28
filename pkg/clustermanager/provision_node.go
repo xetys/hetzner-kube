@@ -174,17 +174,17 @@ func (provisioner *NodeProvisioner) prepareNetwork() error {
 
 func (provisioner *NodeProvisioner) prepareFlannel() error {
 	// udev action to run systemd service on each flannel interface add
-	flannelUdevRules := `
-SUBSYSTEM=="net", ACTION=="add", KERNEL=="flannel.*", TAG+="systemd", ENV{SYSTEMD_WANTS}="flannel-created@%k.service"
-	`
+	flannelUdevRules :=
+		`SUBSYSTEM=="net", ACTION=="add", KERNEL=="flannel.*", TAG+="systemd", ENV{SYSTEMD_WANTS}="flannel-created@%k.service"
+`
 	// systemd oneshot unit to run ethtool on corresponding interface
-	flannelSystemd := `
-[Unit]
+	flannelSystemd :=
+		`[Unit]
 Description=Disable TX checksum offload on flannel interface
 [Service]
 Type=oneshot
 ExecStart=/sbin/ethtool -K %I tx off
-	`
+`
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/udev/rules.d/71-flannel.rules", flannelUdevRules, false)
 	if err != nil {
 		return err
