@@ -2,6 +2,5 @@
 *.iml
 /hetzner-kube*
 /dist
-/vendor
 
 /cmd/test.go
