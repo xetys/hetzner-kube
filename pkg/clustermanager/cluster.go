@@ -145,6 +145,24 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	return nil
 }
 
+//RestartFlannel restarts flannel on all nodes after wireguard restart
+func (manager *Manager) RestartFlannel() error {
+	cmdRestartFlannel :=
+		`kubectl -n kube-system delete pod -l 'app=flannel'`
+
+	for _, node := range manager.nodes {
+		if node.IsMaster {
+			_, err := manager.nodeCommunicator.RunCmd(node, cmdRestartFlannel)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
 //InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
 

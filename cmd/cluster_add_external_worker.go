@@ -163,6 +163,10 @@ An external server must meet the following requirements:
 		FatalOnError(err)
 		saveCluster(cluster)
 
+		// restart flannel on all nodes due to wireguard restart
+		err = clusterManager.RestartFlannel()
+		FatalOnError(err)
+
 		// all work on the already existing nodes is completed by now
 		for _, node := range existingNodes {
 			coordinator.CompleteProgress(node.Name)
