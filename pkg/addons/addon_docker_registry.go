@@ -54,7 +54,7 @@ func (addon *DockerregistryAddon) Install(args ...string) {
 //Uninstall performs all steps to remove the addon
 func (addon DockerregistryAddon) Uninstall() {
 	node := *addon.masterNode
-	_, err := addon.communicator.RunCmd(node, "helm delete --purge docker-registry")
+	_, err := addon.communicator.RunCmd(node, "helm delete --purge `helm list | grep docker-registry  | awk '{print $1;}'`")
 	FatalOnError(err)
 	log.Println("docker-registry uninstalled")
 }
