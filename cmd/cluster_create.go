@@ -37,7 +37,7 @@ var clusterCreateCmd = &cobra.Command{
 The most simple command is: hetzner-kube cluster create -k YOUR-SSH-KEY-NAME
 This will create a 2 node cluster with a random name.
 
-You can specify a name using -n pr --name.
+You can specify a name using -n or --name.
 
 = High-Availability =
 This tool supports these levels of kubernetes HA:
