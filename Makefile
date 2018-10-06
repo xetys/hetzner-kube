@@ -1,7 +1,7 @@
 HETZNER_KUBE=${TRAVIS_BUILD_DIR}/hetzner-kube
 
 SSH_KEY_PATH_PRIVATE=${TRAVIS_BUILD_DIR}/tests/id_rsa
-SSH_KEY_PATH_PUBLIC=${TRAVIS_BUILD_DIR}/tests/id_rsa.pub
+SSH_KEY_PATH_PUBLIC=${SSH_KEY_PATH_PRIVATE}.pub
 DATACENTER=fsn1-dc8
 SERVER_MASTER_COUNT=1
 SERVER_WORKER_COUNT=1
@@ -22,6 +22,8 @@ context:
 	# ${HETZNER_KUBE} context delete ${CONTEXT_NAME}
 
 ssh-key:
+	mkdir ${TRAVIS_BUILD_DIR}/tests
+	ssh-keygen -b 2048 -t rsa -f ${SSH_KEY_PATH_PRIVATE} -q -N ""
 	${HETZNER_KUBE} ssh-key add --name ${SSH_KEY_NAME} --private-key-path ${SSH_KEY_PATH_PRIVATE} --public-key-path ${SSH_KEY_PATH_PUBLIC}
 	${HETZNER_KUBE} ssh-key list
 	# ${HETZNER_KUBE} ssh-key delete --name ${SSH_KEY_NAME}
