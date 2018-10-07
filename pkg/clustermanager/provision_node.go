@@ -147,6 +147,19 @@ Pin-Priority: 1000
 		return err
 	}
 
+	// k8s preferences
+	// This will fix issue on package dependencies as reported in
+	// https://github.com/kubernetes/kubernetes/issues/69489
+	aptPreferencesKubernetes := `
+Package: kubernetes-cni
+Pin: version 0.6.0-00*
+Pin-Priority: 900
+	`
+	err = provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/k8s.pref", aptPreferencesKubernetes, false)
+	if err != nil {
+		return err
+	}
+
 	_, err = provisioner.communicator.RunCmd(provisioner.node, "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -")
 	if err != nil {
 		return err
