@@ -36,10 +36,6 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/thcyron/uiprogress"
-
-[[constraint]]
-  branch = "master"
   name = "golang.org/x/crypto"
 
 [prune]
