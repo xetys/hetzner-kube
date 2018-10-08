@@ -6,7 +6,7 @@
 
 # hetzner-kube: fast and easy setup of kubernetes clusters on Hetzner Cloud
 
-This project contains a CLI tool to easily provision [kubernetes](https://kubernetes.io) clusters 
+This project contains a CLI tool to easily provision [kubernetes](https://kubernetes.io) v1.9.2 / Ubuntu 16.04 clusters 
 on [Hetzner Cloud](https://hetzner.com/cloud).
 
 This is my very first tool written in Go. 
