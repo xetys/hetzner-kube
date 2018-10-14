@@ -1,5 +1,9 @@
 language: go
 
+sudo: false
+
+go_import_path: github.com/xetys/hetzner-kube
+
 go:
   - 1.9.x
   - 1.10.x
@@ -15,10 +19,16 @@ before_install:
   - dep ensure
 
 script:
-  - golint cmd/ pkg/
   - go test -v ./...
-  - unused $(go list ./...)
-  - gosimple $(go list ./...)
-  - misspell -error $(git ls-files | grep -v vendor/)
-  - unparam $(go list ./...)
-  - staticcheck $(go list ./...)
+
+jobs:
+  include:
+    - stage: Linting
+      script:
+        - golint $(go list ./...)
+        - unused $(go list ./...)
+        - gosimple $(go list ./...)
+        - misspell -error $(git ls-files | grep -v vendor/)
+        - unparam $(go list ./...)
+        - staticcheck $(go list ./...)
+      go: 1.11.x
