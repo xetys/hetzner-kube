@@ -18,6 +18,9 @@ before_install:
   - go get -u github.com/client9/misspell/cmd/misspell
   - dep ensure
 
+after_script:
+  - make hard-cleanup
+
 script:
   - go test -v ./...
 
@@ -31,4 +34,12 @@ jobs:
         - misspell -error $(git ls-files | grep -v vendor/)
         - unparam $(go list ./...)
         - staticcheck $(go list ./...)
+      go: 1.11.x
+
+    - stage: e2e test
+      script:
+        - go build
+        - make preparare
+        - make test-all
+        - make cleanup
       go: 1.11.x
