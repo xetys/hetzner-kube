@@ -6,37 +6,22 @@
 
 # hetzner-kube: fast and easy setup of kubernetes clusters on Hetzner Cloud
 
-This project contains a CLI tool to easily provision [kubernetes](https://kubernetes.io) clusters 
+This project contains a CLI tool to easily provision [kubernetes](https://kubernetes.io) clusters
 on [Hetzner Cloud](https://hetzner.com/cloud).
 
-This is my very first tool written in Go. 
+This is my very first tool written in Go.
 
 ## How to install
 
-Get the Linux binary from releases page.
+### Binary releases
 
-[Download version 0.3.1 - linux-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-amd64)
-
-[Download version 0.3.1 - linux-386](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-386)
-
-[Download version 0.3.1 - linux-arm](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-arm)
-
-[Download version 0.3.1 - linux-arm64](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-linux-arm64)
-
-### experimental binaries (partly tested yet)
-[Download version 0.3.1 - darwin-386](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-darwin-386)
-
-[Download version 0.3.1 - darwin-amd64](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-darwin-amd64)
-
-[Download version 0.3.1 - Windows(32Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-386.exe)
-
-[Download version 0.3.1 - Windows(64Bit)](https://github.com/xetys/hetzner-kube/releases/download/0.3.1/hetzner-kube-windows-amd64.exe)
+Get the binary from [releases page](https://github.com/xetys/hetzner-kube/releases)
 
 ### From source
 
-hetzner-kube is written in [Go](https://golang.org/). To install Go please follow the instructions on its homepage.
+`hetzner-kube` is written in [Go](https://golang.org/). To install Go please follow the instructions on its homepage.
 
-To get and build hetzner-kube from source run this command:
+To get and build `hetzner-kube` from source run this command:
 
 ```
 $ go get -u github.com/xetys/hetzner-kube
@@ -97,7 +82,7 @@ For a full list of options that can be passed to the ```cluster create``` comman
 You can build high available clusters with hetzner-kube. Read the [High availability Guide](docs/high-availability.md) for
 further information.
 
-# Custom Options 
+# Custom Options
 
 ## addons
 
@@ -126,9 +111,6 @@ packages:
  - python
 ```
 
-
-
 ## Full tutorial
 
-[This article](http://stytex.de/blog/2018/01/29/deploy-kubernetes-hetzner-cloud-openebs/) guides through a full
-cluster setup.
+[This article](http://stytex.de/blog/2018/01/29/deploy-kubernetes-hetzner-cloud-openebs/) guides through a full cluster setup.

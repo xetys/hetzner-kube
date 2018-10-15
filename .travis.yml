@@ -4,6 +4,10 @@ sudo: false
 
 go_import_path: github.com/xetys/hetzner-kube
 
+cache:
+  directories:
+    - vendor
+
 go:
   - 1.9.x
   - 1.10.x
@@ -36,10 +40,25 @@ jobs:
         - staticcheck $(go list ./...)
       go: 1.11.x
 
-    - stage: e2e test
+    - stage: E2E testing
       script:
         - go build
         - make preparare
         - make test-all
         - make cleanup
       go: 1.11.x
+
+    - stage: Build
+      script:
+        - echo "Build binary & deploying to GitHub releases ..."
+        - make build
+      go: 1.10.x
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file_glob: yes
+  file: dist/*
+  skip_cleanup: true
+  on:
+    tags: true
