@@ -42,6 +42,9 @@ func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 // RunCmd runs a bash command on the given node
 func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string, err error) {
 	session, connection, err := sshComm.newSession(node)
+	if err != nil {
+		return
+	}
 	defer connection.Close()
 
 	var stdoutBuf bytes.Buffer
@@ -69,12 +72,14 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
 	}
 	var connection *ssh.Client
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			//log.Printf("dial failed:%v", err)
+			log.Printf("dial failed:%v", err)
+			log.Printf("retrying..")
 			if try > 10 {
 				return nil, nil, err
 			}
@@ -104,6 +109,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
 	}
 	var connection *ssh.Client
 	for try := 0; ; try++ {
