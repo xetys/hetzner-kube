@@ -43,7 +43,7 @@ func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
 func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string, err error) {
 	session, connection, err := sshComm.newSession(node)
 	if err != nil {
-		return
+		return output, err
 	}
 	defer connection.Close()
 
@@ -78,8 +78,8 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed:%v", err)
-			log.Printf("retrying..")
+			log.Printf("dial failed: %v", err)
+			log.Print("retrying..")
 			if try > 10 {
 				return nil, nil, err
 			}
