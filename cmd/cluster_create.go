@@ -178,7 +178,7 @@ func saveCluster(cluster *clustermanager.Cluster) {
 
 func renderProgressBars(cluster *clustermanager.Cluster, coordinator *pkg.UIProgressCoordinator) {
 	nodes := cluster.Nodes
-	provisionSteps := 5
+	provisionSteps := 8
 	netWorkSetupSteps := 2
 	etcdSteps := 4
 	masterInstallSteps := 2

@@ -7,16 +7,27 @@ import (
 
 //GenerateMasterConfiguration generate the kubernetes config for master
 func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
-	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
+	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
 api:
   advertiseAddress: %s
-networking:
-  podSubnet: 10.244.0.0/16
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 apiServerCertSANs:
   - %s
   - 127.0.0.1
 `
+
 	etcdConfig := `etcd:
   endpoints:`
 	masterConfig := fmt.Sprintf(masterConfigTpl, masterNode.PrivateIPAddress, masterNode.IPAddress)
