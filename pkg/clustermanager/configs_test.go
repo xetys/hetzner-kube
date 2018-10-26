@@ -7,12 +7,22 @@ import (
 )
 
 func TestGenerateMasterConfiguration(t *testing.T) {
-	expectedConf := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
+	expectedConf := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
 api:
   advertiseAddress: 10.0.0.1
-networking:
-  podSubnet: 10.244.0.0/16
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 apiServerCertSANs:
   - 1.1.1.1
   - 127.0.0.1
@@ -20,12 +30,22 @@ apiServerCertSANs:
   - 10.0.0.2
 `
 
-	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
+	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
 api:
   advertiseAddress: 10.0.0.1
-networking:
-  podSubnet: 10.244.0.0/16
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 apiServerCertSANs:
   - 1.1.1.1
   - 127.0.0.1

@@ -172,14 +172,14 @@ func (manager *Manager) InstallMasters() error {
 
 	for _, node := range manager.nodes {
 		if node.IsMaster {
-			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset")
+			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f")
 			if err != nil {
-				return nil
+				return err
 			}
 
 			_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
 			if err != nil {
-				return nil
+				return err
 			}
 			if len(manager.nodes) == 1 {
 				commands = append(commands, NodeCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
@@ -328,6 +328,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	if err != nil {
 		return err
 	}
+	joinCommand = fmt.Sprintf("%s --cri-socket /var/run/docker/containerd/docker-containerd.sock", joinCommand)
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -338,7 +339,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 			numProcs++
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
-				_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset && "+joinCommand)
+				_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f && "+joinCommand)
 				if err != nil {
 					errChan <- err
 				}
