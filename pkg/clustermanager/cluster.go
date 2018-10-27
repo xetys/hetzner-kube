@@ -101,18 +101,19 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 //SetupEncryptedNetwork setups an encrypted virtual network using wireguard
 // modifies the state of manager.Nodes
 func (manager *Manager) SetupEncryptedNetwork() error {
-	nodes := manager.nodes
-	// render a public/private key pair
-	keyPairs, err := manager.GenerateKeyPairs(nodes[0], len(nodes))
-	if err != nil {
-		return fmt.Errorf("unable to setup encrypted network: %v", err)
-	}
+	var err error
+	var keyPair WgKeyPair
 
-	for i, keyPair := range keyPairs {
+	for i := range manager.nodes {
+		keyPair, err = GenerateKeyPair()
+		if err != nil {
+			return fmt.Errorf("unable to setup encrypted network: %v", err)
+		}
+
 		manager.nodes[i].WireGuardKeyPair = keyPair
 	}
 
-	nodes = manager.nodes
+	nodes := manager.nodes
 
 	// for each node, get specific IP and install it on node
 	errChan := make(chan error)
