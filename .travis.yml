@@ -47,6 +47,7 @@ jobs:
         - make test-all
         - make cleanup
       go: 1.11.x
+      if: env(HETZNER_API_KEY) IS present
 
     - stage: Build
       script:
