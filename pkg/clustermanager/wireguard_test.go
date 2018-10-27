@@ -2,6 +2,7 @@ package clustermanager_test
 
 import (
 	"encoding/base64"
+	"fmt"
 	"testing"
 
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
@@ -63,5 +64,33 @@ func TestGenerateKeyPair(t *testing.T) {
 
 	if len(publicBytes) != 32 {
 		t.Errorf("Public key is not 32 bytes len")
+	}
+}
+
+func TestPrivateIPPrefix(t *testing.T) {
+	testCases := []struct {
+		source   string
+		expected string
+	}{
+		{
+			source:   "10.5.3.6",
+			expected: "10.5.3",
+		},
+		{
+			source:   "10.20.30.60",
+			expected: "10.20.30",
+		},
+		{
+			source:   "250.251.252.253",
+			expected: "250.251.252",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {
+			generated := clustermanager.PrivateIPPrefix(tC.source)
+			if tC.expected != generated {
+				t.Errorf("\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tC.source, tC.expected, generated)
+			}
+		})
 	}
 }
