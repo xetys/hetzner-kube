@@ -59,7 +59,7 @@ func (addon *HCloudControllerManagerAddon) Install(args ...string) {
 Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
 `
 	for _, node := range addon.nodes {
-		err := addon.communicator.WriteFile(node, "/etc/systemd/system/kubelet.service.d/20-hcloud.conf", config, false)
+		err := addon.communicator.WriteFile(node, "/etc/systemd/system/kubelet.service.d/20-hcloud.conf", config, clustermanager.AllRead)
 		FatalOnError(err)
 
 		_, err = addon.communicator.RunCmd(node, "systemctl daemon-reload && systemctl restart kubelet")

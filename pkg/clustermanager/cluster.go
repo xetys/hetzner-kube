@@ -133,13 +133,13 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "configure wireguard")
 			wireGuardConf := GenerateWireguardConf(node, manager.nodes)
-			err := manager.nodeCommunicator.WriteFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, false)
+			err := manager.nodeCommunicator.WriteFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, OwnerRead)
 			if err != nil {
 				errChan <- err
 			}
 
 			overlayRouteConf := GenerateOverlayRouteSystemdService(node)
-			err = manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/overlay-route.service", overlayRouteConf, false)
+			err = manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/overlay-route.service", overlayRouteConf, AllRead)
 			if err != nil {
 				errChan <- err
 			}
@@ -244,7 +244,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 	}
 	masterNodes := manager.clusterProvider.GetMasterNodes()
 	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes)
-	if err := manager.nodeCommunicator.WriteFile(node, "/root/master-config.yaml", masterConfig, false); err != nil {
+	if err := manager.nodeCommunicator.WriteFile(node, "/root/master-config.yaml", masterConfig, AllRead); err != nil {
 		errChan <- err
 	}
 
@@ -304,6 +304,7 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 
 		go func(node Node) {
 			manager.etcdInstallStep(node, nodes, errChan, keepData)
+
 			trueChan <- true
 		}(node)
 	}
@@ -319,7 +320,7 @@ func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan er
 	}
 	// set systemd service
 	etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
-	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
+	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, AllRead)
 	if err != nil {
 		errChan <- err
 	}

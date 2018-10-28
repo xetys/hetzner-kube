@@ -114,7 +114,7 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 }
 
 // WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
-func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, executable bool) error {
+func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, permission FilePermission) error {
 	signer, err := sshComm.getPrivateSSHKey(node.SSHKeyName)
 
 	if err != nil {
@@ -148,10 +148,6 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	}
 	defer session.Close()
 
-	permission := "C0644"
-	if executable {
-		permission = "C0755"
-	}
 	fileName := path.Base(filePath)
 	dir := path.Dir(filePath)
 
@@ -193,7 +189,7 @@ func (sshComm *SSHCommunicator) TransformFileOverNode(sourceNode Node, targetNod
 	}
 
 	// write file
-	err = sshComm.WriteFile(targetNode, filePath, fileContent, false)
+	err = sshComm.WriteFile(targetNode, filePath, fileContent, AllRead)
 	return err
 }
 

@@ -66,7 +66,7 @@ subjects:
   - kind: ServiceAccount
     name: admin-user
     namespace: kube-system`
-	err = addon.communicator.WriteFile(node, "/root/dashboard-service-account.yaml", serviceAccount, false)
+	err = addon.communicator.WriteFile(node, "/root/dashboard-service-account.yaml", serviceAccount, clustermanager.OwnerRead)
 	FatalOnError(err)
 
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f dashboard-service-account.yaml")
