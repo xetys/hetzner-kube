@@ -15,20 +15,20 @@
 package cmd
 
 import (
-	"fmt"
-
 	"bytes"
 	"errors"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/mitchellh/go-homedir"
-	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"golang.org/x/crypto/ssh"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"golang.org/x/crypto/ssh"
 )
 
 // sshKeyAddCmd represents the sshKeyAdd command

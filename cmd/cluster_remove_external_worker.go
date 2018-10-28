@@ -17,9 +17,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
-	"log"
 )
 
 // clusterAddWorkerCmd represents the clusterAddWorker command

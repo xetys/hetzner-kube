@@ -205,7 +205,7 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 	}
 
 	fmt.Print("Enter passphrase for SSH key " + privateKey.PrivateKeyPath + ": ")
-	text, err := terminal.ReadPassword(int(syscall.Stdin))
+	text, err := terminal.ReadPassword(syscall.Stdin)
 
 	if err != nil {
 		return err
