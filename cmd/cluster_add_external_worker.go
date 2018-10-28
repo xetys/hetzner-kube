@@ -124,7 +124,11 @@ An external server must meet the following requirements:
 		FatalOnError(err)
 		externalNode.Name = hostname
 
-		cidrPrefix := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
+		cidrPrefix, err := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// render internal IP address
 		nextNode := 21
 	outer:

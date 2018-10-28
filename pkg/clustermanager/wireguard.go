@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"strings"
 
 	"golang.org/x/crypto/curve25519"
@@ -47,8 +48,17 @@ Endpoint = %s:51820
 }
 
 // PrivateIPPrefix extracts the first 3 digits of an IPv4 address
-func PrivateIPPrefix(ip string) string {
-	return strings.Join(strings.Split(ip, ".")[:3], ".")
+func PrivateIPPrefix(ip string) (string, error) {
+	ipAddress := net.ParseIP(ip)
+	if ipAddress == nil {
+		return "", fmt.Errorf("unable to parse ip %q", ip)
+	}
+	ipAddress = ipAddress.To4()
+	if ipAddress == nil {
+		return "", fmt.Errorf("unable to convert ip %q to IPv4s", ip)
+	}
+
+	return strings.Join(strings.Split(ipAddress.String(), ".")[:3], "."), nil
 }
 
 // GenerateKeyPair create a key-pair used to instantiate a wireguard connection

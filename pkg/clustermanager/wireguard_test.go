@@ -87,9 +87,29 @@ func TestPrivateIPPrefix(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {
-			generated := clustermanager.PrivateIPPrefix(tC.source)
+			generated, err := clustermanager.PrivateIPPrefix(tC.source)
+			if err != nil {
+				t.Errorf("Unexpected error on parsing valid IP\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tC.source, tC.expected, generated)
+			}
+
 			if tC.expected != generated {
 				t.Errorf("\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tC.source, tC.expected, generated)
+			}
+		})
+	}
+}
+
+func TestPrivateIPPrefixWithWrongIpAddress(t *testing.T) {
+	testCases := []struct{ source string }{
+		{source: "10.5.3"},
+		{source: "10.20.30.6000"},
+		{source: "250.251.252.253.254"},
+	}
+	for _, tC := range testCases {
+		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {
+			_, err := clustermanager.PrivateIPPrefix(tC.source)
+			if err == nil {
+				t.Errorf("we expect an error on parsing invalid IP %q", tC.source)
 			}
 		})
 	}
