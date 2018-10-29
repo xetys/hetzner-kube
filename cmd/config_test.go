@@ -1,9 +1,15 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
 
+	"github.com/xetys/hetzner-kube/cmd"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+)
+
+const (
+	firstContext  string = "first-context"
+	secondContext string = "second-context"
 )
 
 func TestHetznerConfig_FindSSHKeyByName(t *testing.T) {
@@ -64,7 +70,7 @@ func TestHetznerConfig_DeleteNonExistingSSHKey(t *testing.T) {
 func TestAppConfig_FindContextByName(t *testing.T) {
 	config := getAppConfig()
 	tests := []string{
-		"first-context",
+		firstContext,
 		"non-existing",
 	}
 	for _, test := range tests {
@@ -72,7 +78,7 @@ func TestAppConfig_FindContextByName(t *testing.T) {
 			_, err := config.FindContextByName(test)
 
 			switch test {
-			case "first-context", "second-context":
+			case firstContext, secondContext:
 				if err != nil {
 					t.Errorf("unexpected error for context %s", test)
 				}
@@ -87,26 +93,26 @@ func TestAppConfig_FindContextByName(t *testing.T) {
 func TestAppConfig_SwitchContextByName(t *testing.T) {
 	config := getAppConfig()
 
-	config.SwitchContextByName("second-context")
+	config.SwitchContextByName(secondContext)
 
-	if config.CurrentContext.Name != "second-context" {
+	if config.CurrentContext.Name != secondContext {
 		t.Error("could not switch context")
 	}
 }
 
-func getAppConfig() AppConfig {
-	return AppConfig{
-		Config: &HetznerConfig{
-			Contexts: []HetznerContext{
-				{Name: "first-context"},
-				{Name: "second-context"},
+func getAppConfig() cmd.AppConfig {
+	return cmd.AppConfig{
+		Config: &cmd.HetznerConfig{
+			Contexts: []cmd.HetznerContext{
+				{Name: firstContext},
+				{Name: secondContext},
 			},
 		},
 	}
 }
 
-func getCloudProvider() HetznerConfig {
-	return HetznerConfig{
+func getCloudProvider() cmd.HetznerConfig {
+	return cmd.HetznerConfig{
 		SSHKeys: []clustermanager.SSHKey{
 			{Name: "test-key1"},
 			{Name: "test-key2"},

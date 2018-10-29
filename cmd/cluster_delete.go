@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"fmt"
-
 	"errors"
-	"github.com/spf13/cobra"
+	"fmt"
 	"log"
+
+	"github.com/spf13/cobra"
 )
 
 // clusterDeleteCmd represents the clusterDelete command

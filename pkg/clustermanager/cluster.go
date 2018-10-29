@@ -8,17 +8,19 @@ import (
 	"github.com/xetys/hetzner-kube/pkg"
 )
 
+const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
+
 //Manager is the structure used to mange cluster
 type Manager struct {
-	clusterName      string
-	haEnabled        bool
-	isolatedEtcd     bool
-	cloudInitFile    string
-	selfHosted       bool
 	nodes            []Node
+	clusterName      string
+	cloudInitFile    string
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
+	haEnabled        bool
+	isolatedEtcd     bool
+	selfHosted       bool
 }
 
 //NewClusterManager create a new manager for the cluster
@@ -342,7 +344,6 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				if manager.haEnabled {
 					time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
 
-					rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 					kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
 
 					manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
@@ -400,7 +401,6 @@ func (manager *Manager) SetupHA() error {
 	manager.nodeCommunicator.RunCmd(*masterNode, "kubectl get pods --all-namespaces | grep proxy | awk '{print$2}' | xargs kubectl -n kube-system delete pod")
 
 	// rewrite all kubeconfigs
-	rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 	kubeConfigs := []string{"kubelet.conf", "controller-manager.conf", "scheduler.conf"}
 
 	numProcs = 0
