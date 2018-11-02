@@ -9,45 +9,59 @@ cache:
     - vendor
 
 go:
-  - 1.9.x
-  - 1.10.x
+  # - 1.9.x
+  # - 1.10.x
   - 1.11.x
-  - tip
+  # - tip
 
-before_install:
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure
+# before_install:
+#   - go get -u github.com/golang/dep/cmd/dep
+#   - dep ensure
 
-after_script:
-  - make hard-cleanup
+# after_script:
+#   - make hard-cleanup
 
-script:
-  - go test -v ./...
+script: true
+  # - go test -v ./...
 
 jobs:
   include:
-    - stage: E2E testing
+    - stage: sample1
       script:
-        - go build
-        - make preparare
-        - make test-all
-        - make cleanup
-      go: 1.11.x
+        - echo "no filter"
+
+    - stage: sample2
+      script:
+        - echo "present"
       if: env(HETZNER_API_KEY) IS present
 
-    - stage: Build
+    - stage: SAMPLE_123
       script:
-        - echo "Build binary & deploying to GitHub releases ..."
-        - make build
-      go: 1.11.x
-      if: tag IS present
+        - echo "present & not blank"
+      if: env(HETZNER_API_KEY) IS present AND env(HETZNER_API_KEY) IS NOT blank
 
-deploy:
-  provider: releases
-  api_key: $GITHUB_OAUTH_TOKEN
-  file_glob: yes
-  file: dist/*
-  name: $TRAVIS_TAG
-  skip_cleanup: true
-  on:
-    tags: true
+    # - stage: E2E testing
+    #   script:
+    #     - go build
+    #     - make preparare
+    #     - make test-all
+    #     - make cleanup
+    #   go: 1.11.x
+    #   if: env(HETZNER_API_KEY) IS present AND env(HETZNER_API_KEY) IS NOT blank
+
+    # - stage: Build
+    #   script:
+    #     - echo "Build binary & deploying to GitHub releases ..."
+    #     - make build
+    #   go: 1.11.x
+    #   if: tag IS present
+
+# deploy:
+#   provider: releases
+#   api_key: $GITHUB_OAUTH_TOKEN
+#   file_glob: yes
+#   file: dist/*
+#   name: $TRAVIS_TAG
+#   skip_cleanup: true
+#   on:
+#     tags: true
