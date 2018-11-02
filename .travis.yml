@@ -33,11 +33,10 @@ jobs:
         - make test-all
         - make cleanup
       go: 1.11.x
-      if: env(HETZNER_API_KEY) IS present
+      if: fork = false
 
     - stage: Build
       script:
-        - echo "Build binary & deploying to GitHub releases ..."
         - make build
       go: 1.11.x
       if: tag IS present
