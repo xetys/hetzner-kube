@@ -39,7 +39,8 @@ jobs:
       script:
         - echo "Build binary & deploying to GitHub releases ..."
         - make build
-      go: 1.10.x
+      go: 1.11.x
+      if: tag IS present
 
 deploy:
   provider: releases
