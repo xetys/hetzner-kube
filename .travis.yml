@@ -48,6 +48,12 @@ jobs:
         - echo $TEST_MAVIMO
       if: env(TEST_MAVIMO) != ""
 
+    - stage: sample5
+      script:
+        - echo "present & not blank"
+        - echo $TEST_MAVIMO
+      if: fork = false
+
     # - stage: E2E testing
     #   script:
     #     - go build
