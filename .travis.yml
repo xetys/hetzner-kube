@@ -36,11 +36,17 @@ jobs:
         - echo $TEST_MAVIMO
       if: env(TEST_MAVIMO) IS present
 
-    - stage: SAMPLE_123
+    - stage: sample3
       script:
         - echo "present & not blank"
         - echo $TEST_MAVIMO
       if: env(TEST_MAVIMO) IS present AND env(TEST_MAVIMO) IS NOT blank
+
+    - stage: sample4
+      script:
+        - echo "present & not blank"
+        - echo $TEST_MAVIMO
+      if: env(TEST_MAVIMO) != ""
 
     # - stage: E2E testing
     #   script:
