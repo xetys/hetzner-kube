@@ -33,12 +33,14 @@ jobs:
     - stage: sample2
       script:
         - echo "present"
-      if: env(HETZNER_API_KEY) IS present
+        - echo $TEST_MAVIMO
+      if: env(TEST_MAVIMO) IS present
 
     - stage: SAMPLE_123
       script:
         - echo "present & not blank"
-      if: env(HETZNER_API_KEY) IS present AND env(HETZNER_API_KEY) IS NOT blank
+        - echo $TEST_MAVIMO
+      if: env(TEST_MAVIMO) IS present AND env(TEST_MAVIMO) IS NOT blank
 
     # - stage: E2E testing
     #   script:
