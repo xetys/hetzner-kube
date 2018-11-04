@@ -47,7 +47,7 @@ Endpoint = %s:51820
 	return output
 }
 
-// PrivateIPPrefix extracts the first 3 digits of an IPv4 address
+// PrivateIPPrefix extracts the first 3 digits of an IPv4 address from CIDR block
 func PrivateIPPrefix(cidr string) (string, error) {
 	ipAddress, _, err := net.ParseCIDR(cidr)
 	if err != nil {
