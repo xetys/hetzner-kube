@@ -73,15 +73,15 @@ func TestPrivateIPPrefix(t *testing.T) {
 		expected string
 	}{
 		{
-			source:   "10.5.3.6",
+			source:   "10.5.3.6/24",
 			expected: "10.5.3",
 		},
 		{
-			source:   "10.20.30.60",
+			source:   "10.20.30.60/16",
 			expected: "10.20.30",
 		},
 		{
-			source:   "250.251.252.253",
+			source:   "250.251.252.253/32",
 			expected: "250.251.252",
 		},
 	}
@@ -104,6 +104,8 @@ func TestPrivateIPPrefixWithWrongIpAddress(t *testing.T) {
 		{source: "10.5.3"},
 		{source: "10.20.30.6000"},
 		{source: "250.251.252.253.254"},
+		{source: "10.0.1.100"},
+		{source: "10.0.1.100/33"},
 	}
 	for _, tC := range testCases {
 		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {

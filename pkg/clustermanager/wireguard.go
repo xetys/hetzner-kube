@@ -47,15 +47,15 @@ Endpoint = %s:51820
 	return output
 }
 
-// PrivateIPPrefix extracts the first 3 digits of an IPv4 address
-func PrivateIPPrefix(ip string) (string, error) {
-	ipAddress := net.ParseIP(ip)
-	if ipAddress == nil {
-		return "", fmt.Errorf("unable to parse ip %q", ip)
+// PrivateIPPrefix extracts the first 3 digits of an IPv4 address from CIDR block
+func PrivateIPPrefix(cidr string) (string, error) {
+	ipAddress, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse cidr %q", cidr)
 	}
 	ipAddress = ipAddress.To4()
 	if ipAddress == nil {
-		return "", fmt.Errorf("unable to convert ip %q to IPv4s", ip)
+		return "", fmt.Errorf("unable to convert ip %q to IPv4s", ipAddress)
 	}
 
 	return strings.Join(strings.Split(ipAddress.String(), ".")[:3], "."), nil
