@@ -2,21 +2,14 @@ language: go
 
 sudo: false
 
-go_import_path: github.com/xetys/hetzner-kube
+install: true
 
-cache:
-  directories:
-    - vendor
+env:
+  - GO111MODULE=on
 
 go:
-  - 1.9.x
-  - 1.10.x
   - 1.11.x
   - tip
-
-before_install:
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure
 
 after_script:
   - make hard-cleanup

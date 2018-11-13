@@ -12,10 +12,7 @@ VERSION=${TRAVIS_TAG}
 build-cleanup:
 	@rm -rf dist/*
 
-build-prepare:
-	@dep ensure
-
-build: build-cleanup build-prepare
+build: build-cleanup
 	@mkdir -p dist
 	CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-amd64
 	CGO_ENABLED=0 GOOS=linux   GOARCH=386   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-386
