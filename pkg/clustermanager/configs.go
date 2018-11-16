@@ -60,9 +60,9 @@ StartLimitInterval=0
 WantedBy=multi-user.target
 `
 
-	var ips []string
-	for _, node := range etcdNodes {
-		ips = append(ips, fmt.Sprintf("%s=http://%s:2380", node.Name, node.PrivateIPAddress))
+	ips := make([]string, len(etcdNodes))
+	for i, node := range etcdNodes {
+		ips[i] = fmt.Sprintf("%s=http://%s:2380", node.Name, node.PrivateIPAddress)
 	}
 	initialCluster := strings.Join(ips, ",")
 

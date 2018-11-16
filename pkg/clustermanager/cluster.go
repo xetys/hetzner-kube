@@ -8,17 +8,19 @@ import (
 	"github.com/xetys/hetzner-kube/pkg"
 )
 
+const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
+
 //Manager is the structure used to mange cluster
 type Manager struct {
-	clusterName      string
-	haEnabled        bool
-	isolatedEtcd     bool
-	cloudInitFile    string
-	selfHosted       bool
 	nodes            []Node
+	clusterName      string
+	cloudInitFile    string
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
+	haEnabled        bool
+	isolatedEtcd     bool
+	selfHosted       bool
 }
 
 //NewClusterManager create a new manager for the cluster
@@ -99,18 +101,19 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 //SetupEncryptedNetwork setups an encrypted virtual network using wireguard
 // modifies the state of manager.Nodes
 func (manager *Manager) SetupEncryptedNetwork() error {
-	nodes := manager.nodes
-	// render a public/private key pair
-	keyPairs, err := manager.GenerateKeyPairs(nodes[0], len(nodes))
-	if err != nil {
-		return fmt.Errorf("unable to setup encrypted network: %v", err)
-	}
+	var err error
+	var keyPair WgKeyPair
 
-	for i, keyPair := range keyPairs {
+	for i := range manager.nodes {
+		keyPair, err = GenerateKeyPair()
+		if err != nil {
+			return fmt.Errorf("unable to setup encrypted network: %v", err)
+		}
+
 		manager.nodes[i].WireGuardKeyPair = keyPair
 	}
 
-	nodes = manager.nodes
+	nodes := manager.nodes
 
 	// for each node, get specific IP and install it on node
 	errChan := make(chan error)
@@ -342,7 +345,6 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				if manager.haEnabled {
 					time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
 
-					rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 					kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
 
 					manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
@@ -400,7 +402,6 @@ func (manager *Manager) SetupHA() error {
 	manager.nodeCommunicator.RunCmd(*masterNode, "kubectl get pods --all-namespaces | grep proxy | awk '{print$2}' | xargs kubectl -n kube-system delete pod")
 
 	// rewrite all kubeconfigs
-	rewriteTpl := `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 	kubeConfigs := []string{"kubelet.conf", "controller-manager.conf", "scheduler.conf"}
 
 	numProcs = 0

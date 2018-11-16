@@ -16,10 +16,10 @@ package cmd
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
 	"os"
 	"text/tabwriter"
+
+	"github.com/spf13/cobra"
 )
 
 // listCmd represents the list command

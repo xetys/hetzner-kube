@@ -102,7 +102,11 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 				privateIPLastBlock += 10
 			}
 		}
-		cidrPrefix := clustermanager.PrivateIPPrefix(provider.nodeCidr)
+		cidrPrefix, err := clustermanager.PrivateIPPrefix(provider.nodeCidr)
+		if err != nil {
+			return nil, err
+		}
+
 		privateIPAddress := fmt.Sprintf("%s.%d", cidrPrefix, privateIPLastBlock)
 
 		node := clustermanager.Node{

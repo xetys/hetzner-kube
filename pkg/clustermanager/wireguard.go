@@ -1,35 +1,19 @@
 package clustermanager
 
 import (
-	"encoding/json"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"net"
 	"strings"
+
+	"golang.org/x/crypto/curve25519"
 )
 
 //WgKeyPair containse key pairs
 type WgKeyPair struct {
 	Private string `json:"private"`
 	Public  string `json:"public"`
-}
-
-//GenerateKeyPairs generate key pairs
-func (manager *Manager) GenerateKeyPairs(node Node, count int) ([]WgKeyPair, error) {
-	genKeyPairs := fmt.Sprintf(`echo "[" ;for i in {1..%d}; do pk=$(wg genkey); pubk=$(echo $pk | wg pubkey);echo "{\"private\":\"$pk\",\"public\":\"$pubk\"},"; done; echo "]";`, count)
-	// gives an invalid JSON back
-	o, err := manager.nodeCommunicator.RunCmd(node, genKeyPairs)
-	if err != nil {
-		return []WgKeyPair{}, fmt.Errorf("unable to generate a key pairs: %v", err)
-	}
-	o = o[0:len(o)-4] + "]"
-	// now it's a valid json
-
-	var keyPairs []WgKeyPair
-	err = json.Unmarshal([]byte(o), &keyPairs)
-	if err != nil {
-		return []WgKeyPair{}, fmt.Errorf("unable to json decode key pairs: %v", err)
-	}
-
-	return keyPairs, nil
 }
 
 //GenerateWireguardConf generate wireguard configuration file
@@ -63,7 +47,38 @@ Endpoint = %s:51820
 	return output
 }
 
-// PrivateIPPrefix extracts the first 3 digits of an IPv4 address
-func PrivateIPPrefix(ip string) string {
-	return strings.Join(strings.Split(ip, ".")[:3], ".")
+// PrivateIPPrefix extracts the first 3 digits of an IPv4 address from CIDR block
+func PrivateIPPrefix(cidr string) (string, error) {
+	ipAddress, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse cidr %q", cidr)
+	}
+	ipAddress = ipAddress.To4()
+	if ipAddress == nil {
+		return "", fmt.Errorf("unable to convert ip %q to IPv4s", ipAddress)
+	}
+
+	return strings.Join(strings.Split(ipAddress.String(), ".")[:3], "."), nil
+}
+
+// GenerateKeyPair create a key-pair used to instantiate a wireguard connection
+// Code is redacted from https://github.com/WireGuard/wireguard-go/blob/1c025570139f614f2083b935e2c58d5dbf199c2f/noise-helpers.go
+func GenerateKeyPair() (WgKeyPair, error) {
+	var publicKey [32]byte
+	var privateKey [32]byte
+	_, err := rand.Reader.Read(privateKey[:])
+	if err != nil {
+		return WgKeyPair{}, fmt.Errorf("unable to generate a private key: %v", err)
+	}
+
+	privateKey[0] &= 248
+	privateKey[31] &= 127
+	privateKey[31] |= 64
+
+	curve25519.ScalarBaseMult(&publicKey, &privateKey)
+
+	return WgKeyPair{
+		Private: base64.StdEncoding.EncodeToString(privateKey[:]),
+		Public:  base64.StdEncoding.EncodeToString(publicKey[:]),
+	}, nil
 }
