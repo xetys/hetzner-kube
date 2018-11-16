@@ -191,7 +191,7 @@ func (provisioner *NodeProvisioner) configurePackages() error {
 		provisioner.node,
 		"ufw --force reset"+
 			" && ufw allow ssh"+
-			" && ufw allow in from "+provisioner.nodeCidr+" to any"+ // Kubernetes pod overlay interface
+			" && ufw allow in from "+provisioner.nodeCidr+" to any"+ // Kubernetes VPN overlay interface
 			" && ufw allow in from 10.244.0.0/16 to any"+ // Kubernetes pod overlay interface
 			" && ufw allow 6443"+ // Kubernetes API secure remote port
 			" && ufw allow 80"+
