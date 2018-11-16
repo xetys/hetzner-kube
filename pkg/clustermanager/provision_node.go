@@ -18,14 +18,16 @@ type NodeProvisioner struct {
 	node         Node
 	communicator NodeCommunicator
 	eventService EventService
+	nodeCidr     string
 }
 
 // NewNodeProvisioner creates a NodeProvisioner instance
-func NewNodeProvisioner(node Node, communicator NodeCommunicator, eventService EventService) *NodeProvisioner {
+func NewNodeProvisioner(node Node, communicator NodeCommunicator, eventService EventService, nodeCidr string) *NodeProvisioner {
 	return &NodeProvisioner{
 		node:         node,
 		communicator: communicator,
 		eventService: eventService,
+		nodeCidr:     nodeCidr,
 	}
 }
 
@@ -77,6 +79,10 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 		return err
 	}
 	err = provisioner.updateAndInstall()
+	if err != nil {
+		return err
+	}
+	err = provisioner.configurePackages()
 	if err != nil {
 		return err
 	}
@@ -168,9 +174,30 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s wireguard linux-headers-$(uname -r) linux-headers-virtual",
+	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s wireguard linux-headers-$(uname -r) linux-headers-virtual ufw",
 		*K8sVersion, *K8sVersion, *K8sVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (provisioner *NodeProvisioner) configurePackages() error {
+	provisioner.eventService.AddEvent(provisioner.node.Name, "configuring ufw")
+
+	_, err := provisioner.communicator.RunCmd(
+		provisioner.node,
+		"ufw --force reset"+
+			" && ufw allow ssh"+
+			" && ufw allow in from "+provisioner.nodeCidr+" to any"+ // Kubernetes pod overlay interface
+			" && ufw allow in from 10.244.0.0/16 to any"+ // Kubernetes pod overlay interface
+			" && ufw allow 6443"+ // Kubernetes API secure remote port
+			" && ufw allow 80"+
+			" && ufw allow 443"+
+			" && ufw default deny incoming"+
+			" && ufw --force enable")
 	if err != nil {
 		return err
 	}
