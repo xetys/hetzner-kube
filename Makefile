@@ -1,13 +1,15 @@
 HETZNER_KUBE=${TRAVIS_BUILD_DIR}/hetzner-kube
 
 SSH_KEY_FOLDER=${TRAVIS_BUILD_DIR}/tests/keys
-DATACENTER=fsn1-dc8
 
 SSH_KEY_NAME=testing-ssh-key-${TRAVIS_JOB_NUMBER}
 CONTEXT_NAME=testing-context-${TRAVIS_JOB_NUMBER}
 CLUSTER_NAME=testing-cluster-${TRAVIS_JOB_NUMBER}
 
 VERSION=${TRAVIS_TAG}
+
+detect-datacenter:
+	@curl -s --request GET --url https://api.hetzner.cloud/v1/datacenters --header "Authorization: Bearer ${HETZNER_API_KEY}" | jq -M '.recommendation as $$reco | .datacenters[] | select(.id == $$reco) | .name' | tr -d '"'
 
 build-cleanup:
 	@rm -rf dist/*
@@ -26,11 +28,11 @@ build: build-cleanup build-prepare
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-amd64.exe
 	CGO_ENABLED=0 GOOS=windows GOARCH=386   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-386.exe
 
-preparare:
+test-preparare:
 	mkdir -p ${SSH_KEY_FOLDER}
 	ssh-keygen -t rsa -b 4096 -P "" -f ${SSH_KEY_FOLDER}/id_rsa
 
-test-all: test-info test-context test-ssh-key test-clusters
+test-all: test-preparare test-info test-context test-ssh-key test-clusters
 
 test-info:
 	${HETZNER_KUBE} help
