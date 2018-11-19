@@ -81,9 +81,9 @@ func (addon UfwAddon) Install(args ...string) {
 
 //Uninstall performs all steps to remove the addon
 func (addon UfwAddon) Uninstall() {
-	node := *addon.masterNode
-	_, err := addon.communicator.RunCmd(node, "ufw --force reset && ufw --force disable")
-	FatalOnError(err)
-
+	for _, node := range addon.nodes {
+		_, err := addon.communicator.RunCmd(node, "ufw --force reset && ufw --force disable")
+		FatalOnError(err)
+	}
 	fmt.Println("ufw uninstalled")
 }
