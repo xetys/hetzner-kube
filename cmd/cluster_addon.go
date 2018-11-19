@@ -51,7 +51,7 @@ func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
 	if idx == -1 {
 		return fmt.Errorf("cluster '%s' not found", name)
 	}
-	if len(args) != 1 {
+	if len(args) < 1 {
 		return errors.New("exactly one argument expected")
 	}
 	addonName := args[0]
