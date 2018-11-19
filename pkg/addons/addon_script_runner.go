@@ -49,7 +49,7 @@ func (addon ScriptRunnerAddon) URL() string {
 //Install performs all steps to install the addon
 func (addon ScriptRunnerAddon) Install(args ...string) {
 
-	if len(args) < 1 {
+	if len(args) < 2 {
 		log.Fatal("path argument is missing")
 	}
 	scriptPath := args[1]
