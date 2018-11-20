@@ -308,6 +308,7 @@ func init() {
 	clusterCreateCmd.Flags().StringP("ssh-key", "k", "", "Name of the SSH key used for provisioning")
 	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
+	clusterCreateCmd.Flags().String("k8s-version", "1.9.6-00","The version of the k8s debian packages that will be used during provisioning")
 	clusterCreateCmd.Flags().Bool("ha-enabled", false, "Install high-available control plane")
 	clusterCreateCmd.Flags().Bool("isolated-etcd", false, "Isolates etcd cluster from master nodes")
 	clusterCreateCmd.Flags().IntP("master-count", "m", 3, "Number of master nodes, works only if -ha-enabled is passed")
