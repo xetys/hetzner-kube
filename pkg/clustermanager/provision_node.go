@@ -163,7 +163,7 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	if err != nil {
 		return err
 	}
-	println("installing ", provisioner.k8sVersion)
+
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
 	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s wireguard linux-headers-$(uname -r) linux-headers-virtual",
 		provisioner.k8sVersion, provisioner.k8sVersion, provisioner.k8sVersion)
