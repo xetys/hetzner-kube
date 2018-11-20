@@ -8,7 +8,6 @@ import (
 
 //UfwAddon installs ufw
 type UfwAddon struct {
-	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 	nodeCidr     string
 	nodes        []clustermanager.Node
@@ -16,8 +15,7 @@ type UfwAddon struct {
 
 //NewUfwAddon installs ufw to the cluster
 func NewUfwAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
-	masterNode, _ := provider.GetMasterNode()
-	return UfwAddon{masterNode: masterNode, communicator: communicator, nodeCidr: provider.GetNodeCidr(), nodes: provider.GetAllNodes()}
+	return UfwAddon{communicator: communicator, nodeCidr: provider.GetNodeCidr(), nodes: provider.GetAllNodes()}
 }
 
 func init() {
