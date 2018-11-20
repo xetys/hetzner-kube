@@ -15,6 +15,7 @@ type Manager struct {
 	nodes            []Node
 	clusterName      string
 	cloudInitFile    string
+	k8sVersion       string
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
@@ -24,7 +25,7 @@ type Manager struct {
 }
 
 //NewClusterManager create a new manager for the cluster
-func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool) *Manager {
+func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool, k8sVersion string) *Manager {
 	manager := &Manager{
 		clusterName:      name,
 		haEnabled:        haEnabled,
@@ -35,6 +36,7 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 		nodeCommunicator: nodeCommunicator,
 		clusterProvider:  provider,
 		nodes:            provider.GetAllNodes(),
+		k8sVersion:       k8sVersion,
 	}
 
 	return manager
@@ -83,7 +85,7 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
 			//_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
-			provisioner := NewNodeProvisioner(node, manager.nodeCommunicator, manager.eventService)
+			provisioner := NewNodeProvisioner(node, manager.nodeCommunicator, manager.eventService, manager.k8sVersion)
 			err := provisioner.Provision(node, manager.nodeCommunicator, manager.eventService)
 			if err != nil {
 				errChan <- err

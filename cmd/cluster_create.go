@@ -80,6 +80,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 	nodeCidr, _ := cmd.Flags().GetString("node-cidr")
 	cloudInit, _ := cmd.Flags().GetString("cloud-init")
+	k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 
 	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, clustermanager.Cluster{
 		Name:          clusterName,
@@ -114,7 +115,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 
 	coordinator := pkg.NewProgressCoordinator()
 
-	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false)
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, false, k8sVersion)
 	cluster := clusterManager.Cluster()
 	saveCluster(&cluster)
 	renderProgressBars(&cluster, coordinator)
@@ -308,7 +309,7 @@ func init() {
 	clusterCreateCmd.Flags().StringP("ssh-key", "k", "", "Name of the SSH key used for provisioning")
 	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
 	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
-	clusterCreateCmd.Flags().String("k8s-version", "1.9.6-00","The version of the k8s debian packages that will be used during provisioning")
+	clusterCreateCmd.Flags().String("k8s-version", "1.9.6-00", "The version of the k8s debian packages that will be used during provisioning")
 	clusterCreateCmd.Flags().Bool("ha-enabled", false, "Install high-available control plane")
 	clusterCreateCmd.Flags().Bool("isolated-etcd", false, "Isolates etcd cluster from master nodes")
 	clusterCreateCmd.Flags().IntP("master-count", "m", 3, "Number of master nodes, works only if -ha-enabled is passed")
