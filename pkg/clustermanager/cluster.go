@@ -148,6 +148,24 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	return nil
 }
 
+//RestartFlannel restarts flannel on all nodes after wireguard restart
+func (manager *Manager) RestartFlannel() error {
+	cmdRestartFlannel :=
+		`kubectl -n kube-system delete pod -l 'app=flannel'`
+
+	for _, node := range manager.nodes {
+		if node.IsMaster {
+			_, err := manager.nodeCommunicator.RunCmd(node, cmdRestartFlannel)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
 //InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
 
@@ -156,6 +174,7 @@ func (manager *Manager) InstallMasters() error {
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
 		{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"},
 		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
+		{"configure flannel to work via wireguard interface", "kubectl -n kube-system patch ds kube-flannel-ds -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"args\":[\"--ip-masq\",\"--kube-subnet-mgr\",\"--iface\",\"wg0\"],\"name\":\"kube-flannel\"}]}}}}'"},
 		//{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
 		//{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
