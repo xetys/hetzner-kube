@@ -45,9 +45,9 @@ func (addon UfwAddon) URL() string {
 //Install performs all steps to install the addon
 func (addon UfwAddon) Install(args ...string) {
 
-	var nodeIpRules string
+	var nodeIPRules string
 	for _, node := range addon.nodes {
-		nodeIpRules += " && ufw allow in from " + node.IPAddress + " to any"
+		nodeIPRules += " && ufw allow in from " + node.IPAddress + " to any"
 	}
 	var output string
 	for _, node := range addon.nodes {
@@ -59,7 +59,7 @@ func (addon UfwAddon) Install(args ...string) {
 		_, err = addon.communicator.RunCmd(
 			node,
 			"ufw --force reset"+
-				nodeIpRules+
+				nodeIPRules+
 				" && ufw allow ssh"+
 				" && ufw allow in from "+addon.nodeCidr+" to any"+ // Kubernetes VPN overlay interface
 				" && ufw allow in from 10.244.0.0/16 to any"+ // Kubernetes pod overlay interface
