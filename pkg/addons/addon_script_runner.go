@@ -63,22 +63,20 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 	replacer := strings.NewReplacer("\n", "", "'", "\\'")
 	clusterInfo := replacer.Replace(string(clusterInfoBin))
 
-	var output string
 	for _, node := range addon.nodes {
 		scriptRemotePath := "/tmp/script-" + time.Now().Format("20060102150405") + ".sh"
 		err = addon.communicator.WriteFile(node, scriptRemotePath, string(scriptContents), true)
 		FatalOnError(err)
 
-		output, err = addon.communicator.RunCmd(
+		output, err := addon.communicator.RunCmd(
 			node,
 			"bash "+
 				scriptRemotePath+
 				" "+node.Group+
 				" '"+clusterInfo+"'")
 		FatalOnError(err)
+		fmt.Println(node.Name+" "+node.IPAddress+": script ran successfully..\n", output)
 	}
-
-	fmt.Println("Script ran successfully:\n", output)
 }
 
 //Uninstall performs all steps to remove the addon
