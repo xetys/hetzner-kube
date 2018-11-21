@@ -52,5 +52,6 @@ var clusterAddonInstallCmd = &cobra.Command{
 
 func init() {
 	clusterAddonCmd.AddCommand(clusterAddonInstallCmd)
+
 	clusterAddonInstallCmd.Flags().StringP("name", "n", "", "Name of the cluster")
 }

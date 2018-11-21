@@ -178,17 +178,8 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 
 func init() {
 	sshKeyCmd.AddCommand(sshKeyAddCmd)
+
 	sshKeyAddCmd.Flags().StringP("name", "n", "", "the name of the key")
 	sshKeyAddCmd.Flags().String("private-key-path", "~/.ssh/id_rsa", "the path to the private key")
 	sshKeyAddCmd.Flags().String("public-key-path", "~/.ssh/id_rsa.pub", "the path to the public key")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// sshKeyAddCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// sshKeyAddCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

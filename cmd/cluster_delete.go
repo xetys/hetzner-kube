@@ -78,15 +78,6 @@ var clusterDeleteCmd = &cobra.Command{
 
 func init() {
 	clusterCmd.AddCommand(clusterDeleteCmd)
+
 	clusterDeleteCmd.Flags().StringP("name", "n", "", "Name of the cluster to delete")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// clusterDeleteCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// clusterDeleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

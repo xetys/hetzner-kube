@@ -52,5 +52,6 @@ var clusterAddonUninstallCmd = &cobra.Command{
 
 func init() {
 	clusterAddonCmd.AddCommand(clusterAddonUninstallCmd)
+
 	clusterAddonUninstallCmd.Flags().StringP("name", "n", "", "Name of the cluster")
 }

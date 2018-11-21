@@ -85,7 +85,7 @@ var clusterRemoveExternalWorkerCmd = &cobra.Command{
 
 func init() {
 	clusterCmd.AddCommand(clusterRemoveExternalWorkerCmd)
+
 	clusterRemoveExternalWorkerCmd.Flags().StringP("name", "n", "", "Name of the cluster where to remove the worker")
 	clusterRemoveExternalWorkerCmd.Flags().StringP("ip", "i", "", "The IP address of the external node")
-
 }

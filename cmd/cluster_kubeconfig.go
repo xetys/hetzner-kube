@@ -117,14 +117,4 @@ func init() {
 	clusterKubeconfigCmd.Flags().BoolP("print", "p", false, "prints output to stdout")
 	clusterKubeconfigCmd.Flags().BoolP("backup", "b", false, "saves existing config")
 	clusterKubeconfigCmd.Flags().BoolP("force", "f", false, "don't ask to overwrite")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// clusterKubeconfigCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// clusterKubeconfigCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

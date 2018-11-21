@@ -34,8 +34,8 @@ var clusterAddonCmd = &cobra.Command{
 
 func init() {
 	clusterCmd.AddCommand(clusterAddonCmd)
-
 }
+
 func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
 	name, err := cmd.Flags().GetString("name")
 	if err != nil {
