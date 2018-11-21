@@ -3,12 +3,12 @@ package addons
 import (
 	"fmt"
 
+	"encoding/json"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"io/ioutil"
 	"log"
-	"time"
-	"encoding/json"
 	"strings"
+	"time"
 )
 
 //ScriptRunnerAddon installs script runner
