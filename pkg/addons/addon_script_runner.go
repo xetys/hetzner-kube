@@ -7,19 +7,20 @@ import (
 	"io/ioutil"
 	"log"
 	"time"
+	"encoding/json"
+	"strings"
 )
 
 //ScriptRunnerAddon installs script runner
 type ScriptRunnerAddon struct {
-	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 	nodes        []clustermanager.Node
+	cluster      clustermanager.Cluster
 }
 
 //NewScriptRunnerAddon installs script runner to the cluster
 func NewScriptRunnerAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
-	masterNode, _ := provider.GetMasterNode()
-	return ScriptRunnerAddon{masterNode: masterNode, communicator: communicator, nodes: provider.GetAllNodes()}
+	return ScriptRunnerAddon{communicator: communicator, nodes: provider.GetAllNodes(), cluster: provider.GetCluster()}
 }
 
 func init() {
@@ -56,13 +57,24 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 	scriptContents, err := ioutil.ReadFile(scriptPath)
 	FatalOnError(err)
 
+	clusterInfoBin, err := json.Marshal(addon.cluster)
+	FatalOnError(err)
+
+	replacer := strings.NewReplacer("\n", "", "'", "\\'")
+	clusterInfo := replacer.Replace(string(clusterInfoBin))
+
 	var output string
 	for _, node := range addon.nodes {
 		scriptRemotePath := "/tmp/script-" + time.Now().Format("20060102150405") + ".sh"
 		err = addon.communicator.WriteFile(node, scriptRemotePath, string(scriptContents), true)
 		FatalOnError(err)
 
-		output, err = addon.communicator.RunCmd(node, "bash "+scriptRemotePath)
+		output, err = addon.communicator.RunCmd(
+			node,
+			"bash "+
+				scriptRemotePath+
+				" "+node.Group+
+				" '"+clusterInfo+"'")
 		FatalOnError(err)
 	}
 
