@@ -41,7 +41,7 @@ func NewHetznerProvider(context context.Context, client *hcloud.Client, cluster 
 }
 
 // CreateNodes creates hetzner nodes
-func (provider *Provider) CreateNodes(suffix string, template clustermanager.Node, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
+func (provider *Provider) CreateNodes(template clustermanager.Node, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
 	sshKey, _, err := provider.client.SSHKey.Get(provider.context, template.SSHKeyName)
 
 	if err != nil {
@@ -52,7 +52,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 		return nil, fmt.Errorf("we got some problem with the SSH-Key '%s', chances are you are in the wrong context", template.SSHKeyName)
 	}
 
-	serverNameTemplate := fmt.Sprintf("%s-%s-@idx", provider.clusterName, suffix)
+	serverNameTemplate := fmt.Sprintf("%s-%s-@idx", provider.clusterName, template.Group)
 	serverOptsTemplate := hcloud.ServerCreateOpts{
 		Name: serverNameTemplate,
 		ServerType: &hcloud.ServerType{
@@ -127,20 +127,20 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 
 // CreateEtcdNodes creates nodes with type 'etcd'
 func (provider *Provider) CreateEtcdNodes(sshKeyName string, masterServerType string, datacenters []string, count int) ([]clustermanager.Node, error) {
-	template := clustermanager.Node{SSHKeyName: sshKeyName, IsEtcd: true, Type: masterServerType}
-	return provider.CreateNodes("etcd", template, datacenters, count, 0)
+	template := clustermanager.Node{SSHKeyName: sshKeyName, IsEtcd: true, Type: masterServerType, Group: "etcd"}
+	return provider.CreateNodes(template, datacenters, count, 0)
 }
 
 // CreateMasterNodes creates nodes with type 'master'
 func (provider *Provider) CreateMasterNodes(sshKeyName string, masterServerType string, datacenters []string, count int, isEtcd bool) ([]clustermanager.Node, error) {
-	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType, IsEtcd: isEtcd}
-	return provider.CreateNodes("master", template, datacenters, count, 0)
+	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: true, Type: masterServerType, IsEtcd: isEtcd, Group: "master"}
+	return provider.CreateNodes(template, datacenters, count, 0)
 }
 
 // CreateWorkerNodes create new worker node on provider
 func (provider *Provider) CreateWorkerNodes(sshKeyName string, workerServerType string, datacenters []string, count int, offset int) ([]clustermanager.Node, error) {
-	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType}
-	return provider.CreateNodes("worker", template, datacenters, count, offset)
+	template := clustermanager.Node{SSHKeyName: sshKeyName, IsMaster: false, Type: workerServerType, Group: "worker"}
+	return provider.CreateNodes(template, datacenters, count, offset)
 }
 
 // GetAllNodes retrieves all nodes
