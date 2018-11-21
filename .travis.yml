@@ -16,10 +16,6 @@ go:
 
 before_install:
   - go get -u github.com/golang/dep/cmd/dep
-  - go get -u golang.org/x/lint/golint
-  - go get -u honnef.co/go/tools/...
-  - go get -u mvdan.cc/unparam
-  - go get -u github.com/client9/misspell/cmd/misspell
   - dep ensure
 
 after_script:
@@ -30,29 +26,20 @@ script:
 
 jobs:
   include:
-    - stage: Linting
-      script:
-        - golint $(go list ./...)
-        - unused $(go list ./...)
-        - gosimple $(go list ./...)
-        - misspell -error $(git ls-files | grep -v vendor/)
-        - unparam $(go list ./...)
-        - staticcheck $(go list ./...)
-      go: 1.11.x
-
     - stage: E2E testing
       script:
         - go build
-        - make preparare
+        - export DATACENTER=$(make detect-datacenter)
         - make test-all
         - make cleanup
       go: 1.11.x
+      if: fork = false
 
     - stage: Build
       script:
-        - echo "Build binary & deploying to GitHub releases ..."
         - make build
-      go: 1.10.x
+      go: 1.11.x
+      if: tag IS present
 
 deploy:
   provider: releases

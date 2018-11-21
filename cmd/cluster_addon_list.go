@@ -35,7 +35,7 @@ var clusterAddonListCmd = &cobra.Command{
 		tw.Init(os.Stdout, 0, 8, 2, '\t', 0)
 		fmt.Fprintln(tw, "NAME\tREQUIRES\tDESCRIPTION\tURL")
 
-		cluster := &clustermanager.Cluster{Nodes: []clustermanager.Node{clustermanager.Node{IsMaster: true}}}
+		cluster := &clustermanager.Cluster{Nodes: []clustermanager.Node{{IsMaster: true}}}
 		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		addonService := addons.NewClusterAddonService(provider, AppConf.SSHClient)
 		for _, addon := range addonService.Addons() {
