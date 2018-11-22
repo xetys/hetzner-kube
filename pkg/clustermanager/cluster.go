@@ -67,6 +67,7 @@ func (manager *Manager) Cluster() Cluster {
 		CloudInitFile: manager.cloudInitFile,
 		SelfHosted:    manager.selfHosted,
 		NodeCIDR:      manager.clusterProvider.GetNodeCidr(),
+		K8sVersion:    manager.k8sVersion,
 	}
 }
 
