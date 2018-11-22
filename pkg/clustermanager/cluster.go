@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/xetys/hetzner-kube/pkg"
-	"log"
 )
 
 const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
@@ -341,9 +340,6 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 		return err
 	}
 	joinCommand = fmt.Sprintf("%s --apiserver-advertise-address=10.0.0.1 --cri-socket /var/run/docker/containerd/docker-containerd.sock", joinCommand)
-
-	log.Println("sleep for 10s...")
-	time.Sleep(20 * time.Second)
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
