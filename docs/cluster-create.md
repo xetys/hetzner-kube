@@ -39,3 +39,4 @@ The following custom options are available for the cluster create command:
 - `--worker-count`,`-w`: Number of worker nodes for the cluster , *default: 1*
 - `--cloud-init`: Cloud-init file for server preconfiguration
 - `--datacenters`: Can be used to filter datacenters by their name, *options: nbg1-dc3, fsn1-dc8, hel1-dc2*
+- `--k8s-version`: The version of the k8s debian packages that will be used during provisioning (only 1.9*, 1.10* currently supported)
