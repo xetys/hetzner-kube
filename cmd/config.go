@@ -41,7 +41,7 @@ func NewAppConfig() AppConfig {
 	}
 
 	makeConfigIfNotExists(&appConf)
-	appConf.SSHClient = clustermanager.NewSSHCommunicator(appConf.Config.SSHKeys)
+	appConf.SSHClient = clustermanager.NewSSHCommunicator(appConf.Config.SSHKeys, true)
 	return appConf
 }
 

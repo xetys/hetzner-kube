@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"strings"
 	"syscall"
@@ -27,16 +28,32 @@ type SSHKey struct {
 type SSHCommunicator struct {
 	sshKeys     []SSHKey
 	passPhrases map[string][]byte
+	debug       bool
+	log         *log.Logger
 }
 
 var _ NodeCommunicator = &SSHCommunicator{}
 
 // NewSSHCommunicator creates an instance of SSHCommunicator
-func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
-	return &SSHCommunicator{
+func NewSSHCommunicator(sshKeys []SSHKey, debug bool) NodeCommunicator {
+	sshComm := &SSHCommunicator{
 		sshKeys:     sshKeys,
 		passPhrases: make(map[string][]byte),
+		debug:       debug,
 	}
+	if debug {
+		outfile, _ := os.Create("hetzner.log")
+		sshComm.log = log.New(outfile, "", 0)
+	}
+	return sshComm
+}
+
+// Logger
+func (sshComm *SSHCommunicator) Log(msg ...string) {
+	if !sshComm.debug {
+		return
+	}
+	sshComm.log.Println(msg)
 }
 
 // RunCmd runs a bash command on the given node
@@ -54,7 +71,11 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 
 	err = session.Run(command)
 
+	sshComm.Log("Running Command: ", command)
+	sshComm.Log("Output: ", stdoutBuf.String())
+
 	if err != nil {
+		sshComm.Log("Error: ", err.Error())
 		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
 	}
 	session.Close()
