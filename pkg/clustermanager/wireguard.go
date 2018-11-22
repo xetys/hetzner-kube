@@ -82,3 +82,23 @@ func GenerateKeyPair() (WgKeyPair, error) {
 		Public:  base64.StdEncoding.EncodeToString(publicKey[:]),
 	}, nil
 }
+
+//GenerateEtcdSystemdService generate configuration file used to manage etcd service on systemd
+func GenerateOverlayRouteSystemdService(node Node) string {
+	serviceTpls := `# /etc/systemd/system/overlay-route.service
+[Unit]
+Description=Overlay network route for Wireguard
+After=wg-quick@wg0.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/sbin/ip route add 10.96.0.0/12 dev wg0 src %s
+
+[Install]
+WantedBy=multi-user.target
+`
+	service := fmt.Sprintf(serviceTpls, node.PrivateIPAddress)
+
+	return service
+}
