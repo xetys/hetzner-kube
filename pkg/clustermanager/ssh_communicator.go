@@ -67,11 +67,11 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 
 	combinedOutput, err := session.CombinedOutput(command)
 
-	sshComm.Log("Command: ", command)
-	sshComm.Log("Output: ", string(combinedOutput))
+	sshComm.Log(node.Name+": Command: ", command)
+	sshComm.Log(node.Name+": Output: ", string(combinedOutput))
 
 	if err != nil {
-		sshComm.Log("Error: ", err.Error())
+		sshComm.Log(node.Name+": Error: ", err.Error())
 		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nerr:%v", command, string(combinedOutput), err)
 	}
 
@@ -95,8 +95,8 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			sshComm.Log("dial failed: ", err.Error())
-			sshComm.Log("retrying..")
+			sshComm.Log(node.Name+": dial failed: ", err.Error())
+			sshComm.Log(node.Name + ": retrying..")
 			if try > 10 {
 				return nil, nil, err
 			}
@@ -132,7 +132,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			sshComm.Log("dial failed:", err.Error())
+			sshComm.Log(node.Name+": dial failed:", err.Error())
 			if try > 10 {
 				return err
 			}
@@ -145,7 +145,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
 	if err != nil {
-		log.Fatalf("session failed:%v", err)
+		log.Fatalf(node.Name+": session failed:%v", err)
 	}
 	defer session.Close()
 
@@ -170,7 +170,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	err = session.Run("/usr/bin/scp -t " + dir)
 	if err != nil {
 		fmt.Println(stderrBuf.String())
-		log.Fatalf("write failed:%v", err.Error())
+		log.Fatalf(node.Name+": write failed:%v", err.Error())
 	}
 
 	return nil
