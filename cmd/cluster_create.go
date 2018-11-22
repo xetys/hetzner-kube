@@ -52,6 +52,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	if isolatedEtcd {
 		etcdCount, _ = cmd.Flags().GetInt("etcd-count")
 	}
+	debug, _ := cmd.Flags().GetBool("debug")
 
 	clusterName := randomName()
 	if name, _ := cmd.Flags().GetString("name"); name != "" {
@@ -73,7 +74,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		CloudInitFile: cloudInit,
 	}, AppConf.CurrentContext.Token)
 
-	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys)
+	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys, debug)
 	err := sshClient.(*clustermanager.SSHCommunicator).CapturePassphrase(sshKeyName)
 	FatalOnError(err)
 
