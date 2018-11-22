@@ -350,7 +350,10 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 			numProcs++
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
-				_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f && "+joinCommand)
+				_, err := manager.nodeCommunicator.RunCmd(
+					node,
+					"for i in ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack_ipv4; do modprobe $i; done"+
+						" && kubeadm reset -f && "+joinCommand)
 				if err != nil {
 					errChan <- err
 				}
