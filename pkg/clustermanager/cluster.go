@@ -339,7 +339,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	if err != nil {
 		return err
 	}
-	joinCommand = fmt.Sprintf("%s --apiserver-advertise-address=10.0.0.1 --cri-socket /var/run/docker/containerd/docker-containerd.sock", joinCommand)
+	joinCommand = fmt.Sprintf("%s --apiserver-advertise-address=10.0.0.1 --cri-socket /var/run/docker/containerd/docker-containerd.sock", strings.TrimSuffix(joinCommand, "\n"))
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)

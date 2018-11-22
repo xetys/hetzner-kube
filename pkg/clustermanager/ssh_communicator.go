@@ -95,8 +95,8 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed: %v", err)
-			log.Print("retrying..")
+			sshComm.Log("dial failed: ", err.Error())
+			sshComm.Log("retrying..")
 			if try > 10 {
 				return nil, nil, err
 			}
@@ -132,7 +132,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed:%v", err)
+			sshComm.Log("dial failed:", err.Error())
 			if try > 10 {
 				return err
 			}
