@@ -63,23 +63,19 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 		return output, err
 	}
 	defer connection.Close()
+	defer session.Close()
 
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
+	combinedOutput, err := session.CombinedOutput(command)
 
-	err = session.Run(command)
-
-	sshComm.Log("Running Command: ", command)
-	sshComm.Log("Output: ", stdoutBuf.String())
+	sshComm.Log("Command: ", command)
+	sshComm.Log("Output: ", string(combinedOutput))
 
 	if err != nil {
 		sshComm.Log("Error: ", err.Error())
-		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
+		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nerr:%v", command, string(combinedOutput), err)
 	}
-	session.Close()
-	return stdoutBuf.String(), nil
+
+	return string(combinedOutput), nil
 }
 
 func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client, error) {
