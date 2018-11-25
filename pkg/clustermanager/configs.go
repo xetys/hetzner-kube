@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//GenerateMasterConfiguration generate the kubernetes config for master
+// GenerateMasterConfiguration generate the kubernetes config for master
 func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
 	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
@@ -34,7 +34,7 @@ apiServerCertSANs:
 	return masterConfig
 }
 
-//GenerateEtcdSystemdService generate configuration file used to manage etcd service on systemd
+// GenerateEtcdSystemdService generate configuration file used to manage etcd service on systemd
 func GenerateEtcdSystemdService(node Node, etcdNodes []Node) string {
 	serviceTpls := `# /etc/systemd/system/etcd.service
 [Unit]

@@ -31,27 +31,27 @@ func init() {
 	addAddon(NewHCloudControllerManagerAddon)
 }
 
-//Name returns the addons name
+// Name returns the addons name
 func (addon *HCloudControllerManagerAddon) Name() string {
 	return "hcloud-controller-manager"
 }
 
-//Requires returns a slice with the name of required addons
+// Requires returns a slice with the name of required addons
 func (addon *HCloudControllerManagerAddon) Requires() []string {
 	return []string{}
 }
 
-//Description returns the addons description
+// Description returns the addons description
 func (addon *HCloudControllerManagerAddon) Description() string {
 	return "Hetzner Cloud official cloud controller manager"
 }
 
-//URL returns the URL of the addons underlying project
+// URL returns the URL of the addons underlying project
 func (addon *HCloudControllerManagerAddon) URL() string {
 	return "https://github.com/hetznercloud/hcloud-cloud-controller-manager"
 }
 
-//Install performs all steps to install the addon
+// Install performs all steps to install the addon
 func (addon *HCloudControllerManagerAddon) Install(args ...string) {
 	// set external cloud provider
 	config := `
@@ -74,7 +74,7 @@ Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
 	FatalOnError(err)
 }
 
-//Uninstall performs all steps to remove the addon
+// Uninstall performs all steps to remove the addon
 func (addon *HCloudControllerManagerAddon) Uninstall() {
 	_, err := addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.2.0.yaml")
 	FatalOnError(err)

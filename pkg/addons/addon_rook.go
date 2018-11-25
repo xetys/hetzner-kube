@@ -7,14 +7,14 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
-//RookAddon installs rook
+// RookAddon installs rook
 type RookAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 	nodes        []clustermanager.Node
 }
 
-//NewRookAddon creates an addon which install rook
+// NewRookAddon creates an addon which install rook
 func NewRookAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
 	return &RookAddon{masterNode: masterNode, communicator: communicator, nodes: provider.GetAllNodes()}
@@ -24,27 +24,27 @@ func init() {
 	addAddon(NewRookAddon)
 }
 
-//Name returns the addons name
+// Name returns the addons name
 func (addon RookAddon) Name() string {
 	return "rook"
 }
 
-//Requires returns a slice with the name of required addons
+// Requires returns a slice with the name of required addons
 func (addon RookAddon) Requires() []string {
 	return []string{}
 }
 
-//Description returns the addons description
+// Description returns the addons description
 func (addon RookAddon) Description() string {
 	return "File, Block and Object Storage provider"
 }
 
-//URL returns the URL of the addons underlying project
+// URL returns the URL of the addons underlying project
 func (addon RookAddon) URL() string {
 	return "https://rook.io"
 }
 
-//Install performs all steps to install the addon
+// Install performs all steps to install the addon
 func (addon RookAddon) Install(args ...string) {
 	node := *addon.masterNode
 
@@ -72,7 +72,7 @@ func (addon RookAddon) Install(args ...string) {
 	fmt.Println("Rook installed")
 }
 
-//Uninstall performs all steps to remove the addon
+// Uninstall performs all steps to remove the addon
 func (addon RookAddon) Uninstall() {
 	node := *addon.masterNode
 	addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
