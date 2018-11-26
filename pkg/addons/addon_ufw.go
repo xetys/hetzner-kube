@@ -63,7 +63,6 @@ func (addon UfwAddon) Install(args ...string) {
 				" && ufw allow ssh"+
 				" && ufw allow in from "+addon.nodeCidr+" to any"+ // Kubernetes VPN overlay interface
 				" && ufw allow in from 10.244.0.0/16 to any"+ // Kubernetes pod overlay interface
-				" && ufw allow 6443"+ // Kubernetes API secure remote port
 				" && ufw allow 80"+
 				" && ufw allow 443"+
 				" && ufw default deny incoming"+
