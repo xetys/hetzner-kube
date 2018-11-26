@@ -1,15 +1,15 @@
 package addons
 
 import (
-	"fmt"
-	"math/rand"
-
 	"encoding/json"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // ScriptRunnerAddon installs script runner
