@@ -2,6 +2,7 @@ package addons
 
 import (
 	"fmt"
+	"math/rand"
 
 	"encoding/json"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
@@ -64,10 +65,9 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 	clusterInfo := replacer.Replace(string(clusterInfoBin))
 
 	for _, node := range addon.nodes {
-		scriptRemotePath := "/tmp/script-" + time.Now().Format("20060102150405") + ".sh"
+		scriptRemotePath := fmt.Sprintf("/tmp/script-%s-%d.sh", time.Now().Format("20060102150405"), rand.Int31())
 		err = addon.communicator.WriteFile(node, scriptRemotePath, string(scriptContents), true)
 		FatalOnError(err)
-
 
 		output, err := addon.communicator.RunCmd(
 			node,
