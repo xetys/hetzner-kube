@@ -73,7 +73,7 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 			node,
 			fmt.Sprintf("bash %s %s '%s'", scriptRemotePath, node.Group, clusterInfo))
 		FatalOnError(err)
-		fmt.Println(node.Name+" "+node.IPAddress+": script ran successfully..\n", output)
+		fmt.Printf("%s %s: script ran successfully..\n%s\n", node.Name, node.IPAddress, output)
 	}
 }
 
