@@ -68,12 +68,10 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 		err = addon.communicator.WriteFile(node, scriptRemotePath, string(scriptContents), true)
 		FatalOnError(err)
 
+
 		output, err := addon.communicator.RunCmd(
 			node,
-			"bash "+
-				scriptRemotePath+
-				" "+node.Group+
-				" '"+clusterInfo+"'")
+			fmt.Sprintf("bash %s %s '%s'", scriptRemotePath, node.Group, clusterInfo))
 		FatalOnError(err)
 		fmt.Println(node.Name+" "+node.IPAddress+": script ran successfully..\n", output)
 	}
