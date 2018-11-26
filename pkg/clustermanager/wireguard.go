@@ -93,7 +93,7 @@ After=wg-quick@wg0.service
 [Service]
 Type=oneshot
 User=root
-ExecStart=/sbin/ip route add 10.96.0.0/12 dev wg0 src %s
+ExecStart=/sbin/ip route add 10.244.0.0/16 dev wg0 src %s
 
 [Install]
 WantedBy=multi-user.target
