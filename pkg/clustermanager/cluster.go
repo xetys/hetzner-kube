@@ -10,7 +10,7 @@ import (
 
 const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 
-//Manager is the structure used to mange cluster
+// Manager is the structure used to mange cluster
 type Manager struct {
 	nodes            []Node
 	clusterName      string
@@ -24,7 +24,7 @@ type Manager struct {
 	selfHosted       bool
 }
 
-//NewClusterManager create a new manager for the cluster
+// NewClusterManager create a new manager for the cluster
 func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool, k8sVersion string) *Manager {
 	manager := &Manager{
 		clusterName:      name,
@@ -42,7 +42,7 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 	return manager
 }
 
-//NewClusterManagerFromCluster create a new manager from an existing cluster
+// NewClusterManagerFromCluster create a new manager from an existing cluster
 func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService) *Manager {
 	return &Manager{
 		clusterName:      cluster.Name,
@@ -57,7 +57,7 @@ func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nod
 	}
 }
 
-//Cluster creates a Cluster object for further processing
+// Cluster creates a Cluster object for further processing
 func (manager *Manager) Cluster() Cluster {
 	return Cluster{
 		Name:          manager.clusterName,
@@ -101,7 +101,7 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-//SetupEncryptedNetwork setups an encrypted virtual network using wireguard
+// SetupEncryptedNetwork setups an encrypted virtual network using wireguard
 // modifies the state of manager.Nodes
 func (manager *Manager) SetupEncryptedNetwork() error {
 	var err error
@@ -151,7 +151,7 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	return nil
 }
 
-//InstallMasters installs the kubernetes control plane to master nodes
+// InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
 
 	commands := []NodeCommand{
@@ -276,7 +276,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 	trueChan <- true
 }
 
-//InstallEtcdNodes installs the etcd cluster
+// InstallEtcdNodes installs the etcd cluster
 func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 
 	commands := []NodeCommand{
@@ -319,7 +319,7 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-//InstallWorkers installs kubernetes workers to given nodes
+// InstallWorkers installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
 	node, err := manager.clusterProvider.GetMasterNode()
 	if err != nil {
@@ -370,7 +370,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-//SetupHA installs the high-availability plane to cluster
+// SetupHA installs the high-availability plane to cluster
 func (manager *Manager) SetupHA() error {
 	// copy pki
 	masterNode, err := manager.clusterProvider.GetMasterNode()
@@ -436,7 +436,7 @@ func (manager *Manager) SetupHA() error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-//DeployLoadBalancer installs a client based load balancer for the master nodes to given nodes
+// DeployLoadBalancer installs a client based load balancer for the master nodes to given nodes
 func (manager *Manager) DeployLoadBalancer(nodes []Node) error {
 
 	errChan := make(chan error)
