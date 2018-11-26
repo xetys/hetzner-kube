@@ -37,29 +37,37 @@ If you want to build it yourself later, you can change into the source directory
 
 To load completion run
 
-    source <(hetzner-kube completion bash)
+```bash
+source <(hetzner-kube completion bash)
+```
 
 To configure your bash shell to load completions for each session add to your "~/.bashrc" file
 
-    # ~/.bashrc or ~/.profile
-    echo 'source <(hetzner-kube completion bash)\n' >> ~/.bashrc
+```bash
+# ~/.bashrc or ~/.profile
+echo 'source <(hetzner-kube completion bash)\n' >> ~/.bashrc
+```
 
 Or you can add it to your `bash_completition.d` folder:
 
-    # On linux
-    hetzner-kube completion bash > /etc/bash_completion.d/hetzner-kube
-    # On OSX with completion installed via brew (`brew intall bash-completion`)
-    hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
+```bash
+# On linux
+hetzner-kube completion bash > /etc/bash_completion.d/hetzner-kube
+# On OSX with completion installed via brew (`brew intall bash-completion`)
+hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
+```
 
 #### ZSH
 
-To load completion run
+To configure your zsh shell to load completions run following commands:
 
-	source <(hetzner-kube completion zsh)
-
-To configure your zsh shell to load completions for each session add to your "~/.zshrc" file
-
-    echo 'source <(hetzner-kube completion zsh)\n' >> ~/.zshrc
+```bash
+mkdir ~/.zcomp
+fpath=($HOME/.zcomp $fpath)
+hetzner-kube completion zsh > ~/.zcomp/_hetzner-kube
+rm -f ~/.zcompdump
+compinits
+```
 
 ## Usage
 
@@ -82,7 +90,6 @@ And finally, you can create a cluster by running:
 
 ```bash
 $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
-
 ```
 
 This will provision a brand new kubernetes cluster in latest version!

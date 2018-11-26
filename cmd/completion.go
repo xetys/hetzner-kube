@@ -28,13 +28,14 @@ Or you can add it to your bash_completition folder:
 
 ZSH:
 
-To load completion run
+To configure your zsh shell to load completions run following commands:
 
-	source <(hetzner-kube completion zsh)
+    mkdir ~/.zcomp
+    fpath=($HOME/.zcomp $fpath)
+    hetzner-kube completion zsh > ~/.zcomp/_hetzner-kube
+    rm -f ~/.zcompdump
+    compinit
 
-To configure your zsh shell to load completions for each session add to your "~/.zshrc" file
-
-    echo 'source <(hetzner-kube completion zsh)\n' >> ~/.zshrc
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
