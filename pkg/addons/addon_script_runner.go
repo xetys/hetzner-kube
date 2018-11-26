@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-//ScriptRunnerAddon installs script runner
+// ScriptRunnerAddon installs script runner
 type ScriptRunnerAddon struct {
 	communicator clustermanager.NodeCommunicator
 	nodes        []clustermanager.Node
 	cluster      clustermanager.Cluster
 }
 
-//NewScriptRunnerAddon installs script runner to the cluster
+// NewScriptRunnerAddon installs script runner to the cluster
 func NewScriptRunnerAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	return ScriptRunnerAddon{communicator: communicator, nodes: provider.GetAllNodes(), cluster: provider.GetCluster()}
 }
@@ -27,27 +27,27 @@ func init() {
 	addAddon(NewScriptRunnerAddon)
 }
 
-//Name returns the addons name
+// Name returns the addons name
 func (addon ScriptRunnerAddon) Name() string {
 	return "script-runner"
 }
 
-//Requires returns a slice with the name of required addons
+// Requires returns a slice with the name of required addons
 func (addon ScriptRunnerAddon) Requires() []string {
 	return []string{}
 }
 
-//Description returns the addons description
+// Description returns the addons description
 func (addon ScriptRunnerAddon) Description() string {
 	return "Bash remote script runner"
 }
 
-//URL returns the URL of the addons underlying project
+// URL returns the URL of the addons underlying project
 func (addon ScriptRunnerAddon) URL() string {
 	return "https://www.gnu.org/software/bash/"
 }
 
-//Install performs all steps to install the addon
+// Install performs all steps to install the addon
 func (addon ScriptRunnerAddon) Install(args ...string) {
 
 	if len(args) < 2 {
@@ -79,7 +79,7 @@ func (addon ScriptRunnerAddon) Install(args ...string) {
 	}
 }
 
-//Uninstall performs all steps to remove the addon
+// Uninstall performs all steps to remove the addon
 func (addon ScriptRunnerAddon) Uninstall() {
 	fmt.Println("no uninstall for this addon")
 }
