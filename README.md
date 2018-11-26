@@ -33,21 +33,33 @@ If you want to build it yourself later, you can change into the source directory
 
 ### Code completion
 
-To load completion for bash env run
+#### BASH
 
-    . <(hetzner-kube completion)
+To load completion run
 
-To configure your bash shell to load completions for each session add to your `.bashrc` file:
+    source <(hetzner-kube completion bash)
+
+To configure your bash shell to load completions for each session add to your "~/.bashrc" file
 
     # ~/.bashrc or ~/.profile
-    . <(hetzner-kube completion)
+    echo 'source <(hetzner-kube completion bash)\n' >> ~/.bashrc
 
 Or you can add it to your `bash_completition.d` folder:
 
     # On linux
-    hetzner-kube completion > /etc/bash_completion.d/hetzner-kube
+    hetzner-kube completion bash > /etc/bash_completion.d/hetzner-kube
     # On OSX with completion installed via brew (`brew intall bash-completion`)
-    hetzner-kube completion > /usr/local/etc/bash_completion.d/hetzner-kube
+    hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
+
+#### ZSH
+
+To load completion run
+
+	source <(hetzner-kube completion zsh)
+
+To configure your zsh shell to load completions for each session add to your "~/.zshrc" file
+
+    echo 'source <(hetzner-kube completion zsh)\n' >> ~/.zshrc
 
 ## Usage
 

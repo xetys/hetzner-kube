@@ -21,7 +21,7 @@ var DefaultConfigPath string
 // AppConf is the default configuration from the local system.
 var AppConf = NewAppConfig()
 
-//AppSSHClient is the SSH client
+// AppSSHClient is the SSH client
 type AppSSHClient struct {
 }
 
@@ -45,7 +45,7 @@ func NewAppConfig() AppConfig {
 	return appConf
 }
 
-//WriteCurrentConfig write the configuration to file
+// WriteCurrentConfig write the configuration to file
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
 	configJSON, err := json.Marshal(&config)
@@ -61,17 +61,17 @@ func (config HetznerConfig) WriteCurrentConfig() {
 	}
 }
 
-//AddContext add context to config
+// AddContext add context to config
 func (config *HetznerConfig) AddContext(context HetznerContext) {
 	config.Contexts = append(config.Contexts, context)
 }
 
-//AddSSHKey add a new SSH key to config
+// AddSSHKey add a new SSH key to config
 func (config *HetznerConfig) AddSSHKey(key clustermanager.SSHKey) {
 	config.SSHKeys = append(config.SSHKeys, key)
 }
 
-//DeleteSSHKey remove the SSH key from config
+// DeleteSSHKey remove the SSH key from config
 func (config *HetznerConfig) DeleteSSHKey(name string) error {
 
 	index, err := config.FindSSHKeyByName(name)
@@ -84,7 +84,7 @@ func (config *HetznerConfig) DeleteSSHKey(name string) error {
 	return nil
 }
 
-//FindSSHKeyByName find a SSH key in config by name
+// FindSSHKeyByName find a SSH key in config by name
 func (config *HetznerConfig) FindSSHKeyByName(name string) (int, error) {
 	for i, v := range config.SSHKeys {
 		if v.Name == name {
@@ -95,7 +95,7 @@ func (config *HetznerConfig) FindSSHKeyByName(name string) (int, error) {
 	return -1, fmt.Errorf("unable to find '%s' SSH key", name)
 }
 
-//AddCluster add a cluster in config
+// AddCluster add a cluster in config
 func (config *HetznerConfig) AddCluster(cluster clustermanager.Cluster) {
 	for i, v := range config.Clusters {
 		if v.Name == cluster.Name {
@@ -107,7 +107,7 @@ func (config *HetznerConfig) AddCluster(cluster clustermanager.Cluster) {
 	config.Clusters = append(config.Clusters, cluster)
 }
 
-//DeleteCluster remove cluster from config
+// DeleteCluster remove cluster from config
 func (config *HetznerConfig) DeleteCluster(name string) error {
 
 	index, _ := config.FindClusterByName(name)
@@ -121,7 +121,7 @@ func (config *HetznerConfig) DeleteCluster(name string) error {
 	return nil
 }
 
-//FindClusterByName find a cluster by name in config
+// FindClusterByName find a cluster by name in config
 func (config *HetznerConfig) FindClusterByName(name string) (int, *clustermanager.Cluster) {
 	for i, cluster := range config.Clusters {
 		if cluster.Name == name {
@@ -132,7 +132,7 @@ func (config *HetznerConfig) FindClusterByName(name string) (int, *clustermanage
 	return -1, nil
 }
 
-//SwitchContextByName switch to context with a specific name in app
+// SwitchContextByName switch to context with a specific name in app
 func (app *AppConfig) SwitchContextByName(name string) error {
 	ctx, err := app.FindContextByName(name)
 
@@ -152,7 +152,7 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 	return nil
 }
 
-//FindContextByName find a context using name
+// FindContextByName find a context using name
 func (app *AppConfig) FindContextByName(name string) (*HetznerContext, error) {
 
 	for _, ctx := range app.Config.Contexts {

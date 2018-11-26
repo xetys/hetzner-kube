@@ -6,13 +6,13 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
-//OpenEBSAddon installs OpenEBS
+// OpenEBSAddon installs OpenEBS
 type OpenEBSAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
 }
 
-//NewOpenEBSAddon creates an addon which installs OpenEBS
+// NewOpenEBSAddon creates an addon which installs OpenEBS
 func NewOpenEBSAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
 	return &OpenEBSAddon{masterNode: masterNode, communicator: communicator}
@@ -22,27 +22,27 @@ func init() {
 	addAddon(NewOpenEBSAddon)
 }
 
-//Name returns the addons name
+// Name returns the addons name
 func (addon OpenEBSAddon) Name() string {
 	return "openebs"
 }
 
-//Requires returns a slice with the name of required addons
+// Requires returns a slice with the name of required addons
 func (addon OpenEBSAddon) Requires() []string {
 	return []string{}
 }
 
-//Description returns the addons description
+// Description returns the addons description
 func (addon OpenEBSAddon) Description() string {
 	return "Simple scalable block storage provider"
 }
 
-//URL returns the URL of the addons underlying project
+// URL returns the URL of the addons underlying project
 func (addon OpenEBSAddon) URL() string {
 	return "https://openebs.io/"
 }
 
-//Install performs all steps to install the addon
+// Install performs all steps to install the addon
 func (addon OpenEBSAddon) Install(args ...string) {
 	node := *addon.masterNode
 
@@ -68,7 +68,7 @@ parameters:
 	fmt.Println("OpenEBS installed")
 }
 
-//Uninstall performs all steps to remove the addon
+// Uninstall performs all steps to remove the addon
 func (addon OpenEBSAddon) Uninstall() {
 	node := *addon.masterNode
 
