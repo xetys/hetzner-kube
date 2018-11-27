@@ -92,6 +92,10 @@ You can install some addons to your cluster using the `cluster addon` sub-comman
 $ hetzner-kube cluster addon list
 ```
 
+## Script Runner Addon
+
+The addon lets you run bash scripts on the running nodes, check [Script Runner Guide](docs/script-runner-addon.md) for more info. 
+
 ### contributing new addons
 
 You want to add some cool stuff to hetzner-kube? It's quite easy! Learn how to add new addons in the [Developing Addons](docs/cluster-addons.md) documentation.
