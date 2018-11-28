@@ -1,6 +1,6 @@
 # Script Runner Addon Guide
 
-Script Runner lets you run a bash script on all your cluster nodes with one command. It uploads the bash script to each node then execute. The script will receive two arguments upon execution:
+Script Runner lets you run a bash script on all your cluster nodes with one command. It uploads the bash script to each node then execute it. The script will receive two arguments upon execution:
 1. Node group, allowed values are `master`, `worker` and `etcd`
 2. Cluster info JSON config, which is similar to the hetzner-kube config found in `~/.hetzner-kube/config.json`
 
