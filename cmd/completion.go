@@ -24,17 +24,21 @@ To configure your bash shell to load completions for each session add to your "~
 
 Or you can add it to your bash_completition folder:
 
-	hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
+    hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
 
 ZSH:
 
-To load completion run
+To configure your zsh shell to load completions run following commands:
 
-	source <(hetzner-kube completion zsh)
+    # On linux
+    hetzner-kube completion zsh | sudo tee /usr/share/zsh/vendor-completions/_hetzner-kube
+    # On OSX
+    hetzner-kube completion zsh | sudo tee /usr/share/zsh/site-functions/_hetzner-kube
 
-To configure your zsh shell to load completions for each session add to your "~/.zshrc" file
+Than rebuild autocomplete function with:
 
-    echo 'source <(hetzner-kube completion zsh)\n' >> ~/.zshrc
+    compinits
+
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
