@@ -21,6 +21,7 @@ type Cluster struct {
 	SelfHosted    bool   `json:"self_hosted"`
 	CloudInitFile string `json:"cloud_init_file"`
 	NodeCIDR      string `json:"node_cidr"`
+	K8sVersion    string `json:"k8s_version"`
 }
 
 // NodeCommand is the structure used to define acommand to execute on a node
