@@ -10,7 +10,7 @@ import (
 const maxErrors = 3
 
 // K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.10.12-00",
+var K8sVersion = flag.String("k8s-version", "1.9.11",
 	"The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
