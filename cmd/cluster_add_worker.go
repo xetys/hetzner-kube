@@ -132,5 +132,5 @@ func init() {
 	clusterAddWorkerCmd.Flags().StringP("name", "", "", "Name of the cluster to add the workers to")
 	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
-	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"nbg1-dc3", "fsn1-dc8", "hel1-dc2"}, "Can be used to filter datacenters by their name")
+	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"fsn1-dc8", "nbg1-dc3", "hel1-dc2", "fsn1-dc14"}, "Can be used to filter datacenters by their name")
 }
