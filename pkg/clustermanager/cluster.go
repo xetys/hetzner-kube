@@ -158,9 +158,8 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 
 // InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
-
 	commands := []NodeCommand{
-		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --config /root/master-config.yaml"},
+		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
 		//{"install Weave Net", "kubectl apply -f \"https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\\n')\""},
 		{"install canal (RBAC)", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml"},
