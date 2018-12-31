@@ -77,7 +77,6 @@ nodeRegistration:
 	if etcdConf != expectedConfWithEtcd {
 		t.Errorf("master config with etcd does not match to expected.\n%s\n", diff.LineDiff(etcdConf, expectedConfWithEtcd))
 	}
-
 }
 
 func TestGenerateEtcdSystemdService(t *testing.T) {
