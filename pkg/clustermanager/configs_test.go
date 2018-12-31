@@ -13,21 +13,23 @@ networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
+apiServerCertSANs:
+  - 127.0.0.1
+  - 1.1.1.1
+  - 10.0.0.1
+  - 10.0.0.2
+
 ---
 apiVersion: kubeadm.k8s.io/v1alpha3
 kind: InitConfiguration
-api:
+apiEndpoint:
   advertiseAddress: 10.0.0.1
+  bindPort: 6443
 nodeRegistration:
   criSocket: /var/run/docker/containerd/docker-containerd.sock
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
-apiServerCertSANs:
-  - 1.1.1.1
-  - 127.0.0.1
-  - 10.0.0.1
-  - 10.0.0.2
 `
 
 	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha3
@@ -36,25 +38,28 @@ networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
+apiServerCertSANs:
+  - 127.0.0.1
+  - 1.1.1.1
+  - 10.0.0.1
+  - 10.0.0.2
+etcd:
+  external:
+    endpoints:
+    - http://10.0.0.1:2379
+    - http://10.0.0.2:2379
+
 ---
 apiVersion: kubeadm.k8s.io/v1alpha3
 kind: InitConfiguration
-api:
+apiEndpoint:
   advertiseAddress: 10.0.0.1
+  bindPort: 6443
 nodeRegistration:
   criSocket: /var/run/docker/containerd/docker-containerd.sock
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
-apiServerCertSANs:
-  - 1.1.1.1
-  - 127.0.0.1
-  - 10.0.0.1
-  - 10.0.0.2
-etcd:
-  endpoints:
-  - http://10.0.0.1:2379
-  - http://10.0.0.2:2379
 `
 	nodes := []Node{
 		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1"},
@@ -64,7 +69,7 @@ etcd:
 	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil)
 
 	if noEtcdConf != expectedConf {
-		t.Errorf("master config without etcd does not match to expected.\n%s\n", noEtcdConf)
+		t.Errorf("master config without etcd does not match to expected.\n%s\n", diff.LineDiff(noEtcdConf, expectedConf))
 	}
 
 	etcdConf := GenerateMasterConfiguration(nodes[0], nodes, nodes)
