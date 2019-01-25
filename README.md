@@ -33,21 +33,46 @@ If you want to build it yourself later, you can change into the source directory
 
 ### Code completion
 
-To load completion for bash env run
+#### BASH
 
-    . <(hetzner-kube completion)
+To load completion run
 
-To configure your bash shell to load completions for each session add to your `.bashrc` file:
+```bash
+source <(hetzner-kube completion bash)
+```
 
-    # ~/.bashrc or ~/.profile
-    . <(hetzner-kube completion)
+To configure your bash shell to load completions for each session add to your "~/.bashrc" file
+
+```bash
+# ~/.bashrc or ~/.profile
+echo 'source <(hetzner-kube completion bash)\n' >> ~/.bashrc
+```
 
 Or you can add it to your `bash_completition.d` folder:
 
-    # On linux
-    hetzner-kube completion > /etc/bash_completion.d/hetzner-kube
-    # On OSX with completion installed via brew (`brew intall bash-completion`)
-    hetzner-kube completion > /usr/local/etc/bash_completion.d/hetzner-kube
+```bash
+# On linux
+hetzner-kube completion bash > /etc/bash_completion.d/hetzner-kube
+# On OSX with completion installed via brew (`brew intall bash-completion`)
+hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
+```
+
+#### ZSH
+
+To configure your zsh shell to load completions run following commands:
+
+```bash
+# On linux
+hetzner-kube completion zsh | sudo tee /usr/share/zsh/vendor-completions/_hetzner-kube
+# On OSX
+hetzner-kube completion zsh | sudo tee /usr/share/zsh/site-functions/_hetzner-kube
+```
+
+Than rebuild autocomplete function with:
+
+```
+compinits
+```
 
 ## Usage
 
@@ -70,7 +95,6 @@ And finally, you can create a cluster by running:
 
 ```bash
 $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
-
 ```
 
 This will provision a brand new kubernetes cluster in latest version!

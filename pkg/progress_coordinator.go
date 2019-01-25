@@ -10,19 +10,19 @@ import (
 	"github.com/gosuri/uiprogress/util/strutil"
 )
 
-//CompletedEvent indicate the process completed
+// CompletedEvent indicate the process completed
 const CompletedEvent = "complete!"
 
-//UIProgressCoordinator coortinate display of progress in UI
+// UIProgressCoordinator coortinate display of progress in UI
 type UIProgressCoordinator struct {
 	group      sync.WaitGroup
 	progresses map[string]*Progress
 }
 
-//RenderProgressBars indicate if we need to display progress in UI
+// RenderProgressBars indicate if we need to display progress in UI
 var RenderProgressBars bool
 
-//NewProgressCoordinator create a new progress coordinator UI
+// NewProgressCoordinator create a new progress coordinator UI
 func NewProgressCoordinator() *UIProgressCoordinator {
 	if isUIEnabled() {
 		uiprogress.Start()
@@ -48,7 +48,7 @@ func shortLeftPadRight(s string, padWidth int) string {
 	return strutil.PadRight(s, padWidth, ' ')
 }
 
-//StartProgress start the progress UI
+// StartProgress start the progress UI
 func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 	progress := &Progress{
 		Bar:     uiprogress.AddBar(steps),
@@ -89,7 +89,7 @@ func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 	}(progress)
 }
 
-//AddEvent add an new event in the progress UI
+// AddEvent add an new event in the progress UI
 func (c *UIProgressCoordinator) AddEvent(progressName string, eventName string) {
 	if progress, isPresent := c.progresses[progressName]; isPresent {
 		progress.channel <- eventName
@@ -103,7 +103,7 @@ func (c *UIProgressCoordinator) CompleteProgress(nodeName string) {
 	}
 }
 
-//Wait temporary stop the progress UI
+// Wait temporary stop the progress UI
 func (c *UIProgressCoordinator) Wait() {
 	c.group.Wait()
 	if isUIEnabled() {

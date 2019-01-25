@@ -7,7 +7,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
 )
 
-//PrometheusAddon provides cluster monitoring using prometheus operator
+// PrometheusAddon provides cluster monitoring using prometheus operator
 type PrometheusAddon struct {
 	masterNode   *clustermanager.Node
 	communicator clustermanager.NodeCommunicator
@@ -15,7 +15,7 @@ type PrometheusAddon struct {
 	provider     *hetzner.Provider
 }
 
-//NewPrometheusAddon create a new prometheus addon
+// NewPrometheusAddon create a new prometheus addon
 func NewPrometheusAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := provider.GetMasterNode()
 	FatalOnError(err)
@@ -31,22 +31,22 @@ func init() {
 	addAddon(NewPrometheusAddon)
 }
 
-//Name returns the addons name
+// Name returns the addons name
 func (addon *PrometheusAddon) Name() string {
 	return "kube-prometheus"
 }
 
-//Requires returns a slice with the name of required addons
+// Requires returns a slice with the name of required addons
 func (addon *PrometheusAddon) Requires() []string {
 	return []string{}
 }
 
-//Description returns the addons description
+// Description returns the addons description
 func (addon *PrometheusAddon) Description() string {
 	return "CoreOS prometheus operator /w cluster monitoring"
 }
 
-//URL returns the URL of the addons underlying project
+// URL returns the URL of the addons underlying project
 func (addon *PrometheusAddon) URL() string {
 	return "https://github.com/coreos/prometheus-operator"
 }

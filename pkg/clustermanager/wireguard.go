@@ -10,13 +10,13 @@ import (
 	"golang.org/x/crypto/curve25519"
 )
 
-//WgKeyPair containse key pairs
+// WgKeyPair containse key pairs
 type WgKeyPair struct {
 	Private string `json:"private"`
 	Public  string `json:"public"`
 }
 
-//GenerateWireguardConf generate wireguard configuration file
+// GenerateWireguardConf generate wireguard configuration file
 func GenerateWireguardConf(node Node, nodes []Node) string {
 	var output string
 	// print header block

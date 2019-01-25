@@ -15,7 +15,7 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
-//Provider contains provider information
+// Provider contains provider information
 type Provider struct {
 	client        *hcloud.Client
 	context       context.Context

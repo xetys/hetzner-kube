@@ -38,4 +38,4 @@ The following custom options are available for the cluster create command:
 - `--self-hosted`: If true, the kubernetes control plane will be hosted on itself , *default: false*
 - `--worker-count`,`-w`: Number of worker nodes for the cluster , *default: 1*
 - `--cloud-init`: Cloud-init file for server preconfiguration
-- `--datacenters`: Can be used to filter datacenters by their name, *options: nbg1-dc3, fsn1-dc8, hel1-dc2*
+- `--datacenters`: Can be used to filter datacenters by their name, *options: fsn-dc8, nbg1-dc3, hel1-dc2, fsn1-dc14*
