@@ -114,5 +114,4 @@ WantedBy=multi-user.target
 	if etcdService != expectedString {
 		t.Errorf("etcd systemd service does not match expected\n%s", diff.LineDiff(expectedString, etcdService))
 	}
-
 }
