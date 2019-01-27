@@ -129,8 +129,16 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 				errChan <- err
 			}
 
-			_, err = manager.nodeCommunicator.RunCmd(node, "systemctl enable wg-quick@wg0 && systemctl restart wg-quick@wg0")
+			overlayRouteConf := GenerateOverlayRouteSystemdService(node)
+			err = manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/overlay-route.service", overlayRouteConf, false)
+			if err != nil {
+				errChan <- err
+			}
 
+			_, err = manager.nodeCommunicator.RunCmd(
+				node,
+				"systemctl enable wg-quick@wg0 && systemctl restart wg-quick@wg0"+
+					" && systemctl enable overlay-route.service && systemctl restart overlay-route.service")
 			if err != nil {
 				errChan <- err
 			}
@@ -150,12 +158,14 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 
 // InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters() error {
-
 	commands := []NodeCommand{
-		{"kubeadm init", "kubeadm init --config /root/master-config.yaml"},
+		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"},
-		{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
+		//{"install Weave Net", "kubectl apply -f \"https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\\n')\""},
+		{"install canal (RBAC)", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml"},
+		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml"},
+		//{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"},
+		//{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
 		//{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
 		//{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
@@ -172,14 +182,14 @@ func (manager *Manager) InstallMasters() error {
 
 	for _, node := range manager.nodes {
 		if node.IsMaster {
-			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset")
+			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f")
 			if err != nil {
-				return nil
+				return err
 			}
 
 			_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
 			if err != nil {
-				return nil
+				return err
 			}
 			if len(manager.nodes) == 1 {
 				commands = append(commands, NodeCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
@@ -212,7 +222,6 @@ func (manager *Manager) InstallMasters() error {
 
 // installs kubernetes control plane to a given node
 func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode Node, commands []NodeCommand, trueChan chan bool, errChan chan error) {
-
 	// create master-configuration
 	var etcdNodes []Node
 	if manager.haEnabled {
@@ -275,10 +284,9 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 
 // InstallEtcdNodes installs the etcd cluster
 func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
-
 	commands := []NodeCommand{
-		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.2.13/etcd-v3.2.13-linux-amd64.tar.gz -o /opt/etcd-v3.2.13-linux-amd64.tar.gz"},
-		{"install etcd", "tar xzvf /opt/etcd-v3.2.13-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
+		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
+		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
 		{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
 	}
 
@@ -328,6 +336,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	if err != nil {
 		return err
 	}
+	joinCommand = fmt.Sprintf("%s --cri-socket /var/run/docker/containerd/docker-containerd.sock", strings.TrimRight(joinCommand, "\n"))
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -338,7 +347,10 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 			numProcs++
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
-				_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset && "+joinCommand)
+				_, err := manager.nodeCommunicator.RunCmd(
+					node,
+					"for i in ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack_ipv4; do modprobe $i; done"+
+						" && kubeadm reset -f && "+joinCommand)
 				if err != nil {
 					errChan <- err
 				}

@@ -10,8 +10,7 @@ import (
 const maxErrors = 3
 
 // K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.9.11-00",
-	"The version of the k8s debian packages that will be used during provisioning")
+var K8sVersion = flag.String("k8s-version", "1.13.2-00", "The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
@@ -51,7 +50,8 @@ func (provisioner *NodeProvisioner) Provision(node Node, communicator NodeCommun
 	}
 
 	eventService.AddEvent(node.Name, "packages installed")
-	return nil
+
+	return provisioner.disableSwap()
 }
 
 func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator NodeCommunicator) bool {
@@ -82,6 +82,18 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 	}
 
 	return nil
+}
+
+func (provisioner *NodeProvisioner) disableSwap() error {
+	provisioner.eventService.AddEvent(provisioner.node.Name, "disabling swap")
+
+	_, err := provisioner.communicator.RunCmd(provisioner.node, "swapoff -a")
+	if err != nil {
+		return err
+	}
+
+	_, err = provisioner.communicator.RunCmd(provisioner.node, "sed -i '/ swap / s/^/#/' /etc/fstab")
+	return err
 }
 
 func (provisioner *NodeProvisioner) installTransportTools() error {
@@ -139,7 +151,7 @@ func (provisioner *NodeProvisioner) prepareDocker() error {
 	// docker-ce
 	aptPreferencesDocker := `
 Package: docker-ce
-Pin: version 17.03.*
+Pin: version 18.06.0~ce~3-0~ubuntu
 Pin-Priority: 1000
 	`
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, false)
@@ -168,7 +180,7 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s wireguard linux-headers-$(uname -r) linux-headers-virtual",
+	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s kubernetes-cni wireguard linux-headers-$(uname -r) linux-headers-virtual",
 		*K8sVersion, *K8sVersion, *K8sVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {

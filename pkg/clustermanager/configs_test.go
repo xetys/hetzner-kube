@@ -7,34 +7,59 @@ import (
 )
 
 func TestGenerateMasterConfiguration(t *testing.T) {
-	expectedConf := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
-api:
-  advertiseAddress: 10.0.0.1
+	expectedConf := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
 networking:
-  podSubnet: 10.244.0.0/16
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
 apiServerCertSANs:
-  - 1.1.1.1
   - 127.0.0.1
+  - 1.1.1.1
   - 10.0.0.1
   - 10.0.0.2
+
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
+apiEndpoint:
+  advertiseAddress: 10.0.0.1
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 `
 
-	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
-api:
-  advertiseAddress: 10.0.0.1
+	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
 networking:
-  podSubnet: 10.244.0.0/16
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
 apiServerCertSANs:
-  - 1.1.1.1
   - 127.0.0.1
+  - 1.1.1.1
   - 10.0.0.1
   - 10.0.0.2
 etcd:
-  endpoints:
-  - http://10.0.0.1:2379
-  - http://10.0.0.2:2379
+  external:
+    endpoints:
+    - http://10.0.0.1:2379
+    - http://10.0.0.2:2379
+
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
+apiEndpoint:
+  advertiseAddress: 10.0.0.1
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 `
 	nodes := []Node{
 		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1"},
@@ -44,7 +69,7 @@ etcd:
 	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil)
 
 	if noEtcdConf != expectedConf {
-		t.Errorf("master config without etcd does not match to expected.\n%s\n", noEtcdConf)
+		t.Errorf("master config without etcd does not match to expected.\n%s\n", diff.LineDiff(noEtcdConf, expectedConf))
 	}
 
 	etcdConf := GenerateMasterConfiguration(nodes[0], nodes, nodes)
@@ -52,7 +77,6 @@ etcd:
 	if etcdConf != expectedConfWithEtcd {
 		t.Errorf("master config with etcd does not match to expected.\n%s\n", diff.LineDiff(etcdConf, expectedConfWithEtcd))
 	}
-
 }
 
 func TestGenerateEtcdSystemdService(t *testing.T) {
@@ -90,5 +114,4 @@ WantedBy=multi-user.target
 	if etcdService != expectedString {
 		t.Errorf("etcd systemd service does not match expected\n%s", diff.LineDiff(expectedString, etcdService))
 	}
-
 }

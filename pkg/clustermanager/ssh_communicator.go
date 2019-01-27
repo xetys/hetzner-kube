@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"strings"
 	"syscall"
@@ -27,16 +28,32 @@ type SSHKey struct {
 type SSHCommunicator struct {
 	sshKeys     []SSHKey
 	passPhrases map[string][]byte
+	debug       bool
+	log         *log.Logger
 }
 
 var _ NodeCommunicator = &SSHCommunicator{}
 
 // NewSSHCommunicator creates an instance of SSHCommunicator
-func NewSSHCommunicator(sshKeys []SSHKey) NodeCommunicator {
-	return &SSHCommunicator{
+func NewSSHCommunicator(sshKeys []SSHKey, debug bool) NodeCommunicator {
+	sshComm := &SSHCommunicator{
 		sshKeys:     sshKeys,
 		passPhrases: make(map[string][]byte),
+		debug:       debug,
 	}
+	if debug {
+		outfile, _ := os.Create("hetzner.log")
+		sshComm.log = log.New(outfile, "", 0)
+	}
+	return sshComm
+}
+
+// Log is an helper method that allow to print logs
+func (sshComm *SSHCommunicator) Log(msg ...string) {
+	if !sshComm.debug {
+		return
+	}
+	sshComm.log.Println(msg)
 }
 
 // RunCmd runs a bash command on the given node
@@ -46,19 +63,19 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 		return output, err
 	}
 	defer connection.Close()
+	defer session.Close()
 
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
+	combinedOutput, err := session.CombinedOutput(command)
 
-	err = session.Run(command)
+	sshComm.Log(node.Name+": Command: ", command)
+	sshComm.Log(node.Name+": Output: ", string(combinedOutput))
 
 	if err != nil {
-		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nstderr:%v", command, stdoutBuf.String(), err)
+		sshComm.Log(node.Name+": Error: ", err.Error())
+		return "", fmt.Errorf("run failed\ncommand:%s\nstdout:%s\nerr:%v", command, string(combinedOutput), err)
 	}
-	session.Close()
-	return stdoutBuf.String(), nil
+
+	return string(combinedOutput), nil
 }
 
 func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client, error) {
@@ -78,8 +95,8 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed: %v", err)
-			log.Print("retrying..")
+			sshComm.Log(node.Name+": dial failed: ", err.Error())
+			sshComm.Log(node.Name + ": retrying..")
 			if try > 10 {
 				return nil, nil, err
 			}
@@ -115,7 +132,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
-			log.Printf("dial failed:%v", err)
+			sshComm.Log(node.Name+": dial failed:", err.Error())
 			if try > 10 {
 				return err
 			}
@@ -128,7 +145,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	// log.Println("Connected succeeded!")
 	session, err := connection.NewSession()
 	if err != nil {
-		log.Fatalf("session failed:%v", err)
+		log.Fatalf(node.Name+": session failed:%v", err)
 	}
 	defer session.Close()
 
@@ -153,7 +170,7 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 	err = session.Run("/usr/bin/scp -t " + dir)
 	if err != nil {
 		fmt.Println(stderrBuf.String())
-		log.Fatalf("write failed:%v", err.Error())
+		log.Fatalf(node.Name+": write failed:%v", err.Error())
 	}
 
 	return nil

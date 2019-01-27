@@ -7,29 +7,52 @@ import (
 
 // GenerateMasterConfiguration generate the kubernetes config for master
 func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
-	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
-api:
-  advertiseAddress: %s
+	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
 networking:
-  podSubnet: 10.244.0.0/16
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "cluster.local"
 apiServerCertSANs:
-  - %s
   - 127.0.0.1
+  - %s
+%s%s
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
+apiEndpoint:
+  advertiseAddress: %s
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/docker/containerd/docker-containerd.sock
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 `
-	etcdConfig := `etcd:
-  endpoints:`
-	masterConfig := fmt.Sprintf(masterConfigTpl, masterNode.PrivateIPAddress, masterNode.IPAddress)
+
+	masterNodesIps := ""
 	for _, node := range masterNodes {
-		masterConfig = fmt.Sprintf("%s%s\n", masterConfig, "  - "+node.PrivateIPAddress)
+		masterNodesIps = fmt.Sprintf("%s  - %s\n", masterNodesIps, node.PrivateIPAddress)
 	}
 
+	etcdConfig := ""
 	if len(etcdNodes) > 0 {
-		masterConfig = masterConfig + etcdConfig + "\n"
+		etcdConfig = `etcd:
+  external:
+    endpoints:` + "\n"
+
 		for _, node := range etcdNodes {
-			masterConfig = fmt.Sprintf("%s%s\n", masterConfig, "  - http://"+node.PrivateIPAddress+":2379")
+			etcdConfig = fmt.Sprintf("%s%s\n", etcdConfig, "    - http://"+node.PrivateIPAddress+":2379")
 		}
 	}
+
+	masterConfig := fmt.Sprintf(
+		masterConfigTpl,
+		masterNode.IPAddress,
+		masterNodesIps,
+		etcdConfig,
+		masterNode.PrivateIPAddress,
+	)
 
 	return masterConfig
 }
