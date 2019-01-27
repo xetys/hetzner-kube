@@ -48,7 +48,7 @@ func NewSSHCommunicator(sshKeys []SSHKey, debug bool) NodeCommunicator {
 	return sshComm
 }
 
-// Logger
+// Log is an helper method that allow to print logs
 func (sshComm *SSHCommunicator) Log(msg ...string) {
 	if !sshComm.debug {
 		return

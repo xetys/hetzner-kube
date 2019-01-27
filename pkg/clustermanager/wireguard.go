@@ -83,7 +83,7 @@ func GenerateKeyPair() (WgKeyPair, error) {
 	}, nil
 }
 
-//GenerateEtcdSystemdService generate configuration file used to manage etcd service on systemd
+// GenerateOverlayRouteSystemdService generate configuration file used to manage overlay route service on systemd
 func GenerateOverlayRouteSystemdService(node Node) string {
 	serviceTpls := `# /etc/systemd/system/overlay-route.service
 [Unit]
