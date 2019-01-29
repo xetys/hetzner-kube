@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"syscall"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -228,7 +227,10 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 	}
 
 	fmt.Print("Enter passphrase for SSH key " + privateKey.PrivateKeyPath + ": ")
-	text, err := terminal.ReadPassword(syscall.Stdin)
+	// Should be syscall.Stdin but on window architecture the build fail since is
+	// not an integer value. Casting the syscall.Stdin to int complain on unrequired
+	// casting on most of the architecture we support.
+	text, err := terminal.ReadPassword(0)
 
 	if err != nil {
 		return err
