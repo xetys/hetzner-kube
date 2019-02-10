@@ -3,9 +3,9 @@ package clustermanager
 import (
 	"flag"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
-    "strconv"
 )
 
 const maxErrors = 3
@@ -15,7 +15,7 @@ var K8sVersion = flag.String("k8s-version", "1.13.2-00", "The version of the k8s
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
-    clusterName  string
+	clusterName  string
 	node         Node
 	communicator NodeCommunicator
 	eventService EventService
@@ -24,7 +24,7 @@ type NodeProvisioner struct {
 // NewNodeProvisioner creates a NodeProvisioner instance
 func NewNodeProvisioner(clusterName string, node Node, communicator NodeCommunicator, eventService EventService) *NodeProvisioner {
 	return &NodeProvisioner{
-        clusterName:  clusterName,
+		clusterName:  clusterName,
 		node:         node,
 		communicator: communicator,
 		eventService: eventService,
@@ -107,19 +107,18 @@ func (provisioner *NodeProvisioner) disableSwap() error {
 	return err
 }
 
-
 func (provisioner *NodeProvisioner) waitForCloudInitCompletion() error {
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "waiting for cloud-init completion")
 	var err error
 
-    // define smal bash script to check if /var/lib/cloud/instance/boot-finished exist
-    // this file created only when cloud-init finished its tasks
-    cloudInitScript := `
+	// define smal bash script to check if /var/lib/cloud/instance/boot-finished exist
+	// this file created only when cloud-init finished its tasks
+	cloudInitScript := `
 #!/bin/bash
 
 # timout is 10 min, retur true immediately if ok, otherwise wait timout
-# if cloud-init not very complex usually takes 2-3 min to completion 
+# if cloud-init not very complex usually takes 2-3 min to completion
 for i in {1..200}
 do
   if [ -f /var/lib/cloud/instance/boot-finished ]; then
@@ -130,10 +129,10 @@ done
 exit 127
     `
 
-    err = provisioner.communicator.WriteFile(provisioner.node, "/root/cloud-init-status-check.sh", cloudInitScript, true)
-    if err != nil {
-      return err
-    }
+	err = provisioner.communicator.WriteFile(provisioner.node, "/root/cloud-init-status-check.sh", cloudInitScript, true)
+	if err != nil {
+		return err
+	}
 
 	for i := 0; i < 10; i++ {
 		time.Sleep(3 * time.Second)
@@ -143,7 +142,7 @@ exit 127
 		return err
 	}
 
-    // remove script when done
+	// remove script when done
 	_, err = provisioner.communicator.RunCmd(provisioner.node, "rm -f /root/cloud-init-status-check.sh")
 	if err != nil {
 		return err
@@ -253,13 +252,13 @@ func (provisioner *NodeProvisioner) setSystemWideEnvironment() error {
 	provisioner.eventService.AddEvent(provisioner.node.Name, "set environment variables")
 	var err error
 
-    // set HETZNER_KUBE_MASTER
+	// set HETZNER_KUBE_MASTER
 	_, err = provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_MASTER=%s\" >> /etc/environment", strconv.FormatBool(provisioner.node.IsMaster)))
 	if err != nil {
 		return err
 	}
 
-    // set HETZNER_KUBE_CLUSTER
+	// set HETZNER_KUBE_CLUSTER
 	_, err = provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_CLUSTER=%s\" >> /etc/environment", provisioner.clusterName))
 	if err != nil {
 		return err
