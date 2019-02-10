@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+    "strconv"
 )
 
 const maxErrors = 3
@@ -14,14 +15,16 @@ var K8sVersion = flag.String("k8s-version", "1.13.2-00", "The version of the k8s
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
+    clusterName  string
 	node         Node
 	communicator NodeCommunicator
 	eventService EventService
 }
 
 // NewNodeProvisioner creates a NodeProvisioner instance
-func NewNodeProvisioner(node Node, communicator NodeCommunicator, eventService EventService) *NodeProvisioner {
+func NewNodeProvisioner(clusterName string, node Node, communicator NodeCommunicator, eventService EventService) *NodeProvisioner {
 	return &NodeProvisioner{
+        clusterName:  clusterName,
 		node:         node,
 		communicator: communicator,
 		eventService: eventService,
@@ -68,7 +71,11 @@ func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator
 
 func (provisioner *NodeProvisioner) prepareAndInstall() error {
 
-	err := provisioner.installTransportTools()
+	err := provisioner.waitForCloudInitCompletion()
+	if err != nil {
+		return err
+	}
+	err = provisioner.installTransportTools()
 	if err != nil {
 		return err
 	}
@@ -77,6 +84,10 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 		return err
 	}
 	err = provisioner.updateAndInstall()
+	if err != nil {
+		return err
+	}
+	err = provisioner.setSystemWideEnvironment()
 	if err != nil {
 		return err
 	}
@@ -94,6 +105,51 @@ func (provisioner *NodeProvisioner) disableSwap() error {
 
 	_, err = provisioner.communicator.RunCmd(provisioner.node, "sed -i '/ swap / s/^/#/' /etc/fstab")
 	return err
+}
+
+
+func (provisioner *NodeProvisioner) waitForCloudInitCompletion() error {
+
+	provisioner.eventService.AddEvent(provisioner.node.Name, "waiting for cloud-init completion")
+	var err error
+
+    // define smal bash script to check if /var/lib/cloud/instance/boot-finished exist
+    // this file created only when cloud-init finished its tasks
+    cloudInitScript := `
+#!/bin/bash
+
+# timout is 10 min, retur true immediately if ok, otherwise wait timout
+# if cloud-init not very complex usually takes 2-3 min to completion 
+for i in {1..200}
+do
+  if [ -f /var/lib/cloud/instance/boot-finished ]; then
+    exit 0
+  fi
+  sleep 3
+done
+exit 127
+    `
+
+    err = provisioner.communicator.WriteFile(provisioner.node, "/root/cloud-init-status-check.sh", cloudInitScript, true)
+    if err != nil {
+      return err
+    }
+
+	for i := 0; i < 10; i++ {
+		time.Sleep(3 * time.Second)
+		_, err = provisioner.communicator.RunCmd(provisioner.node, "/root/cloud-init-status-check.sh")
+	}
+	if err != nil {
+		return err
+	}
+
+    // remove script when done
+	_, err = provisioner.communicator.RunCmd(provisioner.node, "rm -f /root/cloud-init-status-check.sh")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (provisioner *NodeProvisioner) installTransportTools() error {
@@ -183,6 +239,28 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s kubernetes-cni wireguard linux-headers-$(uname -r) linux-headers-virtual",
 		*K8sVersion, *K8sVersion, *K8sVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Last step because otherwise we need create script to check if variables already set and replaces them
+// As soon as it is last step we are ok to set them in basic way
+func (provisioner *NodeProvisioner) setSystemWideEnvironment() error {
+
+	provisioner.eventService.AddEvent(provisioner.node.Name, "set environment variables")
+	var err error
+
+    // set HETZNER_KUBE_MASTER
+	_, err = provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_MASTER=%s\" >> /etc/environment", strconv.FormatBool(provisioner.node.IsMaster)))
+	if err != nil {
+		return err
+	}
+
+    // set HETZNER_KUBE_CLUSTER
+	_, err = provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_CLUSTER=%s\" >> /etc/environment", provisioner.clusterName))
 	if err != nil {
 		return err
 	}
