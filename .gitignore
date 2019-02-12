@@ -3,5 +3,5 @@
 /hetzner-kube*
 /dist
 /vendor
-
+**.log
 /cmd/test.go

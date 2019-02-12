@@ -83,7 +83,7 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
 			//_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
-			provisioner := NewNodeProvisioner(node, manager.nodeCommunicator, manager.eventService)
+			provisioner := NewNodeProvisioner(manager.clusterName, node, manager.nodeCommunicator, manager.eventService)
 			err := provisioner.Provision(node, manager.nodeCommunicator, manager.eventService)
 			if err != nil {
 				errChan <- err
