@@ -336,7 +336,7 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	if err != nil {
 		return err
 	}
-	joinCommand = fmt.Sprintf("%s --cri-socket /var/run/docker/containerd/docker-containerd.sock", strings.TrimRight(joinCommand, "\n"))
+	//joinCommand = fmt.Sprintf("%s --cri-socket unix:///var/run/containerd/containerd.sock", strings.TrimRight(joinCommand, "\n"))
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
