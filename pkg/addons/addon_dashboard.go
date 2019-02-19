@@ -85,5 +85,8 @@ func (addon DashboardAddon) Uninstall() {
 	_, err := addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml")
 	FatalOnError(err)
 
+	_, err = addon.communicator.RunCmd(node, "kubectl delete -f dashboard-service-account.yaml")
+	FatalOnError(err)
+
 	fmt.Println("Dashboard uninstalled")
 }
