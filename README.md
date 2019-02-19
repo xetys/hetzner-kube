@@ -53,7 +53,7 @@ Or you can add it to your `bash_completition.d` folder:
 ```bash
 # On linux
 hetzner-kube completion bash > /etc/bash_completion.d/hetzner-kube
-# On OSX with completion installed via brew (`brew intall bash-completion`)
+# On OSX with completion installed via brew (`brew install bash-completion`)
 hetzner-kube completion bash > /usr/local/etc/bash_completion.d/hetzner-kube
 ```
 
