@@ -145,6 +145,7 @@ func (app *AppConfig) SwitchContextByName(name string) error {
 
 	opts := []hcloud.ClientOption{
 		hcloud.WithToken(ctx.Token),
+		hcloud.WithApplication("hetzner-kube", version),
 	}
 
 	app.Client = hcloud.NewClient(opts...)

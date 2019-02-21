@@ -12,7 +12,7 @@ require (
 	github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd // indirect
 	github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce // indirect
-	github.com/hetznercloud/hcloud-go v1.8.0
+	github.com/hetznercloud/hcloud-go v1.12.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
 	github.com/magiconair/properties v1.8.0
