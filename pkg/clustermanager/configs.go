@@ -24,7 +24,6 @@ apiEndpoint:
   advertiseAddress: %s
   bindPort: 6443
 nodeRegistration:
-  criSocket: /var/run/docker/containerd/docker-containerd.sock
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
