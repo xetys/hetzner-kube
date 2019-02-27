@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -49,7 +50,16 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		force, _ := cmd.Flags().GetBool("force")
 
 		if printContent {
-			fmt.Println(kubeConfigContent)
+			// fmt.Println(kubeConfigContent)
+
+			//cfg, _ := clientcmd.Load([]byte(kubeConfigContent))
+			cfg, _ := clientcmd.NewClientConfigFromBytes([]byte(kubeConfigContent))
+			c, _ := cfg.RawConfig()
+			Dump(c)
+
+			// cfg_file, _ := clientcmd.Write(*cfg)
+			// fmt.Println(string(cfg_file))
+
 		} else {
 			fmt.Println("create file")
 
