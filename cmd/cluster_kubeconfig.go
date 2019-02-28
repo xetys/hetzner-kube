@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	default_context = "kubernetes-admin@kubernetes"
+	defaultContext = "kubernetes-admin@kubernetes"
 )
 
 // clusterKubeconfigCmd represents the clusterKubeconfig command
@@ -54,17 +54,17 @@ Example 4: hetzner-kube cluster kubeconfig my-cluster -m                     # m
 		FatalOnError(err)
 
 		// get sanitized kubeconfig
-		// we need is_sanitized flag to ensure we want do a merge if this it fails
-		is_sanitized := false
+		// we need isSanitized flag to ensure we want do a merge if this it fails
+		isSanitized := false
 		newKubeConfig, err := sanitizeKubeConfig(kubeConfigContent, provider.GetCluster().Name, "hetzner")
 		if err != nil {
 			log.Printf("KubeConfig sanitise process failed, default config will be used instead. Error: %s", err.Error())
 		} else {
 			kubeConfigContent = newKubeConfig
-			is_sanitized = true
+			isSanitized = true
 		}
 
-		if merge, _ := cmd.Flags().GetBool("merge"); merge && is_sanitized {
+		if merge, _ := cmd.Flags().GetBool("merge"); merge && isSanitized {
 
 			kubeConfigPath := fmt.Sprintf("%s/.kube/config", GetHome())
 			if _, err := os.Stat(kubeConfigPath); err == nil {
@@ -75,12 +75,12 @@ Example 4: hetzner-kube cluster kubeconfig my-cluster -m                     # m
 
 		if save, _ := cmd.Flags().GetBool("save"); save {
 
-			target_path := fmt.Sprintf("%s/.kube/%s.yaml", GetHome(), provider.GetCluster().Name)
+			targetPath := fmt.Sprintf("%s/.kube/%s.yaml", GetHome(), provider.GetCluster().Name)
 			if target, _ := cmd.Flags().GetString("target"); target != "" {
-				target_path = target
+				targetPath = target
 			}
-			log.Printf("Saving current config to '%s'", target_path)
-			doConfigWrite(target_path, kubeConfigContent)
+			log.Printf("Saving current config to '%s'", targetPath)
+			doConfigWrite(targetPath, kubeConfigContent)
 
 			return
 		}
@@ -127,8 +127,8 @@ func sanitizeKubeConfig(kubeConfig string, clusterName string, prefix string) (s
 
 	// get our default Context from configuration (check `const` section)
 	var ctx *clientcmdapi.Context
-	if ctx = apiCfg.Contexts[default_context]; ctx == nil {
-		return "", errors.New(fmt.Sprintf("Default context '%s' does not found in current configuration!", default_context))
+	if ctx = apiCfg.Contexts[defaultContext]; ctx == nil {
+		return "", fmt.Errorf("Default context '%s' does not found in current configuration!", defaultContext)
 	}
 
 	// Apply prefix if it set
@@ -137,8 +137,8 @@ func sanitizeKubeConfig(kubeConfig string, clusterName string, prefix string) (s
 	}
 
 	// save current cluster name and authInfo Names
-	current_cluster := ctx.Cluster
-	current_authInfo := ctx.AuthInfo
+	currentCluster := ctx.Cluster
+	currentAuthInfo := ctx.AuthInfo
 
 	// define new Cluster and AuthInfo Names as Project Name
 	ctx.Cluster = clusterName
@@ -146,14 +146,14 @@ func sanitizeKubeConfig(kubeConfig string, clusterName string, prefix string) (s
 
 	// Copy current data about Context,Cluster,authInfo with new Names
 	apiCfg.Contexts[clusterName] = ctx
-	apiCfg.Clusters[clusterName] = apiCfg.Clusters[current_cluster]
-	apiCfg.AuthInfos[clusterName] = apiCfg.AuthInfos[current_authInfo]
+	apiCfg.Clusters[clusterName] = apiCfg.Clusters[currentCluster]
+	apiCfg.AuthInfos[clusterName] = apiCfg.AuthInfos[currentAuthInfo]
 	apiCfg.CurrentContext = clusterName
 
 	// Remove outdaited details
-	delete(apiCfg.Clusters, current_cluster)
-	delete(apiCfg.AuthInfos, current_authInfo)
-	delete(apiCfg.Contexts, default_context)
+	delete(apiCfg.Clusters, currentCluster)
+	delete(apiCfg.AuthInfos, currentAuthInfo)
+	delete(apiCfg.Contexts, defaultContext)
 
 	configByte, err := clientcmd.Write(*apiCfg)
 	if err != nil {

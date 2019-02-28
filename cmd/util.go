@@ -20,12 +20,13 @@ func FatalOnError(err error) {
 	}
 }
 
+// GetHome is an helper function to get current home directory
 func GetHome() string {
 	usr, _ := user.Current()
 	return usr.HomeDir
 }
 
-// Handy dumps of structure as json (almost any structures)
+// Dump is handy dumps of structure as json (almost any structures)
 func Dump(cls interface{}) {
 	data, err := json.MarshalIndent(cls, "", "    ")
 	if err != nil {
@@ -35,6 +36,7 @@ func Dump(cls interface{}) {
 	fmt.Println(string(data))
 }
 
+// Sdump is same as Dump, only output to a string
 func Sdump(cls interface{}) string {
 	data, err := json.MarshalIndent(cls, "", "    ")
 	if err != nil {
