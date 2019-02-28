@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os/user"
 
 	"github.com/Pallinder/go-randomdata"
 )
@@ -17,6 +18,11 @@ func FatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetHome() string {
+	usr, _ := user.Current()
+	return usr.HomeDir
 }
 
 // Handy dumps of structure as json (almost any structures)
