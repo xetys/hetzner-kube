@@ -128,7 +128,7 @@ func sanitizeKubeConfig(kubeConfig string, clusterName string, prefix string) (s
 	// get our default Context from configuration (check `const` section)
 	var ctx *clientcmdapi.Context
 	if ctx = apiCfg.Contexts[defaultContext]; ctx == nil {
-		return "", fmt.Errorf("Default context '%s' does not found in current configuration!", defaultContext)
+		return "", fmt.Errorf("default context '%s' does not found in current configuration", defaultContext)
 	}
 
 	// Apply prefix if it set
