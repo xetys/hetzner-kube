@@ -67,10 +67,10 @@ Example 4: hetzner-kube cluster kubeconfig my-cluster -m                     # m
 
 		if merge, _ := cmd.Flags().GetBool("merge"); merge && isSanitized {
 
-			kubeConfigPath := fmt.Sprintf("%s/.kube/config", GetHome())
-			if _, err := os.Stat(kubeConfigPath); err == nil {
-				doConfigCopy(kubeConfigPath)
+			if err = mergeKubeConfig(kubeConfigContent); err != nil {
+				log.Fatalf("During merge we encountered the problem: %s", err.Error())
 			}
+			log.Printf("KubeConfig successfully merged!")
 			return
 		}
 
@@ -100,7 +100,7 @@ func doConfigWrite(dst string, kubeConfig string) (err error) {
 }
 
 // Create backup of current kubeCongig
-func doConfigCopy(src string) (err error) {
+func doConfigCopyBackUp(src string) (err error) {
 	var source, destination *os.File
 	if source, err = os.Open(src); err != nil {
 		return
@@ -116,6 +116,43 @@ func doConfigCopy(src string) (err error) {
 	_, err = io.Copy(destination, source)
 	log.Printf("KubeConfig backup save as '%s'", dst)
 	return
+}
+
+func mergeKubeConfig(kubeConfig string) error {
+
+	// check if main kubeConfig exists and backup it
+	kubeConfigPath := fmt.Sprintf("%s/.kube/config", GetHome())
+	if _, err := os.Stat(kubeConfigPath); err == nil {
+		doConfigCopyBackUp(kubeConfigPath)
+	}
+
+	// Read kubeconfig to k8s config structure
+	apiCfg, err := clientcmd.Load([]byte(kubeConfig))
+	if err != nil {
+		return err
+	}
+
+	// Create Temporary file we going to use for configs merge and write config to it
+	clusterKubeConfigTmp, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(clusterKubeConfigTmp.Name())
+	clientcmd.WriteToFile(*apiCfg, clusterKubeConfigTmp.Name())
+
+	// initialize Loading rules and add Real config and our tmp config as target for merge
+	// Even if `kubeConfigPath` we do not care, it will be ignored during ClientConfigLoadingRules.Load()
+	loadingRules := clientcmd.ClientConfigLoadingRules{
+		Precedence: []string{
+			kubeConfigPath,
+			clusterKubeConfigTmp.Name(),
+		},
+	}
+	mergedConfig, err := loadingRules.Load()
+	if err != nil {
+		return err
+	}
+	return clientcmd.WriteToFile(*mergedConfig, kubeConfigPath)
 }
 
 func sanitizeKubeConfig(kubeConfig string, clusterName string, prefix string) (string, error) {
