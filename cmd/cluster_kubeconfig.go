@@ -54,7 +54,8 @@ Example 4: hetzner-kube cluster kubeconfig my-cluster -m                     # m
 		FatalOnError(err)
 
 		// get sanitized kubeconfig
-		// we need isSanitized flag to ensure we want do a merge if this it fails
+		// we need isSanitized flag to ensure we do not want do a merge if we fail to sanitize config
+		// if it fails we simply print out config as it is
 		isSanitized := false
 		newKubeConfig, err := sanitizeKubeConfig(kubeConfigContent, provider.GetCluster().Name, "hetzner")
 		if err != nil {
