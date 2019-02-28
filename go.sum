@@ -65,6 +65,8 @@ github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce h1:xdsDDbiBDQTKASoGE
 github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce/go.mod h1:oZtUIOe8dh44I2q6ScRibXws4Ajl+d+nod3AaR9vL5w=
 github.com/hetznercloud/hcloud-go v1.8.0 h1:gqTrlBXnIDQZkXn4L1suqNzmLJWAJLum5Vn9j2EwJBU=
 github.com/hetznercloud/hcloud-go v1.8.0/go.mod h1:g5pff0YNAZywQaivY/CmhUYFVp7oP0nu3MiODC2W4Hw=
+github.com/hetznercloud/hcloud-go v1.12.0 h1:ugZO8a8ADekqSWi7xWlcs6pxr4QE0tw5VnyjXcL5n28=
+github.com/hetznercloud/hcloud-go v1.12.0/go.mod h1:g5pff0YNAZywQaivY/CmhUYFVp7oP0nu3MiODC2W4Hw=
 github.com/imdario/mergo v0.3.7 h1:Y+UAYTZ7gDEuOfhxKWy+dvb5dRQ6rJjFSdX2HZY1/gI=
 github.com/imdario/mergo v0.3.7/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
