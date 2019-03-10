@@ -11,7 +11,7 @@ import (
 const maxErrors = 3
 
 // K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.13.3-00", "The version of the k8s debian packages that will be used during provisioning")
+var K8sVersion = flag.String("k8s-version", "1.13.4-00", "The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
@@ -117,7 +117,7 @@ func (provisioner *NodeProvisioner) waitForCloudInitCompletion() error {
 	cloudInitScript := `
 #!/bin/bash
 
-# timout is 10 min, retur true immediately if ok, otherwise wait timout
+# timout is 10 min, return true immediately if ok, otherwise wait timout
 # if cloud-init not very complex usually takes 2-3 min to completion
 for i in {1..200}
 do

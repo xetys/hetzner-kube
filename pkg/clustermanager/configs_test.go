@@ -7,41 +7,49 @@ import (
 )
 
 func TestGenerateMasterConfiguration(t *testing.T) {
-	expectedConf := `apiVersion: kubeadm.k8s.io/v1alpha3
+	expectedConf := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
-apiServerCertSANs:
-  - 127.0.0.1
-  - 1.1.1.1
-  - 10.0.0.1
-  - 10.0.0.2
+apiServer:
+  certSANs:
+    - 127.0.0.1
+    - 1.1.1.1
+    - 10.0.0.1
+    - 10.0.0.2
 
 ---
-apiVersion: kubeadm.k8s.io/v1alpha3
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
-apiEndpoint:
+localAPIEndpoint:
   advertiseAddress: 10.0.0.1
   bindPort: 6443
 nodeRegistration:
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+featureGates:
+  CSINodeInfo: true
+  CSIDriverRegistry: true
 `
 
-	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1alpha3
+	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
-apiServerCertSANs:
-  - 127.0.0.1
-  - 1.1.1.1
-  - 10.0.0.1
-  - 10.0.0.2
+apiServer:
+  certSANs:
+    - 127.0.0.1
+    - 1.1.1.1
+    - 10.0.0.1
+    - 10.0.0.2
 etcd:
   external:
     endpoints:
@@ -49,15 +57,21 @@ etcd:
     - http://10.0.0.2:2379
 
 ---
-apiVersion: kubeadm.k8s.io/v1alpha3
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
-apiEndpoint:
+localAPIEndpoint:
   advertiseAddress: 10.0.0.1
   bindPort: 6443
 nodeRegistration:
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+featureGates:
+  CSINodeInfo: true
+  CSIDriverRegistry: true
 `
 	nodes := []Node{
 		{Name: "node1", IPAddress: "1.1.1.1", PrivateIPAddress: "10.0.0.1"},
