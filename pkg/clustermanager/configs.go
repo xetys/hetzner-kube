@@ -6,32 +6,39 @@ import (
 )
 
 // GenerateMasterConfiguration generate the kubernetes config for master
-func GenerateMasterConfiguration(masterNode Node, masterNodes, etcdNodes []Node) string {
-	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1alpha3
+func GenerateMasterConfiguration(masterNode Node, masterNodes []Node, etcdNodes []Node) string {
+	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
-apiServerCertSANs:
-  - 127.0.0.1
-  - %s
+apiServer:
+  certSANs:
+    - 127.0.0.1
+    - %s
 %s%s
 ---
-apiVersion: kubeadm.k8s.io/v1alpha3
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
-apiEndpoint:
+localAPIEndpoint:
   advertiseAddress: %s
   bindPort: 6443
 nodeRegistration:
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+featureGates:
+  CSINodeInfo: true
+  CSIDriverRegistry: true
 `
 
 	masterNodesIps := ""
 	for _, node := range masterNodes {
-		masterNodesIps = fmt.Sprintf("%s  - %s\n", masterNodesIps, node.PrivateIPAddress)
+		masterNodesIps = fmt.Sprintf("%s    - %s\n", masterNodesIps, node.PrivateIPAddress)
 	}
 
 	etcdConfig := ""
