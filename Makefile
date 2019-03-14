@@ -29,11 +29,13 @@ test-preparare:
 	mkdir -p ${SSH_KEY_FOLDER}
 	ssh-keygen -t rsa -b 4096 -P "" -f ${SSH_KEY_FOLDER}/id_rsa
 
-test-all: test-preparare test-info test-context test-ssh-key test-clusters
+test-all: test-preparare test-help test-version test-context test-ssh-key test-clusters
 
-test-info:
+test-help:
 	${HETZNER_KUBE} help
-	${HETZNER_KUBE} version
+
+test-version:
+	${HETZNER_KUBE} version | grep -q $(shell git rev-parse --short HEAD)
 
 test-context:
 	${HETZNER_KUBE} context add ${CONTEXT_NAME} --token ${HETZNER_API_KEY}

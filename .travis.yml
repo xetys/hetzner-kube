@@ -21,7 +21,7 @@ jobs:
   include:
     - stage: E2E testing
       script:
-        - go build
+        - go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=`git rev-parse --short HEAD`"
         - export DATACENTER=$(make detect-datacenter)
         - make test-all
         - make cleanup
