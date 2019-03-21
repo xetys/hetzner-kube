@@ -18,7 +18,6 @@ type Cluster struct {
 	Nodes         []Node `json:"nodes"`
 	HaEnabled     bool   `json:"ha_enabled"`
 	IsolatedEtcd  bool   `json:"isolated_etcd"`
-	SelfHosted    bool   `json:"self_hosted"`
 	CloudInitFile string `json:"cloud_init_file"`
 	NodeCIDR      string `json:"node_cidr"`
 }

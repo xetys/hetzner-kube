@@ -343,7 +343,6 @@ func TestProviderGetCluster(t *testing.T) {
 		NodeCIDR:      "10.0.1.0/24",
 		HaEnabled:     false,
 		IsolatedEtcd:  false,
-		SelfHosted:    false,
 		CloudInitFile: "cloud/init.file",
 		Nodes:         nodes,
 	}

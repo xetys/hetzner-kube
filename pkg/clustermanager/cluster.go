@@ -20,17 +20,15 @@ type Manager struct {
 	clusterProvider  ClusterProvider
 	haEnabled        bool
 	isolatedEtcd     bool
-	selfHosted       bool
 }
 
 // NewClusterManager create a new manager for the cluster
-func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, selfHosted bool) *Manager {
+func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string) *Manager {
 	manager := &Manager{
 		clusterName:      name,
 		haEnabled:        haEnabled,
 		isolatedEtcd:     isolatedEtcd,
 		cloudInitFile:    cloudInitFile,
-		selfHosted:       selfHosted,
 		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
 		clusterProvider:  provider,
@@ -47,7 +45,6 @@ func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nod
 		haEnabled:        cluster.HaEnabled,
 		isolatedEtcd:     cluster.IsolatedEtcd,
 		cloudInitFile:    cluster.CloudInitFile,
-		selfHosted:       cluster.SelfHosted,
 		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
 		clusterProvider:  provider,
@@ -63,7 +60,6 @@ func (manager *Manager) Cluster() Cluster {
 		HaEnabled:     manager.haEnabled,
 		IsolatedEtcd:  manager.isolatedEtcd,
 		CloudInitFile: manager.cloudInitFile,
-		SelfHosted:    manager.selfHosted,
 		NodeCIDR:      manager.clusterProvider.GetNodeCidr(),
 	}
 }
