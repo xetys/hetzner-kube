@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -27,7 +26,7 @@ Example 3: hetzner-kube cluster kubeconfig -n my-cluster -p # prints the content
 Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # prints the contents of kubeconfig into a custom file
 	`,
 	Args:    cobra.ExactArgs(1),
-	PreRunE: validateKubeconfigCmd,
+	PreRunE: validateClusterInArgumentExists,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		_, cluster := AppConf.Config.FindClusterByName(name)
@@ -78,22 +77,6 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 			fmt.Println("kubeconfig configured")
 		}
 	},
-}
-
-func validateKubeconfigCmd(cmd *cobra.Command, args []string) error {
-
-	name := args[0]
-
-	if name == "" {
-		return errors.New("flag --name is required")
-	}
-
-	idx, _ := AppConf.Config.FindClusterByName(name)
-
-	if idx == -1 {
-		return fmt.Errorf("cluster '%s' not found", name)
-	}
-	return nil
 }
 
 func init() {

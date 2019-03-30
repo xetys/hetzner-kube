@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -19,4 +21,21 @@ are hopefully coming soon.'`,
 
 func init() {
 	rootCmd.AddCommand(clusterCmd)
+}
+
+// validateClusterInArgumentExists checks if a cluster name is present in arguments and the cluster can be found
+func validateClusterInArgumentExists(cmd *cobra.Command, args []string) error {
+
+	name := args[0]
+
+	if name == "" {
+		return errors.New("argument NAME is required")
+	}
+
+	idx, _ := AppConf.Config.FindClusterByName(name)
+
+	if idx == -1 {
+		return fmt.Errorf("cluster '%s' not found", name)
+	}
+	return nil
 }
