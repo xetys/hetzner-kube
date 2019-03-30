@@ -392,11 +392,12 @@ func (manager *Manager) SetupHA() error {
 		return err
 	}
 
-	// set apiserver-count to 3
+	// set apiserver-count to number of masters
+	apiServerCount := fmt.Sprintf("- --apiserver-count=%d\n    image: gcr.io/", len(masterNodes))
 	for _, node := range masterNodes {
 		manager.eventService.AddEvent(node.Name, "set api-server count")
 		manager.nodeCommunicator.TransformFileOverNode(node, node, "/etc/kubernetes/manifests/kube-apiserver.yaml", func(in string) string {
-			return strings.Replace(in, "image: gcr.io/", "- --apiserver-count=3\n    image: gcr.io/", 1)
+			return strings.Replace(in, "image: gcr.io/", apiServerCount, 1)
 		})
 	}
 
