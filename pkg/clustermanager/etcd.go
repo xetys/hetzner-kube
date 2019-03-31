@@ -25,7 +25,7 @@ func (manager *EtcdManager) CreateSnapshot(name string) error {
 	etcdNodes := manager.provider.GetEtcdNodes()
 
 	if len(etcdNodes) == 0 {
-		return fmt.Errorf("cannot peform backup when no etcd nodes are available\n")
+		return fmt.Errorf("cannot peform backup when no etcd nodes are available")
 	}
 
 	firstEtcdNode := etcdNodes[0]
@@ -55,7 +55,7 @@ func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, e
 	snapshotPath := fmt.Sprintf("/root/etcd-snapshots/%s.db", name)
 
 	if len(etcdNodes) == 0 {
-		return false, fmt.Errorf("cannot peform backup when no etcd nodes are available\n")
+		return false, fmt.Errorf("cannot peform backup when no etcd nodes are available")
 	}
 
 	firstEtcdNode := etcdNodes[0]

@@ -170,13 +170,8 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		//{"install Weave Net", "kubectl apply -f \"https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\\n')\""},
 		{"install canal (RBAC)", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml"},
 		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml"},
-		//{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"},
-		//{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
-		//{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
-		//{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
 
 	// inject custom commands
@@ -319,43 +314,44 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 		numProcs++
 
 		go func(node Node) {
-			// set systemd service
-			etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
-			err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
-			if err != nil {
-				errChan <- err
-			}
-
-			// install etcd
-			for _, command := range commands {
-				manager.eventService.AddEvent(node.Name, command.EventName)
-				_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
-				if err != nil {
-					errChan <- err
-				}
-			}
-
-			// configure etcd
-			configureCommand := "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"
-			if keepData {
-				configureCommand = "systemctl enable etcd.service && systemctl stop etcd.service && systemctl start etcd.service"
-			}
-			manager.eventService.AddEvent(node.Name, "configure etcd")
-			_, err = manager.nodeCommunicator.RunCmd(node, configureCommand)
-			if err != nil {
-				errChan <- err
-			}
-
-			if manager.isolatedEtcd {
-				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
-			} else {
-				manager.eventService.AddEvent(node.Name, "etcd configured")
-			}
+			manager.etcdInstallStep(node, nodes, errChan, commands, keepData)
 			trueChan <- true
 		}(node)
 	}
 
 	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan error, commands []NodeCommand, keepData bool) {
+	// set systemd service
+	etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
+	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
+	if err != nil {
+		errChan <- err
+	}
+	// install etcd
+	for _, command := range commands {
+		manager.eventService.AddEvent(node.Name, command.EventName)
+		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
+		if err != nil {
+			errChan <- err
+		}
+	}
+	// configure etcd
+	configureCommand := "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"
+	if keepData {
+		configureCommand = "systemctl enable etcd.service && systemctl stop etcd.service && systemctl start etcd.service"
+	}
+	manager.eventService.AddEvent(node.Name, "configure etcd")
+	_, err = manager.nodeCommunicator.RunCmd(node, configureCommand)
+	if err != nil {
+		errChan <- err
+	}
+	if manager.isolatedEtcd {
+		manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
+	} else {
+		manager.eventService.AddEvent(node.Name, "etcd configured")
+	}
 }
 
 // InstallWorkers installs kubernetes workers to given nodes
