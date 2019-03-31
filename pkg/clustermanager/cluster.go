@@ -191,7 +191,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 
 			switch keepCerts {
 			case NONE:
-				resetCommand = "kubeadm reset - f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
+				resetCommand = "kubeadm reset -f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
 			case CA:
 				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
 			case ALL:
