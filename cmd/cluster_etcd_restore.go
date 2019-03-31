@@ -49,6 +49,6 @@ func validateEtcdRestoreCmd(cmd *cobra.Command, args []string) error {
 
 func init() {
 	etcdCmd.AddCommand(restoreCmd)
-	restoreCmd.Flags().StringP("snapshot-name", "s", "", "Name of the snapshot")
-	restoreCmd.Flags().BoolP("skip-distribution", "d", false, "skips distribution of snapshots. Useful, if performing restore on a previously restored snapshot")
+	restoreCmd.Flags().StringP("snapshot-name", "n", "", "Name of the snapshot")
+	restoreCmd.Flags().BoolP("skip-distribution", "s", false, "skips distribution of snapshots. Useful, if performing restore on a previously restored snapshot")
 }

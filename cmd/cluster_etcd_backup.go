@@ -33,5 +33,5 @@ func getEtcdManager(cmd *cobra.Command, args []string) *clustermanager.EtcdManag
 
 func init() {
 	etcdCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringP("snapshot-name", "s", "", "Name of the snapshot")
+	backupCmd.Flags().StringP("snapshot-name", "n", "", "Name of the snapshot")
 }
