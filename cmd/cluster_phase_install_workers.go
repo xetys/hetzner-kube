@@ -23,7 +23,7 @@ func init() {
 		for _, node := range provider.GetAllNodes() {
 			steps := 2
 			if cluster.HaEnabled {
-				steps += 1
+				steps++
 			}
 			coordinator.StartProgress(node.Name, steps)
 		}

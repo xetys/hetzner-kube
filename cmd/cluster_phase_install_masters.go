@@ -31,7 +31,7 @@ func init() {
 			if node.Name == masterNode.Name {
 				steps += 4
 				if len(provider.GetMasterNodes()) == 1 {
-					steps += 1
+					steps++
 				}
 			} else {
 				steps += 4

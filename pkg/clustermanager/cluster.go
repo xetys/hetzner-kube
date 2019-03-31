@@ -22,6 +22,19 @@ type Manager struct {
 	isolatedEtcd     bool
 }
 
+// KeepCerts is an enumeration for existing certificate handling during master install
+type KeepCerts int
+
+//
+const (
+	// NONE generate completely new certificates
+	NONE KeepCerts = 0
+	// CA generate certificates using existing authority
+	CA KeepCerts = 1
+	// ALL keep all certificates
+	ALL KeepCerts = 2
+)
+
 // NewClusterManager create a new manager for the cluster
 func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string) *Manager {
 	manager := &Manager{
@@ -151,14 +164,6 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	manager.clusterProvider.SetNodes(manager.nodes)
 	return nil
 }
-
-type KeepCerts int
-
-const (
-	NONE KeepCerts = 0
-	CA   KeepCerts = 1
-	ALL  KeepCerts = 2
-)
 
 // InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {

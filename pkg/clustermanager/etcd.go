@@ -52,6 +52,7 @@ func (manager *EtcdManager) CreateSnapshot(name string) error {
 // RestoreSnapshot restores a snapshot, given its name
 func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, error) {
 	etcdNodes := manager.provider.GetEtcdNodes()
+	snapshotPath := fmt.Sprintf("/root/etcd-snapshots/%s.db", name)
 
 	if len(etcdNodes) == 0 {
 		return false, fmt.Errorf("cannot peform backup when no etcd nodes are available\n")
@@ -60,13 +61,67 @@ func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, e
 	firstEtcdNode := etcdNodes[0]
 
 	// check if snapshot exists
-	snapshotPath := fmt.Sprintf("/root/etcd-snapshots/%s.db", name)
-
 	_, err := manager.nodeCommunicator.RunCmd(firstEtcdNode, fmt.Sprintf("stat %s", snapshotPath))
 	if err != nil {
 		return false, fmt.Errorf("cloud not find snapshot '%s' on server", name)
 	}
 
+	err = manager.copyAndRestore(firstEtcdNode, snapshotPath, skipCopy)
+
+	return err == nil, err
+}
+
+// copySnapshot copies a snapshot to a node
+func (manager *EtcdManager) copySnapshot(firstEtcdNode, node Node, snapshotPath string) error {
+
+	_, err := manager.nodeCommunicator.RunCmd(node, "mkdir -p ~/etcd-snapshots")
+	if err != nil {
+		return err
+	}
+
+	err = manager.nodeCommunicator.CopyFileOverNode(firstEtcdNode, node, snapshotPath)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("copied '%s' to node '%s'\n", snapshotPath, node.Name)
+
+	return nil
+}
+
+// restoreNode performs the snapshot restore step1
+func (manager *EtcdManager) restoreNode(node Node, snapshotPath, initialCluster string) error {
+	// stop etcd
+	_, err := manager.nodeCommunicator.RunCmd(node, "systemctl stop etcd.service && rm -rf /var/lib/etcd")
+	if err != nil {
+		return err
+	}
+
+	restoreCmd := fmt.Sprintf("ETCDCTL_API=3 /opt/etcd/etcdctl snapshot restore %s --name %s --data-dir /var/lib/etcd --initial-cluster %s --initial-advertise-peer-urls \"http://%s:2380\"",
+		snapshotPath,
+		node.Name,
+		initialCluster,
+		node.PrivateIPAddress,
+	)
+
+	out, err := manager.nodeCommunicator.RunCmd(node, restoreCmd)
+	if err != nil {
+		fmt.Println(out)
+		return err
+	}
+
+	_, err = manager.nodeCommunicator.RunCmd(node, "systemctl start etcd.service")
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("etcd node '%s' restored \n", node.Name)
+
+	return nil
+}
+
+// copyAndRestore performs the actual tasks for a restore progress1
+func (manager *EtcdManager) copyAndRestore(firstEtcdNode Node, snapshotPath string, skipCopy bool) error {
+	etcdNodes := manager.provider.GetEtcdNodes()
 	initialCluster := ""
 
 	// distribute snapshots to all etcd nodes
@@ -79,16 +134,10 @@ func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, e
 				continue
 			}
 
-			_, err := manager.nodeCommunicator.RunCmd(node, "mkdir -p ~/etcd-snapshots")
+			err := manager.copySnapshot(firstEtcdNode, node, snapshotPath)
 			if err != nil {
-				return false, err
+				return err
 			}
-
-			err = manager.nodeCommunicator.CopyFileOverNode(firstEtcdNode, node, snapshotPath)
-			if err != nil {
-				return false, err
-			}
-			fmt.Printf("copied '%s' to node '%s'\n", snapshotPath, node.Name)
 		}
 	}
 
@@ -97,34 +146,13 @@ func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, e
 	// actual restore the cluster
 	fmt.Println("begin restore process")
 	for _, node := range etcdNodes {
-		// stop etcd
-		_, err := manager.nodeCommunicator.RunCmd(node, "systemctl stop etcd.service && rm -rf /var/lib/etcd")
+		err := manager.restoreNode(node, snapshotPath, initialCluster)
 		if err != nil {
-			return false, err
+			return err
 		}
-
-		restoreCmd := fmt.Sprintf("ETCDCTL_API=3 /opt/etcd/etcdctl snapshot restore %s --name %s --data-dir /var/lib/etcd --initial-cluster %s --initial-advertise-peer-urls \"http://%s:2380\"",
-			snapshotPath,
-			node.Name,
-			initialCluster,
-			node.PrivateIPAddress,
-		)
-
-		out, err := manager.nodeCommunicator.RunCmd(node, restoreCmd)
-		if err != nil {
-			fmt.Println(out)
-			return false, err
-		}
-
-		_, err = manager.nodeCommunicator.RunCmd(node, "systemctl start etcd.service")
-		if err != nil {
-			return false, err
-		}
-
-		fmt.Printf("etcd node '%s' restored \n", node.Name)
 	}
 
-	return true, nil
+	return nil
 }
 
 // generateName returns a datetime string for unnamed snapshots
