@@ -120,6 +120,74 @@ $ hetzner-kube cluster addon list
 
 You want to add some cool stuff to hetzner-kube? It's quite easy! Learn how to add new addons in the [Developing Addons](docs/cluster-addons.md) documentation.
 
+## backup & restore (for HA-clusters)
+
+If you are running an external etcd cluster, you can use the etcd management to backup the
+etcd cluster using
+
+```bash
+$ hetzner-kube cluster etcd backup my-cluster --snapshot-name my-snapshot
+```
+
+(`--snapshot-name` is optional)
+
+and restore it using
+
+```bash
+$ hetzner-kube cluster etcd restore my-cluster --snapshot-name my-snapshot
+```
+
+If you place a different snapshot (with `.db` file extension) in /root/etcd-snapshots of the
+first etcd node, you can use the restore command for migration of kubernetes clusters.
+
+
+## phases
+
+After a cluster is once created (nodes creation is enough), you can perform the steps from
+`hetzner-kube cluster create` separately. 
+
+You can use
+``` bash
+$ hetzner-kube cluster phase -h
+```
+
+to only list all available phases.
+
+Cluster creation is a chain of these phases:
+
+- `provision`
+- `network-setup`
+- `etcd` (if HA)
+- `install-masters`
+- `setup-ha` (if HA)
+- `install-workers`
+
+Some of theses phase have additional options, to run the actual phase differently from the
+usual cluster creation.
+
+### examples for phases
+
+To simply run a phase from cluster creation, you cam run a phase, eg. the `etcd` phase using:
+
+```bash
+$ hetzner-kube cluster phase etcd my-cluster
+```
+
+In order to upgrade or migrate a cluster, you might want to keep the etcd data, and run
+
+```bash
+$ hetzner-kube cluster phase etcd my-cluster --keep-data
+```
+
+and preserve the existing certificates using
+
+```bash
+$ hetzner-kube cluster phase install-master my-cluster --keep-all-certs
+```
+
+The latter command can be also useful during cluster migration, if you place the existing certs
+in /etc/kubernetes/pki before running the `install-masters` phase.
+
 ## cloud-init
 
 If you like to run some scripts or install some additional packages while provisioning new servers, you can use cloud-init
