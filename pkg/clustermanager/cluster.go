@@ -187,9 +187,11 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	for _, node := range manager.nodes {
 		if node.IsMaster {
 
-			resetCommand := "kubeadm reset -f"
+			var resetCommand string
 
 			switch keepCerts {
+			case NONE:
+				resetCommand = "kubeadm reset - f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
 			case CA:
 				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
 			case ALL:
@@ -199,13 +201,6 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 			_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
 			if err != nil {
 				return err
-			}
-
-			if keepCerts == NONE {
-				_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
-				if err != nil {
-					return err
-				}
 			}
 
 			if len(manager.nodes) == 1 {
@@ -301,11 +296,6 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 
 // InstallEtcdNodes installs the etcd cluster
 func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
-	commands := []NodeCommand{
-		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
-		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
-		//{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
-	}
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -314,7 +304,7 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 		numProcs++
 
 		go func(node Node) {
-			manager.etcdInstallStep(node, nodes, errChan, commands, keepData)
+			manager.etcdInstallStep(node, nodes, errChan, keepData)
 			trueChan <- true
 		}(node)
 	}
@@ -322,7 +312,12 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
-func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan error, commands []NodeCommand, keepData bool) {
+func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan error, keepData bool) {
+	commands := []NodeCommand{
+		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
+		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
+		//{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
+	}
 	// set systemd service
 	etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
 	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
