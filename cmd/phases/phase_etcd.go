@@ -2,15 +2,21 @@ package phases
 
 import "github.com/xetys/hetzner-kube/pkg/clustermanager"
 
+type EtcdSetupPhaseOptions struct {
+	KeepData bool
+}
+
 type EtcdSetupPhase struct {
 	clusterManager *clustermanager.Manager
 	provider       clustermanager.ClusterProvider
+	options        EtcdSetupPhaseOptions
 }
 
-func NewEtcdSetupPhase(manager *clustermanager.Manager, provider clustermanager.ClusterProvider) Phase {
+func NewEtcdSetupPhase(manager *clustermanager.Manager, provider clustermanager.ClusterProvider, options EtcdSetupPhaseOptions) Phase {
 	return &EtcdSetupPhase{
 		clusterManager: manager,
 		provider:       provider,
+		options:        options,
 	}
 }
 
@@ -28,7 +34,7 @@ func (phase *EtcdSetupPhase) Run() error {
 		etcdNodes = phase.provider.GetMasterNodes()
 	}
 
-	err := phase.clusterManager.InstallEtcdNodes(etcdNodes)
+	err := phase.clusterManager.InstallEtcdNodes(etcdNodes, phase.options.KeepData)
 	if err != nil {
 		return err
 	}

@@ -2,13 +2,20 @@ package phases
 
 import "github.com/xetys/hetzner-kube/pkg/clustermanager"
 
-type InstallMastersPhase struct {
-	clusterManager *clustermanager.Manager
+type InstallMastersPhaseOptions struct {
+	KeepCaCerts  bool
+	KeepAllCerts bool
 }
 
-func NewInstallMastersPhase(manager *clustermanager.Manager) Phase {
+type InstallMastersPhase struct {
+	clusterManager *clustermanager.Manager
+	options        InstallMastersPhaseOptions
+}
+
+func NewInstallMastersPhase(manager *clustermanager.Manager, options InstallMastersPhaseOptions) Phase {
 	return &InstallMastersPhase{
 		clusterManager: manager,
+		options:        options,
 	}
 }
 
@@ -17,5 +24,11 @@ func (phase *InstallMastersPhase) ShouldRun() bool {
 }
 
 func (phase *InstallMastersPhase) Run() error {
-	return phase.clusterManager.InstallMasters()
+	keepCerts := clustermanager.NONE
+	if phase.options.KeepAllCerts {
+		keepCerts = clustermanager.ALL
+	} else if phase.options.KeepCaCerts {
+		keepCerts = clustermanager.CA
+	}
+	return phase.clusterManager.InstallMasters(keepCerts)
 }

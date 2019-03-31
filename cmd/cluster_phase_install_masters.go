@@ -9,8 +9,14 @@ import (
 )
 
 func init() {
-	declarePhaseCommand("install-masters", "install the control plane", func(cmd *cobra.Command, args []string) {
+	command := declarePhaseCommand("install-masters", "install the control plane", func(cmd *cobra.Command, args []string) {
 		clusterName := args[0]
+		keepCa, _ := cmd.Flags().GetBool("keep-ca")
+		keepAll, _ := cmd.Flags().GetBool("keep-all-certs")
+		phaseOptions := phases.InstallMastersPhaseOptions{
+			KeepCaCerts:  keepCa,
+			KeepAllCerts: keepAll,
+		}
 
 		_, cluster := AppConf.Config.FindClusterByName(clusterName)
 		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
@@ -42,7 +48,7 @@ func init() {
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
 		)
-		phase := phases.NewInstallMastersPhase(clusterManager)
+		phase := phases.NewInstallMastersPhase(clusterManager, phaseOptions)
 
 		if phase.ShouldRun() {
 			err := phase.Run()
@@ -55,4 +61,7 @@ func init() {
 
 		coordinator.Wait()
 	})
+
+	command.Flags().BoolP("keep-ca", "c", false, "if set, keeps the original ca (if present) during install")
+	command.Flags().BoolP("keep-all-certs", "a", false, "if set, all certificates are saved and reused for install")
 }

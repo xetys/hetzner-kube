@@ -8,7 +8,7 @@ import (
 
 func init() {
 	declarePhaseCommand("provision", "provisions all nodes with the current tools", func(cmd *cobra.Command, args []string) {
-		provider, clusterManager, coordinator := getCommonPhaseDependencies(8, cmd, args)
+		provider, clusterManager, coordinator := getCommonPhaseDependencies(20, cmd, args)
 
 		phase := phases.NewProvisionNodesPhase(clusterManager)
 

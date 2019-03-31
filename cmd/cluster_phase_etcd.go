@@ -7,10 +7,11 @@ import (
 )
 
 func init() {
-	declarePhaseCommand("etcd", "setups a etcd cluster", func(cmd *cobra.Command, args []string) {
+	command := declarePhaseCommand("etcd", "setups a etcd cluster", func(cmd *cobra.Command, args []string) {
 		provider, clusterManager, coordinator := getCommonPhaseDependencies(6, cmd, args)
+		keepData, _ := cmd.Flags().GetBool("keep-data")
 
-		phase := phases.NewEtcdSetupPhase(clusterManager, provider)
+		phase := phases.NewEtcdSetupPhase(clusterManager, provider, phases.EtcdSetupPhaseOptions{KeepData: keepData})
 
 		if phase.ShouldRun() {
 			err := phase.Run()
@@ -23,4 +24,6 @@ func init() {
 
 		coordinator.Wait()
 	})
+
+	command.Flags().BoolP("keep-data", "k", false, "if set, the old data dir is not deleted")
 }

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
@@ -17,7 +18,7 @@ var phaseCommand = &cobra.Command{
 
 func declarePhaseCommand(name string, short string, run func(cmd *cobra.Command, args []string)) *cobra.Command {
 	declaredCommand := &cobra.Command{
-		Use:     name,
+		Use:     fmt.Sprintf("%s <CLUSTER_NAME>", name),
 		Short:   short,
 		PreRunE: validateClusterInArgumentExists,
 		Run:     run,

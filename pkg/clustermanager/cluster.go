@@ -152,8 +152,16 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	return nil
 }
 
+type KeepCerts int
+
+const (
+	NONE KeepCerts = 0
+	CA   KeepCerts = 1
+	ALL  KeepCerts = 2
+)
+
 // InstallMasters installs the kubernetes control plane to master nodes
-func (manager *Manager) InstallMasters() error {
+func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
@@ -178,15 +186,28 @@ func (manager *Manager) InstallMasters() error {
 
 	for _, node := range manager.nodes {
 		if node.IsMaster {
-			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f")
+
+			resetCommand := "kubeadm reset -f"
+
+			switch keepCerts {
+			case CA:
+				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
+			case ALL:
+				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/* /etc/kubernetes/pki"
+			}
+
+			_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
 			if err != nil {
 				return err
 			}
 
-			_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
-			if err != nil {
-				return err
+			if keepCerts == NONE {
+				_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
+				if err != nil {
+					return err
+				}
 			}
+
 			if len(manager.nodes) == 1 {
 				commands = append(commands, NodeCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
@@ -279,11 +300,11 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 }
 
 // InstallEtcdNodes installs the etcd cluster
-func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
+func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 	commands := []NodeCommand{
 		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
 		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
-		{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
+		//{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
 	}
 
 	errChan := make(chan error)
@@ -308,6 +329,18 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 					errChan <- err
 				}
 			}
+
+			// configure etcd
+			configureCommand := "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"
+			if keepData {
+				configureCommand = "systemctl enable etcd.service && systemctl stop etcd.service && systemctl start etcd.service"
+			}
+			manager.eventService.AddEvent(node.Name, "configure etcd")
+			_, err = manager.nodeCommunicator.RunCmd(node, configureCommand)
+			if err != nil {
+				errChan <- err
+			}
+
 			if manager.isolatedEtcd {
 				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
 			} else {
