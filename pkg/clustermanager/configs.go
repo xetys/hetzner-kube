@@ -16,7 +16,6 @@ networking:
 apiServer:
   certSANs:
     - 127.0.0.1
-    - %s
 %s%s
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
@@ -38,6 +37,7 @@ featureGates:
 
 	masterNodesIps := ""
 	for _, node := range masterNodes {
+		masterNodesIps = fmt.Sprintf("%s    - %s\n", masterNodesIps, node.IPAddress)
 		masterNodesIps = fmt.Sprintf("%s    - %s\n", masterNodesIps, node.PrivateIPAddress)
 	}
 
@@ -54,7 +54,6 @@ featureGates:
 
 	masterConfig := fmt.Sprintf(
 		masterConfigTpl,
-		masterNode.IPAddress,
 		masterNodesIps,
 		etcdConfig,
 		masterNode.PrivateIPAddress,
