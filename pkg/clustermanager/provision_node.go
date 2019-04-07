@@ -248,7 +248,6 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 // Last step because otherwise we need create script to check if variables already set and replaces them
 // As soon as it is last step we are ok to set them in basic way
 func (provisioner *NodeProvisioner) setSystemWideEnvironment() error {
-
 	provisioner.eventService.AddEvent(provisioner.node.Name, "set environment variables")
 	var err error
 
