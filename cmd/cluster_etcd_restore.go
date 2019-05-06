@@ -9,7 +9,7 @@ var restoreCmd = &cobra.Command{
 	Use:     "restore",
 	Short:   "restores an etcd snapshot",
 	PreRunE: validateEtcdRestoreCmd,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		snapshotName, _ := cmd.Flags().GetString("snapshot-name")
 		skipDistribution, _ := cmd.Flags().GetBool("skip-distribution")
 
@@ -17,12 +17,13 @@ var restoreCmd = &cobra.Command{
 		succeeded, err := etcdManager.RestoreSnapshot(snapshotName, skipDistribution)
 
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
 
 		if succeeded {
 			fmt.Println("restore succeeded")
 		}
+		return nil
 	},
 }
 

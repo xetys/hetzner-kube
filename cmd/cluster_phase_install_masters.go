@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/cmd/phases"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	phases "github.com/xetys/hetzner-kube/pkg/phases"
 )
 
-func init() {
-	command := declarePhaseCommand("install-masters", "install the control plane", func(cmd *cobra.Command, args []string) {
+var installMastersPhaseCommand = &cobra.Command{
+	Use:   "install-masters <CLUSTER_NAME>",
+	Short: "install the control plane",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
 		clusterName := args[0]
 		keepCa, _ := cmd.Flags().GetBool("keep-ca")
 		keepAll, _ := cmd.Flags().GetBool("keep-all-certs")
@@ -21,9 +24,13 @@ func init() {
 		_, cluster := AppConf.Config.FindClusterByName(clusterName)
 		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		coordinator := pkg.NewProgressCoordinator()
 
 		for _, node := range provider.GetAllNodes() {
@@ -52,7 +59,9 @@ func init() {
 
 		if phase.ShouldRun() {
 			err := phase.Run()
-			FatalOnError(err)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, node := range provider.GetAllNodes() {
@@ -60,8 +69,14 @@ func init() {
 		}
 
 		coordinator.Wait()
-	})
+		return nil
+	},
+}
 
-	command.Flags().BoolP("keep-ca", "c", false, "if set, keeps the original ca (if present) during install")
-	command.Flags().BoolP("keep-all-certs", "a", false, "if set, all certificates are saved and reused for install")
+func init() {
+
+	installMastersPhaseCommand.Flags().BoolP("keep-ca", "c", false, "if set, keeps the original ca (if present) during install")
+	installMastersPhaseCommand.Flags().BoolP("keep-all-certs", "a", false, "if set, all certificates are saved and reused for install")
+
+	phaseCommand.AddCommand(installMastersPhaseCommand)
 }

@@ -2,22 +2,30 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/cmd/phases"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	phases2 "github.com/xetys/hetzner-kube/pkg/phases"
 )
 
-func init() {
-	declarePhaseCommand("install-workers", "install the workers", func(cmd *cobra.Command, args []string) {
+var installWorkersCommand = &cobra.Command{
+	Use:     "install-workers <CLUSTER_NAME>",
+	Short:   "install the workers",
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateClusterInArgumentExists,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		clusterName := args[0]
 
 		_, cluster := AppConf.Config.FindClusterByName(clusterName)
 		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		coordinator := pkg.NewProgressCoordinator()
 
 		for _, node := range provider.GetAllNodes() {
@@ -37,11 +45,13 @@ func init() {
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
 		)
-		phase := phases.NewInstallWorkersPhase(clusterManager)
+		phase := phases2.NewInstallWorkersPhase(clusterManager)
 
 		if phase.ShouldRun() {
 			err := phase.Run()
-			FatalOnError(err)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, node := range provider.GetAllNodes() {
@@ -49,5 +59,11 @@ func init() {
 		}
 
 		coordinator.Wait()
-	})
+
+		return nil
+	},
+}
+
+func init() {
+	phaseCommand.AddCommand(installWorkersCommand)
 }

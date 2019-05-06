@@ -3,7 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/xetys/hetzner-kube/cmd/phases"
+	phases "github.com/xetys/hetzner-kube/pkg/phases"
 	"log"
 	"net"
 	"os"

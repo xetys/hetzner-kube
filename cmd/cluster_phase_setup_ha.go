@@ -2,22 +2,30 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/cmd/phases"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
+	phases "github.com/xetys/hetzner-kube/pkg/phases"
 )
 
-func init() {
-	declarePhaseCommand("setup-ha", "configures the cluster for high availability", func(cmd *cobra.Command, args []string) {
+var setupHAPhaseCommand = &cobra.Command{
+	Use:     "setup-ha <CLUSTER_NAME>",
+	Short:   "configures the cluster for high availability",
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateClusterInArgumentExists,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		clusterName := args[0]
 
 		_, cluster := AppConf.Config.FindClusterByName(clusterName)
 		provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		masterNode, err := provider.GetMasterNode()
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
-		FatalOnError(err)
+		if err != nil {
+			return err
+		}
 		coordinator := pkg.NewProgressCoordinator()
 
 		for _, node := range provider.GetAllNodes() {
@@ -44,7 +52,9 @@ func init() {
 
 		if phase.ShouldRun() {
 			err := phase.Run()
-			FatalOnError(err)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, node := range provider.GetAllNodes() {
@@ -52,5 +62,10 @@ func init() {
 		}
 
 		coordinator.Wait()
-	})
+		return nil
+	},
+}
+
+func init() {
+	phaseCommand.AddCommand(setupHAPhaseCommand)
 }

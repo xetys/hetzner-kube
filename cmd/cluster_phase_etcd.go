@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xetys/hetzner-kube/cmd/phases"
 	"github.com/xetys/hetzner-kube/pkg"
+	phases "github.com/xetys/hetzner-kube/pkg/phases"
 )
 
-func init() {
-	command := declarePhaseCommand("etcd", "setups a etcd cluster", func(cmd *cobra.Command, args []string) {
+var etcdPhaseCommand = &cobra.Command{
+	Use:     "etcd <CLUSTER_NAME>",
+	Short:   "setups a etcd cluster",
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateClusterInArgumentExists,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		provider, clusterManager, coordinator := getCommonPhaseDependencies(6, cmd, args)
 		keepData, _ := cmd.Flags().GetBool("keep-data")
 
@@ -15,7 +19,9 @@ func init() {
 
 		if phase.ShouldRun() {
 			err := phase.Run()
-			FatalOnError(err)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, node := range provider.GetAllNodes() {
@@ -23,7 +29,12 @@ func init() {
 		}
 
 		coordinator.Wait()
-	})
+		return nil
+	},
+}
 
-	command.Flags().BoolP("keep-data", "k", false, "if set, the old data dir is not deleted")
+func init() {
+
+	etcdPhaseCommand.Flags().BoolP("keep-data", "k", false, "if set, the old data dir is not deleted")
+	phaseCommand.AddCommand(etcdPhaseCommand)
 }

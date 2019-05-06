@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"github.com/xetys/hetzner-kube/pkg/hetzner"
@@ -11,15 +10,11 @@ var backupCmd = &cobra.Command{
 	Use:     "backup",
 	Short:   "creates a backup of the etcd cluster. If no name is provided, a current datetime string is used",
 	PreRunE: validateClusterInArgumentExists,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		snapshotName, _ := cmd.Flags().GetString("snapshot-name")
 		etcdManager := getEtcdManager(cmd, args)
 
-		err := etcdManager.CreateSnapshot(snapshotName)
-
-		if err != nil {
-			fmt.Println(err)
-		}
+		return etcdManager.CreateSnapshot(snapshotName)
 	},
 }
 
