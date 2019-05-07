@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	phases "github.com/xetys/hetzner-kube/pkg/phases"
 	"log"
 	"net"
 	"os"
@@ -106,53 +107,20 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	saveCluster(&cluster)
 	renderProgressBars(&cluster, coordinator)
 
-	// provision nodes
-	tries := 0
-	for err := clusterManager.ProvisionNodes(cluster.Nodes); err != nil; {
-		if tries < 3 {
-			fmt.Print(err)
-			tries++
-		} else {
-			log.Fatal(err)
-		}
-	}
+	phaseChain := phases.NewPhaseChain()
 
-	// setup encrypted network
-	err = clusterManager.SetupEncryptedNetwork()
-	FatalOnError(err)
-	cluster = clusterManager.Cluster()
-	saveCluster(&cluster)
-
-	if haEnabled {
-		var etcdNodes []clustermanager.Node
-
-		if isolatedEtcd {
-			etcdNodes = hetznerProvider.GetEtcdNodes()
-		} else {
-			etcdNodes = hetznerProvider.GetMasterNodes()
-		}
-
-		err = clusterManager.InstallEtcdNodes(etcdNodes)
-		FatalOnError(err)
-
+	phaseChain.AddPhase(phases.NewProvisionNodesPhase(clusterManager))
+	phaseChain.AddPhase(phases.NewNetworkSetupPhase(clusterManager))
+	phaseChain.AddPhase(phases.NewEtcdSetupPhase(clusterManager, hetznerProvider, phases.EtcdSetupPhaseOptions{KeepData: false}))
+	phaseChain.AddPhase(phases.NewInstallMastersPhase(clusterManager, phases.InstallMastersPhaseOptions{KeepCaCerts: false, KeepAllCerts: false}))
+	phaseChain.AddPhase(phases.NewSetupHighAvailabilityPhase(clusterManager))
+	phaseChain.AddPhase(phases.NewInstallWorkersPhase(clusterManager))
+	phaseChain.SetAfterRun(func() {
 		saveCluster(&cluster)
-	}
+	})
 
-	// install masters
-	if err := clusterManager.InstallMasters(); err != nil {
-		log.Fatal(err)
-	}
-
-	// ha plane
-	if haEnabled {
-		err = clusterManager.SetupHA()
-		FatalOnError(err)
-	}
-
-	// install worker
-	if err := clusterManager.InstallWorkers(cluster.Nodes); err != nil {
-		log.Fatal(err)
-	}
+	err = phaseChain.Run()
+	FatalOnError(err)
 
 	coordinator.Wait()
 	log.Println("Cluster successfully created!")

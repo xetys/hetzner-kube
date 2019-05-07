@@ -22,6 +22,19 @@ type Manager struct {
 	isolatedEtcd     bool
 }
 
+// KeepCerts is an enumeration for existing certificate handling during master install
+type KeepCerts int
+
+//
+const (
+	// NONE generate completely new certificates
+	NONE KeepCerts = 0
+	// CA generate certificates using existing authority
+	CA KeepCerts = 1
+	// ALL keep all certificates
+	ALL KeepCerts = 2
+)
+
 // NewClusterManager create a new manager for the cluster
 func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string) *Manager {
 	manager := &Manager{
@@ -153,17 +166,12 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 }
 
 // InstallMasters installs the kubernetes control plane to master nodes
-func (manager *Manager) InstallMasters() error {
+func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		//{"install Weave Net", "kubectl apply -f \"https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\\n')\""},
 		{"install canal (RBAC)", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml"},
 		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml"},
-		//{"install flannel", "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"},
-		//{"configure flannel", "kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/tolerations/-\",\"value\":{\"key\":\"node.cloudprovider.kubernetes.io/uninitialized\",\"value\":\"true\",\"effect\":\"NoSchedule\"}}]'"},
-		//{"install hcloud integration", fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", AppConf.CurrentContext.Token)},
-		//{"deploy cloud controller manager", "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.0.0.yaml"},
 	}
 
 	// inject custom commands
@@ -178,15 +186,23 @@ func (manager *Manager) InstallMasters() error {
 
 	for _, node := range manager.nodes {
 		if node.IsMaster {
-			_, err := manager.nodeCommunicator.RunCmd(node, "kubeadm reset -f")
+
+			var resetCommand string
+
+			switch keepCerts {
+			case NONE:
+				resetCommand = "kubeadm reset -f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
+			case CA:
+				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
+			case ALL:
+				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/* /etc/kubernetes/pki"
+			}
+
+			_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
 			if err != nil {
 				return err
 			}
 
-			_, err = manager.nodeCommunicator.RunCmd(node, "rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki")
-			if err != nil {
-				return err
-			}
 			if len(manager.nodes) == 1 {
 				commands = append(commands, NodeCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
@@ -279,12 +295,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 }
 
 // InstallEtcdNodes installs the etcd cluster
-func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
-	commands := []NodeCommand{
-		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
-		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
-		{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
-	}
+func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
 
 	errChan := make(chan error)
 	trueChan := make(chan bool)
@@ -293,31 +304,49 @@ func (manager *Manager) InstallEtcdNodes(nodes []Node) error {
 		numProcs++
 
 		go func(node Node) {
-			// set systemd service
-			etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
-			err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
-			if err != nil {
-				errChan <- err
-			}
-
-			// install etcd
-			for _, command := range commands {
-				manager.eventService.AddEvent(node.Name, command.EventName)
-				_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
-				if err != nil {
-					errChan <- err
-				}
-			}
-			if manager.isolatedEtcd {
-				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
-			} else {
-				manager.eventService.AddEvent(node.Name, "etcd configured")
-			}
+			manager.etcdInstallStep(node, nodes, errChan, keepData)
 			trueChan <- true
 		}(node)
 	}
 
 	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan error, keepData bool) {
+	commands := []NodeCommand{
+		{"download etcd", "mkdir -p /opt/etcd && curl -L https://storage.googleapis.com/etcd/v3.3.11/etcd-v3.3.11-linux-amd64.tar.gz -o /opt/etcd-v3.3.11-linux-amd64.tar.gz"},
+		{"install etcd", "tar xzvf /opt/etcd-v3.3.11-linux-amd64.tar.gz -C /opt/etcd --strip-components=1"},
+		//{"configure etcd", "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"},
+	}
+	// set systemd service
+	etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
+	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, false)
+	if err != nil {
+		errChan <- err
+	}
+	// install etcd
+	for _, command := range commands {
+		manager.eventService.AddEvent(node.Name, command.EventName)
+		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
+		if err != nil {
+			errChan <- err
+		}
+	}
+	// configure etcd
+	configureCommand := "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"
+	if keepData {
+		configureCommand = "systemctl enable etcd.service && systemctl stop etcd.service && systemctl start etcd.service"
+	}
+	manager.eventService.AddEvent(node.Name, "configure etcd")
+	_, err = manager.nodeCommunicator.RunCmd(node, configureCommand)
+	if err != nil {
+		errChan <- err
+	}
+	if manager.isolatedEtcd {
+		manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
+	} else {
+		manager.eventService.AddEvent(node.Name, "etcd configured")
+	}
 }
 
 // InstallWorkers installs kubernetes workers to given nodes
@@ -392,11 +421,12 @@ func (manager *Manager) SetupHA() error {
 		return err
 	}
 
-	// set apiserver-count to 3
+	// set apiserver-count to number of masters
+	apiServerCount := fmt.Sprintf("- --apiserver-count=%d\n    image: gcr.io/", len(masterNodes))
 	for _, node := range masterNodes {
 		manager.eventService.AddEvent(node.Name, "set api-server count")
 		manager.nodeCommunicator.TransformFileOverNode(node, node, "/etc/kubernetes/manifests/kube-apiserver.yaml", func(in string) string {
-			return strings.Replace(in, "image: gcr.io/", "- --apiserver-count=3\n    image: gcr.io/", 1)
+			return strings.Replace(in, "image: gcr.io/", apiServerCount, 1)
 		})
 	}
 
