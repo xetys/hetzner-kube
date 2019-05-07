@@ -16,24 +16,26 @@ build-cleanup:
 
 build: build-cleanup
 	@mkdir -p dist
-	CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-amd64
-	CGO_ENABLED=0 GOOS=linux   GOARCH=386   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-386
-	CGO_ENABLED=0 GOOS=linux   GOARCH=arm   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-arm
-	CGO_ENABLED=0 GOOS=linux   GOARCH=arm64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-arm64
-	CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-darwin-amd64
-	CGO_ENABLED=0 GOOS=darwin  GOARCH=386   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-darwin-386
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-amd64.exe
-	CGO_ENABLED=0 GOOS=windows GOARCH=386   go build -ldflags "-X cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-386.exe
+	CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-amd64
+	CGO_ENABLED=0 GOOS=linux   GOARCH=386   go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-386
+	CGO_ENABLED=0 GOOS=linux   GOARCH=arm   go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-arm
+	CGO_ENABLED=0 GOOS=linux   GOARCH=arm64 go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-linux-arm64
+	CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-darwin-amd64
+	CGO_ENABLED=0 GOOS=darwin  GOARCH=386   go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-darwin-386
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-amd64.exe
+	CGO_ENABLED=0 GOOS=windows GOARCH=386   go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=${VERSION}" -o dist/hetzner-kube-${VERSION}-windows-386.exe
 
 test-preparare:
 	mkdir -p ${SSH_KEY_FOLDER}
 	ssh-keygen -t rsa -b 4096 -P "" -f ${SSH_KEY_FOLDER}/id_rsa
 
-test-all: test-preparare test-info test-context test-ssh-key test-clusters
+test-all: test-preparare test-help test-version test-context test-ssh-key test-clusters
 
-test-info:
+test-help:
 	${HETZNER_KUBE} help
-	${HETZNER_KUBE} version
+
+test-version:
+	${HETZNER_KUBE} version | grep -q $(shell git rev-parse --short HEAD)
 
 test-context:
 	${HETZNER_KUBE} context add ${CONTEXT_NAME} --token ${HETZNER_API_KEY}
