@@ -11,7 +11,7 @@ import (
 const maxErrors = 3
 
 // K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.13.4-00", "The version of the k8s debian packages that will be used during provisioning")
+var K8sVersion = flag.String("k8s-version", "1.14.0-00", "The version of the k8s debian packages that will be used during provisioning")
 
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
@@ -248,7 +248,6 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 // Last step because otherwise we need create script to check if variables already set and replaces them
 // As soon as it is last step we are ok to set them in basic way
 func (provisioner *NodeProvisioner) setSystemWideEnvironment() error {
-
 	provisioner.eventService.AddEvent(provisioner.node.Name, "set environment variables")
 	var err error
 

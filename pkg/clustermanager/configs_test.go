@@ -9,11 +9,15 @@ import (
 func TestGenerateMasterConfiguration(t *testing.T) {
 	expectedConf := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
+kubernetesVersion: stable
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
 apiServer:
+  featureGates:
+    CSINodeInfo: true
+    CSIDriverRegistry: true
   certSANs:
     - 127.0.0.1
     - 1.1.1.1
@@ -41,11 +45,15 @@ featureGates:
 
 	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
+kubernetesVersion: stable
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
   dnsDomain: "cluster.local"
 apiServer:
+  featureGates:
+    CSINodeInfo: true
+    CSIDriverRegistry: true
   certSANs:
     - 127.0.0.1
     - 1.1.1.1
