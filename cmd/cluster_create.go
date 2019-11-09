@@ -273,16 +273,20 @@ func init() {
 	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
 
 	// get default datacenters
-	opts := hcloud.DatacenterListOpts{}
-	opts.PerPage = 50
-	datacenters, _, err := AppConf.Client.Datacenter.List(AppConf.Context, opts)
-	if err != nil {
-		fmt.Print(err)
-	}
-
 	dcs := []string{}
-	for _, v := range datacenters {
-		dcs = append(dcs, v.Name)
+	if AppConf.CurrentContext != nil {
+		opts := hcloud.DatacenterListOpts{}
+		opts.PerPage = 50
+		datacenters, _, err := AppConf.Client.Datacenter.List(AppConf.Context, opts)
+		if err != nil {
+			fmt.Print(err)
+		}
+
+		for _, v := range datacenters {
+			dcs = append(dcs, v.Name)
+		}
+	} else {
+		dcs = []string{"nbg1-dc3", "hel1-dc2", "fsn1-dc14"}
 	}
 
 	clusterCreateCmd.Flags().StringSlice("datacenters", dcs, "Can be used to filter datacenters by their name")
