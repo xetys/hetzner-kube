@@ -3,7 +3,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	phases "github.com/xetys/hetzner-kube/pkg/phases"
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/xetys/hetzner-kube/pkg/phases"
 	"log"
 	"net"
 	"os"
@@ -270,5 +271,19 @@ func init() {
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
 	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
-	clusterCreateCmd.Flags().StringSlice("datacenters", []string{"fsn1-dc8", "nbg1-dc3", "hel1-dc2", "fsn1-dc14"}, "Can be used to filter datacenters by their name")
+
+	// get default datacenters
+	opts := hcloud.DatacenterListOpts{}
+	opts.PerPage = 50
+	datacenters, _, err := AppConf.Client.Datacenter.List(AppConf.Context, opts)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	dcs := []string{}
+	for _, v := range datacenters {
+		dcs = append(dcs, v.Name)
+	}
+
+	clusterCreateCmd.Flags().StringSlice("datacenters", dcs, "Can be used to filter datacenters by their name")
 }
