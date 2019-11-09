@@ -170,8 +170,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		{"install canal (RBAC)", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml"},
-		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml"},
+		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/canal.yaml"},
 	}
 
 	// inject custom commands
