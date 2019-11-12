@@ -65,7 +65,7 @@ systemctl daemon-reload
 systemctl restart kubelet`
 
 	for _, node := range addon.nodes {
-		err := addon.communicator.WriteFile(node, "/tmp/prometheus.sh", kubeletModifyScript, true)
+		err := addon.communicator.WriteFile(node, "/tmp/prometheus.sh", kubeletModifyScript, clustermanager.AllExecute)
 		FatalOnError(err)
 		_, err = addon.communicator.RunCmd(node, "/tmp/prometheus.sh")
 		FatalOnError(err)

@@ -129,7 +129,7 @@ done
 exit 127
     `
 
-	err = provisioner.communicator.WriteFile(provisioner.node, "/root/cloud-init-status-check.sh", cloudInitScript, true)
+	err = provisioner.communicator.WriteFile(provisioner.node, "/root/cloud-init-status-check.sh", cloudInitScript, AllExecute)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (provisioner *NodeProvisioner) prepareKubernetes() error {
 		return err
 	}
 
-	err = provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/sources.list.d/kubernetes.list", `deb http://apt.kubernetes.io/ kubernetes-xenial main`, false)
+	err = provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/sources.list.d/kubernetes.list", `deb http://apt.kubernetes.io/ kubernetes-xenial main`, AllRead)
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ Package: docker-ce
 Pin: version 18.09.2~3-0~ubuntu-bionic
 Pin-Priority: 1000
 	`
-	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, false)
+	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, AllRead)
 	if err != nil {
 		return err
 	}

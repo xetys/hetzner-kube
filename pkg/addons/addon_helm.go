@@ -66,7 +66,7 @@ subjects:
   - kind: ServiceAccount
     name: tiller
     namespace: kube-system`
-	err = addon.communicator.WriteFile(node, "/root/helm-service-account.yaml", serviceAccount, false)
+	err = addon.communicator.WriteFile(node, "/root/helm-service-account.yaml", serviceAccount, clustermanager.AllRead)
 	FatalOnError(err)
 
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f helm-service-account.yaml")

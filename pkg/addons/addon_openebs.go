@@ -59,7 +59,7 @@ parameters:
   openebs.io/jiva-replica-count: "3"
   openebs.io/volume-monitor: "true"
   openebs.io/capacity: 5G`
-	err = addon.communicator.WriteFile(node, "/root/openebs-storageclass.yaml", improvedStorageClass, false)
+	err = addon.communicator.WriteFile(node, "/root/openebs-storageclass.yaml", improvedStorageClass, clustermanager.AllRead)
 	FatalOnError(err)
 
 	_, err = addon.communicator.RunCmd(node, "kubectl delete -f openebs-storageclass.yaml && kubectl apply -f openebs-storageclass.yaml")
