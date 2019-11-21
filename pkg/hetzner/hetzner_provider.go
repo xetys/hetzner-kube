@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"strings"
+	"math/rand"
+	"time"
 
 	"github.com/go-kit/kit/log/term"
 	"github.com/gosuri/uiprogress"
@@ -74,6 +76,10 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 	serverOptsTemplate.SSHKeys = append(serverOptsTemplate.SSHKeys, sshKey)
 
 	datacentersCount := len(datacenters)
+
+	//shuffle datacenters to make it more random
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(datacentersCount, func(i, j int) { datacenters[i], datacenters[j] = datacenters[j], datacenters[i] })
 
 	var nodes []clustermanager.Node
 	for i := 1; i <= count; i++ {
