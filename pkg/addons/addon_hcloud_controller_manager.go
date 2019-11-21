@@ -66,17 +66,23 @@ Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
 		FatalOnError(err)
 	}
 
-	_, err := addon.communicator.RunCmd(*addon.masterNode, `kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"node.cloudprovider.kubernetes.io/uninitialized","value":"true","effect":"NoSchedule"}}]'`)
+	_, err := addon.communicator.RunCmd(*addon.masterNode, `kubectl -n kube-system patch ds canal --type json -p '[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"node.cloudprovider.kubernetes.io/uninitialized","value":"true","effect":"NoSchedule"}}]'`)
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(*addon.masterNode, fmt.Sprintf("kubectl -n kube-system create secret generic hcloud --from-literal=token=%s", addon.provider.Token()))
 	FatalOnError(err)
-	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.2.0.yaml")
+	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.5.0.yaml")
+	FatalOnError(err)
+	// This is needed cause there is a bug inside the hcloud-cloud-controller-manager deployment spec.
+	// The env-variable "network" is not marked as optional but is also not needed for the deployment.
+	// Because we don't insert this into the secret, it fails to start the pod cause the network-key is not found in the secret.
+	// This workaround will actually remove the network-key.
+	_, err = addon.communicator.RunCmd(*addon.masterNode, `kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --type json -p '[{"op":"remove","path":"/spec/template/spec/containers/0/env/2"}]'`)
 	FatalOnError(err)
 }
 
 // Uninstall performs all steps to remove the addon
 func (addon *HCloudControllerManagerAddon) Uninstall() {
-	_, err := addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.2.0.yaml")
+	_, err := addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f  https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.5.0.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl -n kube-system delete secret hcloud")
 	FatalOnError(err)
