@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
