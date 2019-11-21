@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
-	"math/rand"
 	"time"
 
 	"github.com/go-kit/kit/log/term"
