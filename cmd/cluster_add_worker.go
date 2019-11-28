@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,13 @@ You can specify the worker server type as in cluster create.`,
 			return errors.New("flag --worker-server-type is required")
 		}
 
+		var cloudInit string
+		if cloudInit, _ = cmd.Flags().GetString("cloud-init"); cloudInit != "" {
+			if _, err := os.Stat(cloudInit); os.IsNotExist(err) {
+				return errors.New("cloud-init file not found")
+			}
+		}
+
 		if err != nil {
 			return err
 		}
@@ -53,6 +61,7 @@ You can specify the worker server type as in cluster create.`,
 		_, cluster := AppConf.Config.FindClusterByName(name)
 		workerServerType, _ := cmd.Flags().GetString("worker-server-type")
 		datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
+		cloudInit, _ := cmd.Flags().GetString("cloud-init")
 		var sshKeyName string
 
 		for _, node := range cluster.Nodes {
@@ -64,6 +73,10 @@ You can specify the worker server type as in cluster create.`,
 
 		if sshKeyName == "" {
 			log.Fatal("master not found")
+		}
+
+		if cloudInit != "" {
+			cluster.CloudInitFile = cloudInit
 		}
 
 		maxNo := 0
@@ -133,4 +146,5 @@ func init() {
 	clusterAddWorkerCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
 	clusterAddWorkerCmd.Flags().IntP("nodes", "n", 2, "Number of nodes for the cluster")
 	clusterAddWorkerCmd.Flags().StringSlice("datacenters", []string{"fsn1-dc8", "nbg1-dc3", "hel1-dc2", "fsn1-dc14"}, "Can be used to filter datacenters by their name")
+	clusterAddWorkerCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for node preconfiguration")
 }
