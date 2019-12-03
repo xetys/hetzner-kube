@@ -19,9 +19,11 @@ jobs:
     - stage: E2E testing
       script:
         - go build -ldflags "-X github.com/xetys/hetzner-kube/cmd.version=`git rev-parse --short HEAD`"
+        - export HETZNER_API_KEY=$(./scripts/get-token.sh)
         - export DATACENTER=$(make detect-datacenter)
         - make test-all
         - make cleanup
+        - ./scripts/delete-token.sh $HETZNER_API_KEY
       go: 1.13.x
       if: fork = false
 
