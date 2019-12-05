@@ -19,7 +19,8 @@ import (
 var DefaultConfigPath string
 
 // AppConf is the default configuration from the local system.
-var AppConf = NewAppConfig()
+//var AppConf = NewAppConfig()
+var AppConf AppConfig
 
 // AppSSHClient is the SSH client
 type AppSSHClient struct {
@@ -27,7 +28,7 @@ type AppSSHClient struct {
 
 // NewAppConfig creates a new AppConfig struct using the locally saved configuration file. If no local
 // configuration file is found a new config will be created.
-func NewAppConfig() AppConfig {
+func NewAppConfig(debug bool) AppConfig {
 	usr, err := user.Current()
 	if err != nil {
 		return AppConfig{}
@@ -41,7 +42,7 @@ func NewAppConfig() AppConfig {
 	}
 
 	makeConfigIfNotExists(&appConf)
-	appConf.SSHClient = clustermanager.NewSSHCommunicator(appConf.Config.SSHKeys, true)
+	appConf.SSHClient = clustermanager.NewSSHCommunicator(appConf.Config.SSHKeys, debug)
 	return appConf
 }
 

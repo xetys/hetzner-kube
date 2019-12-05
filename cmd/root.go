@@ -11,6 +11,7 @@ import (
 )
 
 var cfgFile string
+var DebugMode bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -18,22 +19,20 @@ var rootCmd = &cobra.Command{
 	Short: "A CLI tool to provision kubernetes clusters on Hetzner Cloud",
 	Long: `A tool for creating and managing kubernetes clusters on Hetzner Cloud.
 
-Attention: the tool is of ALPHA quality! Don't use it for production setups, yet
 	`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		pkg.RenderProgressBars = false
+		if DebugMode {
+			fmt.Println("Running in Debug Mode!")
+			pkg.RenderProgressBars = true
+		}
+		AppConf = NewAppConfig(DebugMode)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if debug, err := rootCmd.PersistentFlags().GetBool("debug"); err != nil && debug {
-		pkg.RenderProgressBars = false
-	} else {
-		pkg.RenderProgressBars = true
-	}
-
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -44,7 +43,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file to use")
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "debug mode")
+	rootCmd.PersistentFlags().BoolVarP(&DebugMode, "debug", "d", false, "debug mode")
+
 }
 
 // initConfig reads in config file and ENV variables if set.

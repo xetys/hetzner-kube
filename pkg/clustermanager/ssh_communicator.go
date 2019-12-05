@@ -41,7 +41,7 @@ func NewSSHCommunicator(sshKeys []SSHKey, debug bool) NodeCommunicator {
 		debug:       debug,
 	}
 	if debug {
-		outfile, _ := os.Create("hetzner.log")
+		outfile, _ := os.Create("hetzner-kube-debug.log")
 		sshComm.log = log.New(outfile, "", 0)
 	}
 	return sshComm
