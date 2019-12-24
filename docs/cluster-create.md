@@ -35,7 +35,6 @@ The following custom options are available for the cluster create command:
 - `--isolated-etcd`: Isolates etcd cluster from master nodes , *default: false*
 - `--master-count`, `-m`: Number of master nodes, works only if `--ha-enabled` is passed, *default: 3*
 - `--etcd-count`, `-e`: Number of etcd nodes, works only if `--ha-enabled` and `--isolated-etcd` are passed, *default: 3*
-- `--self-hosted`: If true, the kubernetes control plane will be hosted on itself , *default: false*
 - `--worker-count`,`-w`: Number of worker nodes for the cluster , *default: 1*
 - `--cloud-init`: Cloud-init file for server preconfiguration
 - `--datacenters`: Can be used to filter datacenters by their name, *options: fsn-dc8, nbg1-dc3, hel1-dc2, fsn1-dc14*
