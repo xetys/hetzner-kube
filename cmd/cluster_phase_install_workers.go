@@ -44,6 +44,7 @@ var installWorkersCommand = &cobra.Command{
 			cluster.HaEnabled,
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
+			cluster.CNI,
 		)
 		phase := phases2.NewInstallWorkersPhase(clusterManager)
 

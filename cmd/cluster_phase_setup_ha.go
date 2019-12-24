@@ -46,6 +46,7 @@ var setupHAPhaseCommand = &cobra.Command{
 			cluster.HaEnabled,
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
+			cluster.CNI,
 		)
 
 		phase := phases.NewSetupHighAvailabilityPhase(clusterManager)

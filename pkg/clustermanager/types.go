@@ -21,6 +21,7 @@ type Cluster struct {
 	CloudInitFile     string `json:"cloud_init_file"`
 	NodeCIDR          string `json:"node_cidr"`
 	KubernetesVersion string `json:"kubernetes_version"`
+	CNI               string `json:"cni"`
 }
 
 // NodeCommand is the structure used to define acommand to execute on a node
