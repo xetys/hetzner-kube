@@ -49,7 +49,7 @@ func NewAppConfig(debug bool) AppConfig {
 // WriteCurrentConfig write the configuration to file
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
-	configJSON, err := json.Marshal(&config)
+	configJSON, err := json.MarshalIndent(&config, "", "    ")
 
 	if err == nil {
 		err = ioutil.WriteFile(configFileName, configJSON, 0666)
