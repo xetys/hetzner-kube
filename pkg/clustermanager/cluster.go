@@ -15,7 +15,7 @@ type Manager struct {
 	nodes            []Node
 	clusterName      string
 	cloudInitFile    string
-	CNI              string
+	cni              string
 	eventService     EventService
 	nodeCommunicator NodeCommunicator
 	clusterProvider  ClusterProvider
@@ -46,7 +46,7 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 		eventService:     eventService,
 		nodeCommunicator: nodeCommunicator,
 		clusterProvider:  provider,
-		CNI:              cni,
+		cni:              cni,
 		nodes:            provider.GetAllNodes(),
 	}
 
@@ -77,7 +77,7 @@ func (manager *Manager) Cluster() Cluster {
 		CloudInitFile:     manager.cloudInitFile,
 		NodeCIDR:          manager.clusterProvider.GetNodeCidr(),
 		KubernetesVersion: "1.16.4",
-		CNI:               manager.CNI,
+		Cni:               manager.cni,
 	}
 }
 
@@ -176,9 +176,9 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
 	}
 
-	if manager.CNI == "canal" {
+	if manager.cni == "canal" {
 		commands = append(commands, NodeCommand{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/canal.yaml"})
-	} else if manager.CNI == "calico" {
+	} else if manager.cni == "calico" {
 		// We had to change the Pod CIDR to match the one defined in the kubeadm config file
 		// We had to tweak MTU for our install with Wireguard and the overhead it needs. Calculation is 1500 (eth0) - 80 (wirguard) - 20 (Calico IPinIP)
 		commands = append(commands, NodeCommand{"install calico", "cd /tmp && curl https://docs.projectcalico.org/v3.11/manifests/calico.yaml -O && sed -i -e \"s?192.168.0.0/16?10.244.0.0/16?g\" calico.yaml && sed -i -e \"s?1440?1400?g\" calico.yaml && kubectl apply -f calico.yaml"})
