@@ -6,10 +6,10 @@ import (
 )
 
 // GenerateMasterConfiguration generate the kubernetes config for master
-func GenerateMasterConfiguration(masterNode Node, masterNodes []Node, etcdNodes []Node) string {
+func GenerateMasterConfiguration(masterNode Node, masterNodes []Node, etcdNodes []Node, kubernetesVersion string) string {
 	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: stable
+kubernetesVersion: v%s
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
@@ -58,6 +58,7 @@ featureGates:
 
 	masterConfig := fmt.Sprintf(
 		masterConfigTpl,
+		kubernetesVersion,
 		masterNodesIps,
 		etcdConfig,
 		masterNode.PrivateIPAddress,

@@ -68,12 +68,13 @@ func NewClusterManagerFromCluster(cluster Cluster, provider ClusterProvider, nod
 // Cluster creates a Cluster object for further processing
 func (manager *Manager) Cluster() Cluster {
 	return Cluster{
-		Name:          manager.clusterName,
-		Nodes:         manager.nodes,
-		HaEnabled:     manager.haEnabled,
-		IsolatedEtcd:  manager.isolatedEtcd,
-		CloudInitFile: manager.cloudInitFile,
-		NodeCIDR:      manager.clusterProvider.GetNodeCidr(),
+		Name:              manager.clusterName,
+		Nodes:             manager.nodes,
+		HaEnabled:         manager.haEnabled,
+		IsolatedEtcd:      manager.isolatedEtcd,
+		CloudInitFile:     manager.cloudInitFile,
+		NodeCIDR:          manager.clusterProvider.GetNodeCidr(),
+		KubernetesVersion: "1.16.4",
 	}
 }
 
@@ -243,7 +244,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 		}
 	}
 	masterNodes := manager.clusterProvider.GetMasterNodes()
-	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes)
+	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes, manager.Cluster().KubernetesVersion)
 	if err := manager.nodeCommunicator.WriteFile(node, "/root/master-config.yaml", masterConfig, AllRead); err != nil {
 		errChan <- err
 	}
