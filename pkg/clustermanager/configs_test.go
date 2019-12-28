@@ -45,7 +45,7 @@ featureGates:
 
 	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v.16.4
+kubernetesVersion: v1.16.4
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
