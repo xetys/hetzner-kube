@@ -1,7 +1,6 @@
 package clustermanager
 
 import (
-	"flag"
 	"fmt"
 	"strconv"
 	"strings"
@@ -10,24 +9,23 @@ import (
 
 const maxErrors = 3
 
-// K8sVersion is the version that will be used to install kubernetes
-var K8sVersion = flag.String("k8s-version", "1.16.2-00", "The version of the k8s debian packages that will be used during provisioning")
-
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
-	clusterName  string
-	node         Node
-	communicator NodeCommunicator
-	eventService EventService
+	clusterName       string
+	node              Node
+	communicator      NodeCommunicator
+	eventService      EventService
+	kubernetesVersion string
 }
 
 // NewNodeProvisioner creates a NodeProvisioner instance
-func NewNodeProvisioner(clusterName string, node Node, communicator NodeCommunicator, eventService EventService) *NodeProvisioner {
+func NewNodeProvisioner(clusterName string, node Node, communicator NodeCommunicator, eventService EventService, kubernetesVersion string) *NodeProvisioner {
 	return &NodeProvisioner{
-		clusterName:  clusterName,
-		node:         node,
-		communicator: communicator,
-		eventService: eventService,
+		clusterName:       clusterName,
+		node:              node,
+		communicator:      communicator,
+		eventService:      eventService,
+		kubernetesVersion: kubernetesVersion,
 	}
 }
 
@@ -235,8 +233,8 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s kubeadm=%s kubectl=%s kubernetes-cni=0.7.5-00 wireguard linux-headers-$(uname -r) linux-headers-virtual",
-		*K8sVersion, *K8sVersion, *K8sVersion)
+	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.7.5-00 wireguard linux-headers-$(uname -r) linux-headers-virtual",
+		provisioner.kubernetesVersion, provisioner.kubernetesVersion, provisioner.kubernetesVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {
 		return err
