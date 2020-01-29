@@ -19,13 +19,13 @@ type NodeProvisioner struct {
 }
 
 // NewNodeProvisioner creates a NodeProvisioner instance
-func NewNodeProvisioner(clusterName string, node Node, communicator NodeCommunicator, eventService EventService, kubernetesVersion string) *NodeProvisioner {
+func NewNodeProvisioner(node Node, manager *Manager) *NodeProvisioner {
 	return &NodeProvisioner{
-		clusterName:       clusterName,
+		clusterName:       manager.clusterName,
 		node:              node,
-		communicator:      communicator,
-		eventService:      eventService,
-		kubernetesVersion: kubernetesVersion,
+		communicator:      manager.nodeCommunicator,
+		eventService:      manager.eventService,
+		kubernetesVersion: manager.Cluster().KubernetesVersion,
 	}
 }
 
