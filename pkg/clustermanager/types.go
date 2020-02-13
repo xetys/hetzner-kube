@@ -14,12 +14,13 @@ type Node struct {
 
 // Cluster is the structure used to define a cluster
 type Cluster struct {
-	Name          string `json:"name"`
-	Nodes         []Node `json:"nodes"`
-	HaEnabled     bool   `json:"ha_enabled"`
-	IsolatedEtcd  bool   `json:"isolated_etcd"`
-	CloudInitFile string `json:"cloud_init_file"`
-	NodeCIDR      string `json:"node_cidr"`
+	Name              string `json:"name"`
+	Nodes             []Node `json:"nodes"`
+	HaEnabled         bool   `json:"ha_enabled"`
+	IsolatedEtcd      bool   `json:"isolated_etcd"`
+	CloudInitFile     string `json:"cloud_init_file"`
+	NodeCIDR          string `json:"node_cidr"`
+	KubernetesVersion string `json:"kubernetes_version"`
 }
 
 // NodeCommand is the structure used to define acommand to execute on a node
