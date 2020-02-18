@@ -62,7 +62,7 @@ parameters:
 	err = addon.communicator.WriteFile(node, "/root/openebs-storageclass.yaml", improvedStorageClass, clustermanager.AllRead)
 	FatalOnError(err)
 
-	_, err = addon.communicator.RunCmd(node, "kubectl delete -f openebs-storageclass.yaml && kubectl apply -f openebs-storageclass.yaml")
+	_, err = addon.communicator.RunCmd(node, "kubectl delete -f openebs-storageclass.yaml ; kubectl apply -f openebs-storageclass.yaml")
 	FatalOnError(err)
 
 	fmt.Println("OpenEBS installed")
