@@ -99,6 +99,16 @@ $ hetzner-kube cluster create --name my-cluster --ssh-key my-key
 
 This will provision a brand new kubernetes cluster in latest version!
 
+To access the cluster via kubectl, create a config file:
+
+```bash
+# Write ~/.kube/config (you'll be asked to overwrite if file already exists)
+hetzner-kube cluster kubeconfig my-cluster
+# Alternatively, create a separate file and point kubectl to it:
+#hetzner-kube cluster kubeconfig --print my-cluster > ~/.kube/config-my-cluster
+#export KUBECONFIG=~/.kube/config-my-cluster
+```
+
 For a full list of options that can be passed to the ```cluster create``` command, see the [Cluster Create Guide](docs/cluster-create.md) for more information.
 
 ## HA-clusters
