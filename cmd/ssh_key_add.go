@@ -81,7 +81,7 @@ Note: the private key is never uploaded to any server at any time.`,
 				}
 				// if the key is in the local app config print a message and return
 				if bytes.Equal(pkey.Marshal(), localPkey.Marshal()) {
-					fmt.Printf("SSH key does already exists in your config as %s\n", sshKey.Name)
+					fmt.Printf("SSH key does already exist in your config as %s\n", sshKey.Name)
 					return
 				}
 			}
@@ -96,7 +96,7 @@ Note: the private key is never uploaded to any server at any time.`,
 					log.Fatalln(err)
 				}
 				if bytes.Equal(pkey.Marshal(), hetznerPkey.Marshal()) {
-					fmt.Printf("SSH key does already on hetzner as '%s'\n", sshKeyHetzner.Name)
+					fmt.Printf("SSH key does already exist on hetzner as '%s'\n", sshKeyHetzner.Name)
 					fmt.Printf("SSH key will be added to your config as '%s'\n", sshKeyHetzner.Name)
 					// We replace the failed request response with the fetched sshkey that has the same public key
 					sshKey = sshKeyHetzner
