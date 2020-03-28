@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
 // Version The current version of hetzner-kube.
@@ -15,7 +16,8 @@ var versionCmd = &cobra.Command{
 	Aliases: []string{"v"},
 	Short:   "prints the current version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(version)
+		fmt.Printf("Application: %s\n", version)
+		fmt.Printf("Kubernetes:  %s\n", clustermanager.KubernetesVersion)
 	},
 }
 
