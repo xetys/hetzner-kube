@@ -9,7 +9,7 @@ import (
 func TestGenerateMasterConfiguration(t *testing.T) {
 	expectedConf := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.16.4
+kubernetesVersion: v1.18.0
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
@@ -45,7 +45,7 @@ featureGates:
 
 	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.16.4
+kubernetesVersion: v1.18.0
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
@@ -88,15 +88,13 @@ featureGates:
 		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2"},
 	}
 
-	kubernetesVersion := "1.16.4"
-
-	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil, kubernetesVersion)
+	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil, KubernetesVersion)
 
 	if noEtcdConf != expectedConf {
 		t.Errorf("master config without etcd does not match to expected.\n%s\n", diff.LineDiff(noEtcdConf, expectedConf))
 	}
 
-	etcdConf := GenerateMasterConfiguration(nodes[0], nodes, nodes, kubernetesVersion)
+	etcdConf := GenerateMasterConfiguration(nodes[0], nodes, nodes, KubernetesVersion)
 
 	if etcdConf != expectedConfWithEtcd {
 		t.Errorf("master config with etcd does not match to expected.\n%s\n", diff.LineDiff(etcdConf, expectedConfWithEtcd))

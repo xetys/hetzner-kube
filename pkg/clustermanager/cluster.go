@@ -10,6 +10,9 @@ import (
 
 const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 
+// KubernetesVersion indicate the kubernetes version managed by the current application
+const KubernetesVersion = "1.18.0"
+
 // Manager is the structure used to mange cluster
 type Manager struct {
 	nodes            []Node
@@ -74,7 +77,7 @@ func (manager *Manager) Cluster() Cluster {
 		IsolatedEtcd:      manager.isolatedEtcd,
 		CloudInitFile:     manager.cloudInitFile,
 		NodeCIDR:          manager.clusterProvider.GetNodeCidr(),
-		KubernetesVersion: "1.16.4",
+		KubernetesVersion: KubernetesVersion,
 	}
 }
 
