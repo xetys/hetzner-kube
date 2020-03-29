@@ -7,6 +7,8 @@ import (
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
+const rookSleepTime = 20 * time.Second
+
 // RookAddon installs rook
 type RookAddon struct {
 	masterNode   *clustermanager.Node
@@ -18,10 +20,6 @@ type RookAddon struct {
 func NewRookAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
 	return &RookAddon{masterNode: masterNode, communicator: communicator, nodes: provider.GetAllNodes()}
-}
-
-func init() {
-	addAddon(NewRookAddon)
 }
 
 // Name returns the addons name
@@ -51,6 +49,7 @@ func (addon RookAddon) Install(args ...string) {
 	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-operator.yaml")
 	FatalOnError(err)
 	fmt.Println("waiting until rook is installed")
+
 	for {
 		_, err := addon.communicator.RunCmd(node, "kubectl get cluster")
 
@@ -58,6 +57,7 @@ func (addon RookAddon) Install(args ...string) {
 			break
 		}
 	}
+
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-cluster.yaml")
 	FatalOnError(err)
 	_, err = addon.communicator.RunCmd(node, "kubectl apply -f https://raw.github.com/rook/rook/v0.7.1/cluster/examples/kubernetes/rook-storageclass.yaml")
@@ -75,6 +75,7 @@ func (addon RookAddon) Install(args ...string) {
 // Uninstall performs all steps to remove the addon
 func (addon RookAddon) Uninstall() {
 	node := *addon.masterNode
+
 	addon.communicator.RunCmd(node, "kubectl delete -n rook pool replicapool")
 	addon.communicator.RunCmd(node, "kubectl delete storageclass rook-block")
 	addon.communicator.RunCmd(node, "kubectl delete crd clusters.rook.io pools.rook.io objectstores.rook.io filesystems.rook.io volumeattachments.rook.io  # ignore errors if on K8s 1.5 and 1.6")
@@ -82,13 +83,14 @@ func (addon RookAddon) Uninstall() {
 	addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml")
 	addon.communicator.RunCmd(node, "kubectl delete clusterroles rook-agent")
 	addon.communicator.RunCmd(node, "kubectl delete clusterrolebindings rook-agent")
-	time.Sleep(20 * time.Second)
+	time.Sleep(rookSleepTime)
 	addon.communicator.RunCmd(node, "kubectl delete namespace rook")
 
 	for _, node := range addon.nodes {
 		if node.IsEtcd || node.IsMaster {
 			continue
 		}
+
 		fmt.Printf("deleting rook on node %s\n", node.Name)
 		addon.communicator.RunCmd(node, "rm -rf /var/lib/rook")
 	}

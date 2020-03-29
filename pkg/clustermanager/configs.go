@@ -97,6 +97,7 @@ WantedBy=multi-user.target
 	for i, node := range etcdNodes {
 		ips[i] = fmt.Sprintf("%s=http://%s:2380", node.Name, node.PrivateIPAddress)
 	}
+
 	initialCluster := strings.Join(ips, ",")
 
 	service := fmt.Sprintf(

@@ -18,10 +18,6 @@ func NewDashboardAddon(provider clustermanager.ClusterProvider, communicator clu
 	return DashboardAddon{masterNode: masterNode, communicator: communicator}
 }
 
-func init() {
-	addAddon(NewDashboardAddon)
-}
-
 // Name returns the addons name
 func (addon DashboardAddon) Name() string {
 	return "dashboard"

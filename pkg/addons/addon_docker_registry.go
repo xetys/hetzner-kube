@@ -15,12 +15,10 @@ type DockerregistryAddon struct {
 // NewDockerregistryAddon creates an addon providing a private docker registry
 func NewDockerregistryAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := provider.GetMasterNode()
-	FatalOnError(err)
-	return &DockerregistryAddon{masterNode: masterNode, communicator: communicator}
-}
 
-func init() {
-	addAddon(NewDockerregistryAddon)
+	FatalOnError(err)
+
+	return &DockerregistryAddon{masterNode: masterNode, communicator: communicator}
 }
 
 // Name returns the addons name
@@ -47,6 +45,7 @@ func (addon *DockerregistryAddon) URL() string {
 func (addon *DockerregistryAddon) Install(args ...string) {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm install --set persistence.enabled=true stable/docker-registry")
+
 	FatalOnError(err)
 	log.Println("docker-registry installed")
 }
@@ -55,6 +54,7 @@ func (addon *DockerregistryAddon) Install(args ...string) {
 func (addon DockerregistryAddon) Uninstall() {
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "helm delete --purge `helm list | grep docker-registry  | awk '{print $1;}'`")
+
 	FatalOnError(err)
 	log.Println("docker-registry uninstalled")
 }

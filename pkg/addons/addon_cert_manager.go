@@ -15,12 +15,10 @@ type CertmanagerAddon struct {
 // NewCertmanagerAddon creates an addon installing cert-manager
 func NewCertmanagerAddon(cluster clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := cluster.GetMasterNode()
-	FatalOnError(err)
-	return &CertmanagerAddon{masterNode: masterNode, communicator: communicator}
-}
 
-func init() {
-	addAddon(NewCertmanagerAddon)
+	FatalOnError(err)
+
+	return &CertmanagerAddon{masterNode: masterNode, communicator: communicator}
 }
 
 // Name returns the addons name

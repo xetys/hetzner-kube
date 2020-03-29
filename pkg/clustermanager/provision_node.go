@@ -9,6 +9,9 @@ import (
 
 const maxErrors = 3
 
+const maxTentative = 10
+const timeBetweenTentative = 3 * time.Second
+
 // NodeProvisioner provisions all basic packages to install docker, kubernetes and wireguard
 type NodeProvisioner struct {
 	clusterName       string
@@ -32,10 +35,10 @@ func NewNodeProvisioner(node Node, manager *Manager) *NodeProvisioner {
 // Provision performs all steps to provision a node
 func (provisioner *NodeProvisioner) Provision(node Node, communicator NodeCommunicator, eventService EventService) error {
 	var err error
+
 	errorCount := 0
 
 	for !provisioner.packagesAreInstalled(node, communicator) {
-
 		for err := provisioner.prepareAndInstall(); err != nil; {
 			errorCount++
 
@@ -43,7 +46,6 @@ func (provisioner *NodeProvisioner) Provision(node Node, communicator NodeCommun
 				return err
 			}
 		}
-
 	}
 
 	if err != nil {
@@ -64,27 +66,31 @@ func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator
 	if strings.TrimSpace(out) == "0" {
 		return true
 	}
+
 	return false
 }
 
 func (provisioner *NodeProvisioner) prepareAndInstall() error {
-
 	err := provisioner.waitForCloudInitCompletion()
 	if err != nil {
 		return err
 	}
+
 	err = provisioner.installTransportTools()
 	if err != nil {
 		return err
 	}
+
 	err = provisioner.preparePackages()
 	if err != nil {
 		return err
 	}
+
 	err = provisioner.updateAndInstall()
 	if err != nil {
 		return err
 	}
+
 	err = provisioner.setSystemWideEnvironment()
 	if err != nil {
 		return err
@@ -102,13 +108,14 @@ func (provisioner *NodeProvisioner) disableSwap() error {
 	}
 
 	_, err = provisioner.communicator.RunCmd(provisioner.node, "sed -i '/ swap / s/^/#/' /etc/fstab")
+
 	return err
 }
 
 func (provisioner *NodeProvisioner) waitForCloudInitCompletion() error {
+	var err error
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "waiting for cloud-init completion")
-	var err error
 
 	// define smal bash script to check if /var/lib/cloud/instance/boot-finished exist
 	// this file created only when cloud-init finished its tasks
@@ -132,10 +139,12 @@ exit 127
 		return err
 	}
 
-	for i := 0; i < 10; i++ {
-		time.Sleep(3 * time.Second)
+	for i := 0; i < maxTentative; i++ {
+		time.Sleep(timeBetweenTentative)
+
 		_, err = provisioner.communicator.RunCmd(provisioner.node, "/root/cloud-init-status-check.sh")
 	}
+
 	if err != nil {
 		return err
 	}
@@ -150,13 +159,16 @@ exit 127
 }
 
 func (provisioner *NodeProvisioner) installTransportTools() error {
+	var err error
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing transport tools")
-	var err error
-	for i := 0; i < 10; i++ {
-		time.Sleep(3 * time.Second)
+
+	for i := 0; i < maxTentative; i++ {
+		time.Sleep(timeBetweenTentative)
+
 		_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common")
 	}
+
 	if err != nil {
 		return err
 	}
@@ -207,6 +219,7 @@ Package: docker-ce
 Pin: version 18.09.2~3-0~ubuntu-bionic
 Pin-Priority: 1000
 	`
+
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, AllRead)
 	if err != nil {
 		return err
@@ -227,6 +240,7 @@ Pin-Priority: 1000
 
 func (provisioner *NodeProvisioner) updateAndInstall() error {
 	provisioner.eventService.AddEvent(provisioner.node.Name, "updating packages")
+
 	_, err := provisioner.communicator.RunCmd(provisioner.node, "apt-get update")
 	if err != nil {
 		return err
@@ -235,6 +249,7 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
 	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.7.5-00 wireguard linux-headers-$(uname -r) linux-headers-virtual",
 		provisioner.kubernetesVersion, provisioner.kubernetesVersion, provisioner.kubernetesVersion)
+
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {
 		return err
@@ -247,10 +262,9 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 // As soon as it is last step we are ok to set them in basic way
 func (provisioner *NodeProvisioner) setSystemWideEnvironment() error {
 	provisioner.eventService.AddEvent(provisioner.node.Name, "set environment variables")
-	var err error
 
 	// set HETZNER_KUBE_MASTER
-	_, err = provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_MASTER=%s\" >> /etc/environment", strconv.FormatBool(provisioner.node.IsMaster)))
+	_, err := provisioner.communicator.RunCmd(provisioner.node, fmt.Sprintf("echo \"HETZNER_KUBE_MASTER=%s\" >> /etc/environment", strconv.FormatBool(provisioner.node.IsMaster)))
 	if err != nil {
 		return err
 	}

@@ -53,6 +53,7 @@ func PrivateIPPrefix(cidr string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to parse cidr %q", cidr)
 	}
+
 	ipAddress = ipAddress.To4()
 	if ipAddress == nil {
 		return "", fmt.Errorf("unable to convert ip %q to IPv4s", ipAddress)
@@ -65,7 +66,9 @@ func PrivateIPPrefix(cidr string) (string, error) {
 // Code is redacted from https://github.com/WireGuard/wireguard-go/blob/1c025570139f614f2083b935e2c58d5dbf199c2f/noise-helpers.go
 func GenerateKeyPair() (WgKeyPair, error) {
 	var publicKey [32]byte
+
 	var privateKey [32]byte
+
 	_, err := rand.Reader.Read(privateKey[:])
 	if err != nil {
 		return WgKeyPair{}, fmt.Errorf("unable to generate a private key: %v", err)

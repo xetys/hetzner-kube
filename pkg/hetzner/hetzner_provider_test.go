@@ -75,6 +75,7 @@ func TestProviderGetMasterNodes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetMasterNodes()
@@ -126,6 +127,7 @@ func TestProviderGetEtcdNodes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetEtcdNodes()
@@ -172,6 +174,7 @@ func TestProviderGetWorkerNodes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetWorkerNodes()
@@ -224,6 +227,7 @@ func TestProviderGetAllNodes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			nodes := provider.GetAllNodes()
@@ -267,6 +271,7 @@ func TestProviderGetMasterNode(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			node, _ := provider.GetMasterNode()
@@ -294,6 +299,7 @@ func TestProviderGetMasterNodeIsMissing(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
 			provider := getProviderWithNodes(tt.Nodes)
 			_, err := provider.GetMasterNode()

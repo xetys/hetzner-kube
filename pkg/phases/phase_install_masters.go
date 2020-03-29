@@ -30,10 +30,12 @@ func (phase *InstallMastersPhase) ShouldRun() bool {
 // Run runs the phase
 func (phase *InstallMastersPhase) Run() error {
 	keepCerts := clustermanager.NONE
+
 	if phase.options.KeepAllCerts {
 		keepCerts = clustermanager.ALL
 	} else if phase.options.KeepCaCerts {
 		keepCerts = clustermanager.CA
 	}
+
 	return phase.clusterManager.InstallMasters(keepCerts)
 }

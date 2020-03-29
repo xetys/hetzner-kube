@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
@@ -38,7 +39,7 @@ func getCommonPhaseDependencies(steps int, cmd *cobra.Command, args []string) (c
 	FatalOnError(err)
 	err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
 	FatalOnError(err)
-	coordinator := pkg.NewProgressCoordinator()
+	coordinator := pkg.NewProgressCoordinator(DebugMode)
 
 	for _, node := range provider.GetAllNodes() {
 		coordinator.StartProgress(node.Name, steps)

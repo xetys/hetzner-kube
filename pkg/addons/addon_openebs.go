@@ -18,10 +18,6 @@ func NewOpenEBSAddon(provider clustermanager.ClusterProvider, communicator clust
 	return &OpenEBSAddon{masterNode: masterNode, communicator: communicator}
 }
 
-func init() {
-	addAddon(NewOpenEBSAddon)
-}
-
 // Name returns the addons name
 func (addon OpenEBSAddon) Name() string {
 	return "openebs"

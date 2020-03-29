@@ -30,8 +30,9 @@ func (phase *EtcdSetupPhase) ShouldRun() bool {
 
 // Run runs the phase
 func (phase *EtcdSetupPhase) Run() error {
-	var etcdNodes []clustermanager.Node
 	cluster := phase.clusterManager.Cluster()
+
+	var etcdNodes []clustermanager.Node
 
 	if cluster.IsolatedEtcd {
 		etcdNodes = phase.provider.GetEtcdNodes()

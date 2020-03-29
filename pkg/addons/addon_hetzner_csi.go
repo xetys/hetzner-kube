@@ -45,6 +45,7 @@ func (addon *HetznerCSIAddon) Install(args ...string) {
 	if err != nil {
 		FatalOnError(err)
 	}
+
 	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csinodeinfo.yaml")
 	if err != nil {
 		FatalOnError(err)
@@ -70,6 +71,7 @@ func (addon *HetznerCSIAddon) Uninstall() {
 	if err != nil {
 		FatalOnError(err)
 	}
+
 	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csinodeinfo.yaml --ignore-not-found")
 	if err != nil {
 		FatalOnError(err)
@@ -80,20 +82,15 @@ func (addon *HetznerCSIAddon) Uninstall() {
 	if err != nil {
 		FatalOnError(err)
 	}
-
 }
 
 // NewHetznerCSIAddon creates an instance of HetznerCSIAddon
 func NewHetznerCSIAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, _ := provider.GetMasterNode()
+
 	return &HetznerCSIAddon{
 		masterNode:   masterNode,
 		communicator: communicator,
 		provider:     provider.(*hetzner.Provider),
 	}
-}
-
-// adding the addon to the global list
-func init() {
-	addAddon(NewHetznerCSIAddon)
 }

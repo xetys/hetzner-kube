@@ -7,7 +7,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/xetys/hetzner-kube/pkg"
 )
 
 var cfgFile string
@@ -21,10 +20,8 @@ var rootCmd = &cobra.Command{
 
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		pkg.RenderProgressBars = false
 		if DebugMode {
 			fmt.Println("Running in Debug Mode!")
-			pkg.RenderProgressBars = true
 		}
 		AppConf = NewAppConfig(DebugMode)
 	},

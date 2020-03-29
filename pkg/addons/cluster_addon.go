@@ -15,12 +15,6 @@ type ClusterAddon interface {
 // ClusterAddonInitializer is a function creating ClusterAddon instances from given parameters
 type ClusterAddonInitializer func(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon
 
-var addonInitializers = make([]ClusterAddonInitializer, 0)
-
-func addAddon(clusterAddon ClusterAddonInitializer) {
-	addonInitializers = append(addonInitializers, clusterAddon)
-}
-
 // ClusterAddonService provide the addon service
 type ClusterAddonService struct {
 	provider         clustermanager.ClusterProvider
@@ -30,11 +24,24 @@ type ClusterAddonService struct {
 
 // NewClusterAddonService creates an instance of the cluster addon service
 func NewClusterAddonService(provider clustermanager.ClusterProvider, nodeComm clustermanager.NodeCommunicator) *ClusterAddonService {
-	clusterAddons := []ClusterAddon{}
-	for _, initializer := range addonInitializers {
-		clusterAddons = append(clusterAddons, initializer(provider, nodeComm))
+	clusterAddons := []ClusterAddon{
+		NewCertmanagerAddon(provider, nodeComm),
+		NewDashboardAddon(provider, nodeComm),
+		NewDockerregistryAddon(provider, nodeComm),
+		NewHCloudControllerManagerAddon(provider, nodeComm),
+		NewHelmAddon(provider, nodeComm),
+		NewHetznerCSIAddon(provider, nodeComm),
+		NewIngressAddon(provider, nodeComm),
+		NewOpenEBSAddon(provider, nodeComm),
+		NewPrometheusAddon(provider, nodeComm),
+		NewRookAddon(provider, nodeComm),
 	}
-	return &ClusterAddonService{provider: provider, nodeCommunicator: nodeComm, addons: clusterAddons}
+
+	return &ClusterAddonService{
+		provider:         provider,
+		nodeCommunicator: nodeComm,
+		addons:           clusterAddons,
+	}
 }
 
 // AddonExists return true, if an addon with the requested name exists
@@ -44,6 +51,7 @@ func (addonService *ClusterAddonService) AddonExists(addonName string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
