@@ -88,12 +88,15 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
+
 	for _, node := range nodes {
 		numProcs++
+
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
 			//_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
 			provisioner := NewNodeProvisioner(node, manager)
+
 			err := provisioner.Provision(node, manager.nodeCommunicator, manager.eventService)
 			if err != nil {
 				errChan <- err
@@ -112,6 +115,7 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 // modifies the state of manager.Nodes
 func (manager *Manager) SetupEncryptedNetwork() error {
 	var err error
+
 	var keyPair WgKeyPair
 
 	for i := range manager.nodes {
@@ -129,17 +133,21 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProc := 0
+
 	for _, node := range nodes {
 		numProc++
+
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "configure wireguard")
 			wireGuardConf := GenerateWireguardConf(node, manager.nodes)
+
 			err := manager.nodeCommunicator.WriteFile(node, "/etc/wireguard/wg0.conf", wireGuardConf, OwnerRead)
 			if err != nil {
 				errChan <- err
 			}
 
 			overlayRouteConf := GenerateOverlayRouteSystemdService(node)
+
 			err = manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/overlay-route.service", overlayRouteConf, AllRead)
 			if err != nil {
 				errChan <- err
@@ -162,7 +170,9 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 	if err != nil {
 		return err
 	}
+
 	manager.clusterProvider.SetNodes(manager.nodes)
+
 	return nil
 }
 
@@ -186,7 +196,6 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 
 	for _, node := range manager.nodes {
 		if node.IsMaster {
-
 			var resetCommand string
 
 			switch keepCerts {
@@ -212,6 +221,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 			}
 
 			numProc++
+
 			go func(node Node) {
 				manager.installMasterStep(node, numMaster, masterNode, commands, trueChan, errChan)
 			}(node)
@@ -236,6 +246,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode Node, commands []NodeCommand, trueChan chan bool, errChan chan error) {
 	// create master-configuration
 	var etcdNodes []Node
+
 	if manager.haEnabled {
 		if manager.isolatedEtcd {
 			etcdNodes = manager.clusterProvider.GetEtcdNodes()
@@ -243,8 +254,10 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 			etcdNodes = manager.clusterProvider.GetMasterNodes()
 		}
 	}
+
 	masterNodes := manager.clusterProvider.GetMasterNodes()
 	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes, manager.Cluster().KubernetesVersion)
+
 	if err := manager.nodeCommunicator.WriteFile(node, "/root/master-config.yaml", masterConfig, AllRead); err != nil {
 		errChan <- err
 	}
@@ -277,6 +290,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 
 	for i, command := range commands {
 		manager.eventService.AddEvent(node.Name, command.EventName)
+
 		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
 		if err != nil {
 			errChan <- err
@@ -296,10 +310,10 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 
 // InstallEtcdNodes installs the etcd cluster
 func (manager *Manager) InstallEtcdNodes(nodes []Node, keepData bool) error {
-
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
+
 	for _, node := range nodes {
 		numProcs++
 
@@ -321,6 +335,7 @@ func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan er
 	}
 	// set systemd service
 	etcdSystemdService := GenerateEtcdSystemdService(node, nodes)
+
 	err := manager.nodeCommunicator.WriteFile(node, "/etc/systemd/system/etcd.service", etcdSystemdService, AllRead)
 	if err != nil {
 		errChan <- err
@@ -328,6 +343,7 @@ func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan er
 	// install etcd
 	for _, command := range commands {
 		manager.eventService.AddEvent(node.Name, command.EventName)
+
 		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
 		if err != nil {
 			errChan <- err
@@ -335,14 +351,18 @@ func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan er
 	}
 	// configure etcd
 	configureCommand := "systemctl enable etcd.service && systemctl stop etcd.service && rm -rf /var/lib/etcd && systemctl start etcd.service"
+
 	if keepData {
 		configureCommand = "systemctl enable etcd.service && systemctl stop etcd.service && systemctl start etcd.service"
 	}
+
 	manager.eventService.AddEvent(node.Name, "configure etcd")
+
 	_, err = manager.nodeCommunicator.RunCmd(node, configureCommand)
 	if err != nil {
 		errChan <- err
 	}
+
 	if manager.isolatedEtcd {
 		manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
 	} else {
@@ -370,8 +390,10 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 	for _, node := range nodes {
 		if !node.IsMaster && !node.IsEtcd {
 			numProcs++
+
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
+
 				_, err := manager.nodeCommunicator.RunCmd(
 					node,
 					"for i in ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack_ipv4; do modprobe $i; done"+
@@ -379,28 +401,33 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 				if err != nil {
 					errChan <- err
 				}
+
 				if manager.haEnabled {
-					time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
+					time.Sleep(timeBetweenTentative) // we need some time until the kubelet.conf appears
 
 					kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
 
 					manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
+
 					for _, conf := range kubeConfigs {
 						_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
 						if err != nil {
 							errChan <- err
 						}
 					}
+
 					_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
 					if err != nil {
 						errChan <- err
 					}
 				}
+
 				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
 				trueChan <- true
 			}(node)
 		}
 	}
+
 	return waitOrError(trueChan, errChan, &numProcs)
 }
 
@@ -417,6 +444,7 @@ func (manager *Manager) SetupHA() error {
 	numProcs := 0
 	// deploy load balancer
 	masterNodes := manager.clusterProvider.GetMasterNodes()
+
 	err = manager.DeployLoadBalancer(manager.nodes)
 	if err != nil {
 		return err
@@ -424,6 +452,7 @@ func (manager *Manager) SetupHA() error {
 
 	// set apiserver-count to number of masters
 	apiServerCount := fmt.Sprintf("- --apiserver-count=%d\n    image: gcr.io/", len(masterNodes))
+
 	for _, node := range masterNodes {
 		manager.eventService.AddEvent(node.Name, "set api-server count")
 		manager.nodeCommunicator.TransformFileOverNode(node, node, "/etc/kubernetes/manifests/kube-apiserver.yaml", func(in string) string {
@@ -448,12 +477,14 @@ func (manager *Manager) SetupHA() error {
 
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
+
 			for _, conf := range kubeConfigs {
 				_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
 				if err != nil {
 					errChan <- err
 				}
 			}
+
 			_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
 			if err != nil {
 				errChan <- err
@@ -473,28 +504,33 @@ func (manager *Manager) SetupHA() error {
 
 // DeployLoadBalancer installs a client based load balancer for the master nodes to given nodes
 func (manager *Manager) DeployLoadBalancer(nodes []Node) error {
-
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
 	masterNodesIP := []string{}
+
 	for _, node := range manager.clusterProvider.GetMasterNodes() {
 		masterNodesIP = append(masterNodesIP, node.IPAddress)
 	}
 
 	masterIps := strings.Join(masterNodesIP, " ")
+
 	for _, node := range nodes {
 		if !node.IsMaster && node.IsEtcd {
 			continue
 		}
+
 		numProcs++
+
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "deploy load balancer")
 			// delete old if exists
 			_, err := manager.nodeCommunicator.RunCmd(node, `docker ps | grep master-lb | awk '{print "docker stop "$1" && docker rm "$1}' | sh`)
+
 			if err != nil {
 				errChan <- err
 			}
+
 			_, err = manager.nodeCommunicator.RunCmd(node, fmt.Sprintf("docker run -d --name=master-lb --restart=always -p 16443:16443 xetys/k8s-master-lb %s", masterIps))
 			if err != nil {
 				errChan <- err

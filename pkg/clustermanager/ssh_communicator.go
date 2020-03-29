@@ -16,6 +16,9 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+const sshTimeout = 10 * time.Second
+const sshConnectionTentative = 10
+
 // SSHKey represents a keypair with the paths to the keys
 type SSHKey struct {
 	Name           string `json:"name"`
@@ -40,10 +43,12 @@ func NewSSHCommunicator(sshKeys []SSHKey, debug bool) NodeCommunicator {
 		passPhrases: make(map[string][]byte),
 		debug:       debug,
 	}
+
 	if debug {
 		outfile, _ := os.Create("hetzner-kube-debug.log")
 		sshComm.log = log.New(outfile, "", 0)
 	}
+
 	return sshComm
 }
 
@@ -52,6 +57,7 @@ func (sshComm *SSHCommunicator) Log(msg ...string) {
 	if !sshComm.debug {
 		return
 	}
+
 	sshComm.log.Println(msg)
 }
 
@@ -61,6 +67,7 @@ func (sshComm *SSHCommunicator) RunCmd(node Node, command string) (output string
 	if err != nil {
 		return output, err
 	}
+
 	defer connection.Close()
 	defer session.Close()
 
@@ -88,23 +95,27 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
+		Timeout:         sshTimeout,
 	}
+
 	var connection *ssh.Client
+
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
 			sshComm.Log(node.Name+": dial failed: ", err.Error())
 			sshComm.Log(node.Name + ": retrying..")
-			if try > 10 {
+
+			if try > sshConnectionTentative {
 				return nil, nil, err
 			}
 		} else {
 			break
 		}
+
 		time.Sleep(1 * time.Second)
 	}
-	// log.Println("Connected succeeded!")
+
 	session, err := connection.NewSession()
 	if err != nil {
 		return nil, nil, fmt.Errorf("session failed:%v", err)
@@ -115,8 +126,9 @@ func (sshComm *SSHCommunicator) newSession(node Node) (*ssh.Session, *ssh.Client
 
 // WriteFile places a file at a given part from string. Permissions are 0644, or 0755 if executable true
 func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content string, permission FilePermission) error {
-	signer, err := sshComm.getPrivateSSHKey(node.SSHKeyName)
+	var connection *ssh.Client
 
+	signer, err := sshComm.getPrivateSSHKey(node.SSHKeyName)
 	if err != nil {
 		return err
 	}
@@ -125,27 +137,31 @@ func (sshComm *SSHCommunicator) WriteFile(node Node, filePath string, content st
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
+		Timeout:         sshTimeout,
 	}
-	var connection *ssh.Client
+
 	for try := 0; ; try++ {
 		connection, err = ssh.Dial("tcp", node.IPAddress+":22", config)
 		if err != nil {
 			sshComm.Log(node.Name+": dial failed:", err.Error())
-			if try > 10 {
+
+			if try > sshConnectionTentative {
 				return err
 			}
 		} else {
 			break
 		}
+
 		time.Sleep(1 * time.Second)
 	}
+
 	defer connection.Close()
-	// log.Println("Connected succeeded!")
+
 	session, err := connection.NewSession()
 	if err != nil {
 		log.Fatalf(node.Name+": session failed:%v", err)
 	}
+
 	defer session.Close()
 
 	fileName := path.Base(filePath)
@@ -190,18 +206,22 @@ func (sshComm *SSHCommunicator) TransformFileOverNode(sourceNode Node, targetNod
 
 	// write file
 	err = sshComm.WriteFile(targetNode, filePath, fileContent, AllRead)
+
 	return err
 }
 
 // findPrivateKeyByName returns a SSH key from its store
 func (sshComm *SSHCommunicator) findPrivateKeyByName(name string) (int, *SSHKey) {
 	index := -1
+
 	for i, v := range sshComm.sshKeys {
 		if v.Name == name {
 			index = i
+
 			return index, &v
 		}
 	}
+
 	return index, nil
 }
 
@@ -233,6 +253,7 @@ func (sshComm *SSHCommunicator) CapturePassphrase(sshKeyName string) error {
 	}
 
 	fmt.Print("\n")
+
 	sshComm.passPhrases[privateKey.PrivateKeyPath] = text
 
 	// check that the captured password is correct
@@ -261,7 +282,6 @@ func (sshComm *SSHCommunicator) isEncrypted(privateKey *SSHKey) (bool, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return false, errors.New("SSH: no key found")
-
 	}
 
 	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
@@ -313,8 +333,10 @@ func (sshComm *SSHCommunicator) getSignerFromEncrypthedPrivateSSHKey(sshKeyName 
 		if err != nil {
 			return nil, fmt.Errorf("error capturing passphrase:%v", err)
 		}
+
 		passPhrase, err = sshComm.getPassphrase(privateKey.PrivateKeyPath)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("parse key failed:%v", err)
 	}

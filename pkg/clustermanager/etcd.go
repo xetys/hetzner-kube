@@ -30,6 +30,7 @@ func (manager *EtcdManager) CreateSnapshot(name string) error {
 
 	firstEtcdNode := etcdNodes[0]
 	snapshotName := name
+
 	if snapshotName == "" {
 		snapshotName = generateName()
 	}
@@ -73,7 +74,6 @@ func (manager *EtcdManager) RestoreSnapshot(name string, skipCopy bool) (bool, e
 
 // copySnapshot copies a snapshot to a node
 func (manager *EtcdManager) copySnapshot(firstEtcdNode, node Node, snapshotPath string) error {
-
 	_, err := manager.nodeCommunicator.RunCmd(node, "mkdir -p ~/etcd-snapshots")
 	if err != nil {
 		return err
@@ -83,6 +83,7 @@ func (manager *EtcdManager) copySnapshot(firstEtcdNode, node Node, snapshotPath 
 	if err != nil {
 		return err
 	}
+
 	fmt.Printf("copied '%s' to node '%s'\n", snapshotPath, node.Name)
 
 	return nil
@@ -126,6 +127,7 @@ func (manager *EtcdManager) copyAndRestore(firstEtcdNode Node, snapshotPath stri
 
 	// distribute snapshots to all etcd nodes
 	fmt.Println("distributing snapshots across all nodes")
+
 	for _, node := range etcdNodes {
 		initialCluster += fmt.Sprintf(",%s=http://%s:2380", node.Name, node.PrivateIPAddress)
 
@@ -145,6 +147,7 @@ func (manager *EtcdManager) copyAndRestore(firstEtcdNode Node, snapshotPath stri
 
 	// actual restore the cluster
 	fmt.Println("begin restore process")
+
 	for _, node := range etcdNodes {
 		err := manager.restoreNode(node, snapshotPath, initialCluster)
 		if err != nil {

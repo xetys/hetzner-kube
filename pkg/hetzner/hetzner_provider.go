@@ -14,6 +14,7 @@ import (
 	"github.com/go-kit/kit/log/term"
 	"github.com/gosuri/uiprogress"
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/xetys/hetzner-kube/pkg"
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
@@ -70,7 +71,6 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 		if err == nil {
 			serverOptsTemplate.UserData = string(buf)
 		}
-
 	}
 
 	serverOptsTemplate.SSHKeys = append(serverOptsTemplate.SSHKeys, sshKey)
@@ -82,6 +82,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 	rand.Shuffle(datacentersCount, func(i, j int) { datacenters[i], datacenters[j] = datacenters[j], datacenters[i] })
 
 	var nodes []clustermanager.Node
+
 	for i := 1; i <= count; i++ {
 		serverOpts := serverOptsTemplate
 		nodeNumber := i + offset
@@ -108,6 +109,7 @@ func (provider *Provider) CreateNodes(suffix string, template clustermanager.Nod
 				privateIPLastBlock += 10
 			}
 		}
+
 		cidrPrefix, err := clustermanager.PrivateIPPrefix(provider.nodeCidr)
 		if err != nil {
 			return nil, err
@@ -202,7 +204,6 @@ func (provider *Provider) GetCluster() clustermanager.Cluster {
 
 // GetAdditionalMasterInstallCommands return the list of node command to execute on the cluster
 func (provider *Provider) GetAdditionalMasterInstallCommands() []clustermanager.NodeCommand {
-
 	return []clustermanager.NodeCommand{}
 }
 
@@ -236,10 +237,12 @@ func (provider *Provider) filterNodes(filter nodeFilter) []clustermanager.Node {
 
 func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hcloud.ServerCreateResult, error) {
 	log.Printf("creating server '%s'...", opts.Name)
+
 	server, _, err := provider.client.Server.GetByName(provider.context, opts.Name)
 	if err != nil {
 		return nil, err
 	}
+
 	if server == nil {
 		result, _, err := provider.client.Server.Create(provider.context, *opts)
 		if err != nil {
@@ -266,6 +269,7 @@ func (provider *Provider) runCreateServer(opts *hcloud.ServerCreateOpts) (*hclou
 	}
 
 	log.Printf("loading server '%s'...", opts.Name)
+
 	return &hcloud.ServerCreateResult{Server: server}, nil
 }
 
@@ -276,7 +280,7 @@ func (provider *Provider) actionProgress(action *hcloud.Action) error {
 		progress := uiprogress.New()
 
 		progress.Start()
-		bar := progress.AddBar(100).AppendCompleted().PrependElapsed()
+		bar := progress.AddBar(pkg.ProgressCompleted).AppendCompleted().PrependElapsed()
 		bar.Width = 40
 		bar.Empty = ' '
 
@@ -284,9 +288,11 @@ func (provider *Provider) actionProgress(action *hcloud.Action) error {
 			select {
 			case err := <-errCh:
 				if err == nil {
-					bar.Set(100)
+					bar.Set(pkg.ProgressCompleted)
 				}
+
 				progress.Stop()
+
 				return err
 			case p := <-progressCh:
 				bar.Set(p)

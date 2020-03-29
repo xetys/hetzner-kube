@@ -3,12 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"github.com/xetys/hetzner-kube/pkg/phases"
 	"log"
 	"net"
 	"os"
 	"time"
+
+	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/xetys/hetzner-kube/pkg/phases"
 
 	"github.com/spf13/cobra"
 	"github.com/xetys/hetzner-kube/pkg"
@@ -101,7 +102,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		time.Sleep(10 * time.Second)
 	}
 
-	coordinator := pkg.NewProgressCoordinator()
+	coordinator := pkg.NewProgressCoordinator(DebugMode)
 
 	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit)
 	cluster := clusterManager.Cluster()

@@ -31,7 +31,7 @@ var installMastersPhaseCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		coordinator := pkg.NewProgressCoordinator()
+		coordinator := pkg.NewProgressCoordinator(DebugMode)
 
 		for _, node := range provider.GetAllNodes() {
 			steps := 3

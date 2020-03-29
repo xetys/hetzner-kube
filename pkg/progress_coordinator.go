@@ -15,28 +15,30 @@ const CompletedEvent = "complete!"
 
 // UIProgressCoordinator coortinate display of progress in UI
 type UIProgressCoordinator struct {
+	debug      bool
 	group      sync.WaitGroup
 	progresses map[string]*Progress
 }
 
-// RenderProgressBars indicate if we need to display progress in UI
-var RenderProgressBars bool
-
 // NewProgressCoordinator create a new progress coordinator UI
-func NewProgressCoordinator() *UIProgressCoordinator {
-	if isUIEnabled() {
+func NewProgressCoordinator(debug bool) *UIProgressCoordinator {
+	pc := UIProgressCoordinator{
+		progresses: make(map[string]*Progress),
+		debug:      debug,
+	}
+
+	if pc.isUIEnabled() {
 		uiprogress.Start()
 	}
-	pc := new(UIProgressCoordinator)
-	pc.progresses = make(map[string]*Progress)
 
-	return pc
+	return &pc
 }
 
-func isUIEnabled() bool {
-	if RenderProgressBars {
+func (c *UIProgressCoordinator) isUIEnabled() bool {
+	if c.debug {
 		return term.IsTerminal(os.Stdout)
 	}
+
 	return false
 }
 
@@ -45,6 +47,7 @@ func shortLeftPadRight(s string, padWidth int) string {
 		l := len(s)
 		return "..." + s[(l-(padWidth-2)):(l-1)]
 	}
+
 	return strutil.PadRight(s, padWidth, ' ')
 }
 
@@ -56,6 +59,7 @@ func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 		channel: make(chan string),
 		Name:    name,
 	}
+
 	progress.Bar.Width = 16
 	progress.Bar.PrependFunc(func(b *uiprogress.Bar) string {
 		percent := strutil.PadLeft(fmt.Sprintf("%.01f%%", b.CompletedPercent()), 6, ' ')
@@ -65,22 +69,29 @@ func (c *UIProgressCoordinator) StartProgress(name string, steps int) {
 			percent,
 		)
 	})
+
 	c.progresses[name] = progress
+
 	c.group.Add(1)
+
 	go func(progress *Progress) {
 		for {
 			event := <-progress.channel
-			if !isUIEnabled() {
+
+			if !c.isUIEnabled() {
 				fmt.Printf("%s: %s (%d)", progress.Name, event, progress.Bar.Current()+1)
 				fmt.Println()
 			}
+
 			if event == CompletedEvent {
 				progress.Bar.Set(progress.Bar.Total)
 				progress.SetText(event)
+
 				break
 			}
 
 			progress.SetText(event)
+
 			if done := progress.Bar.Incr(); !done {
 				break
 			}
@@ -106,7 +117,8 @@ func (c *UIProgressCoordinator) CompleteProgress(nodeName string) {
 // Wait temporary stop the progress UI
 func (c *UIProgressCoordinator) Wait() {
 	c.group.Wait()
-	if isUIEnabled() {
+
+	if c.isUIEnabled() {
 		uiprogress.Stop()
 	}
 }

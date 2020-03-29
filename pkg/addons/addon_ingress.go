@@ -16,11 +16,8 @@ type IngressAddon struct {
 func NewIngressAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := provider.GetMasterNode()
 	FatalOnError(err)
-	return &IngressAddon{masterNode: masterNode, communicator: communicator}
-}
 
-func init() {
-	addAddon(NewIngressAddon)
+	return &IngressAddon{masterNode: masterNode, communicator: communicator}
 }
 
 // Name returns the addons name

@@ -2,9 +2,12 @@ package phases
 
 import (
 	"fmt"
-	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 	"log"
+
+	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
+
+const maxAllowedTries = 3
 
 // ProvisionNodesPhase defines the phase which install all the tools for each node
 type ProvisionNodesPhase struct {
@@ -29,7 +32,7 @@ func (phase *ProvisionNodesPhase) Run() error {
 
 	tries := 0
 	for err := phase.clusterManager.ProvisionNodes(cluster.Nodes); err != nil; {
-		if tries < 3 {
+		if tries < maxAllowedTries {
 			fmt.Print(err)
 			tries++
 		} else {

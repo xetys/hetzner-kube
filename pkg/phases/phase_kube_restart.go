@@ -2,6 +2,7 @@ package phases
 
 import (
 	"fmt"
+
 	"github.com/xetys/hetzner-kube/pkg/clustermanager"
 )
 
@@ -26,16 +27,19 @@ func (phase *KubeRestartPhase) ShouldRun() bool {
 
 // Run runs the phase
 func (phase *KubeRestartPhase) Run() error {
-	fmt.Println("restarting")
 	errChan := make(chan error)
 	trueChan := make(chan bool)
 	numProcs := 0
+
+	fmt.Println("restarting")
+
 	for _, node := range phase.provider.GetAllNodes() {
 		numProcs++
+
 		go func(node clustermanager.Node) {
 			fmt.Printf("restarting docker+kubelet on node '%s'\n", node.Name)
-			_, err := phase.ssh.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
 
+			_, err := phase.ssh.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
 			if err != nil {
 				errChan <- err
 			}

@@ -1,3 +1,6 @@
+run:
+  skip-dirs:
+    - cmd
 linters-settings:
   govet:
     check-shadowing: true
@@ -14,6 +17,8 @@ linters-settings:
     min-occurrences: 2
   misspell:
     locale: US
+  funlen:
+    lines: 100
 
 linters:
   enable-all: true
@@ -23,3 +28,10 @@ linters:
     - gocyclo
     - govet
     - lll
+
+issues:
+  exclude-rules:
+    - path: pkg/clustermanager/ssh_communicator.go
+      text: "G106: Use of ssh InsecureIgnoreHostKey should be audited"
+      linters:
+        - gosec

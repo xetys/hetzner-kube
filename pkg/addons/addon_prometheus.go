@@ -19,16 +19,13 @@ type PrometheusAddon struct {
 func NewPrometheusAddon(provider clustermanager.ClusterProvider, communicator clustermanager.NodeCommunicator) ClusterAddon {
 	masterNode, err := provider.GetMasterNode()
 	FatalOnError(err)
+
 	return &PrometheusAddon{
 		masterNode:   masterNode,
 		communicator: communicator,
 		nodes:        provider.GetAllNodes(),
 		provider:     provider.(*hetzner.Provider),
 	}
-}
-
-func init() {
-	addAddon(NewPrometheusAddon)
 }
 
 // Name returns the addons name

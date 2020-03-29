@@ -31,7 +31,6 @@ Endpoint = 1.1.1.1:51820
 	if generatedConf != expectedConf {
 		t.Errorf("The file was not rendered as expected\n%s\n\n", generatedConf)
 	}
-
 }
 
 func TestGenerateKeyPair(t *testing.T) {
@@ -85,15 +84,17 @@ func TestPrivateIPPrefix(t *testing.T) {
 			expected: "250.251.252",
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {
-			generated, err := clustermanager.PrivateIPPrefix(tC.source)
+	for _, tt := range testCases {
+		tt := tt
+
+		t.Run(fmt.Sprintf("testing IP: %s", tt.source), func(t *testing.T) {
+			generated, err := clustermanager.PrivateIPPrefix(tt.source)
 			if err != nil {
-				t.Errorf("Unexpected error on parsing valid IP\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tC.source, tC.expected, generated)
+				t.Errorf("Unexpected error on parsing valid IP\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tt.source, tt.expected, generated)
 			}
 
-			if tC.expected != generated {
-				t.Errorf("\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tC.source, tC.expected, generated)
+			if tt.expected != generated {
+				t.Errorf("\nParsing IP: %s\nExpected: %s\nGenerated: %s\n", tt.source, tt.expected, generated)
 			}
 		})
 	}
@@ -107,11 +108,13 @@ func TestPrivateIPPrefixWithWrongIpAddress(t *testing.T) {
 		{source: "10.0.1.100"},
 		{source: "10.0.1.100/33"},
 	}
-	for _, tC := range testCases {
-		t.Run(fmt.Sprintf("testing IP: %s", tC.source), func(t *testing.T) {
-			_, err := clustermanager.PrivateIPPrefix(tC.source)
+
+	for _, tt := range testCases {
+		tt := tt
+		t.Run(fmt.Sprintf("testing IP: %s", tt.source), func(t *testing.T) {
+			_, err := clustermanager.PrivateIPPrefix(tt.source)
 			if err == nil {
-				t.Errorf("we expect an error on parsing invalid IP %q", tC.source)
+				t.Errorf("we expect an error on parsing invalid IP %q", tt.source)
 			}
 		})
 	}

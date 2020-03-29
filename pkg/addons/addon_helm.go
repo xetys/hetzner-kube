@@ -18,10 +18,6 @@ func NewHelmAddon(provider clustermanager.ClusterProvider, communicator clusterm
 	return HelmAddon{masterNode: masterNode, communicator: communicator}
 }
 
-func init() {
-	addAddon(NewHelmAddon)
-}
-
 // Name returns the addons name
 func (addon HelmAddon) Name() string {
 	return "helm"
@@ -44,10 +40,11 @@ func (addon HelmAddon) URL() string {
 
 // Install performs all steps to install the addon
 func (addon HelmAddon) Install(args ...string) {
-
 	node := *addon.masterNode
 	_, err := addon.communicator.RunCmd(node, "curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash")
+
 	FatalOnError(err)
+
 	serviceAccount := `apiVersion: v1
 kind: ServiceAccount
 metadata:
