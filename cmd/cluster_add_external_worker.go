@@ -72,7 +72,7 @@ An external server must meet the following requirements:
 		if err != nil {
 			return err
 		}
-		if !strings.Contains(issue, "Ubuntu 18.0404") {
+		if !strings.Contains(issue, "Ubuntu 18.04") {
 			return errors.New("target server has no Ubuntu 18.04 installed")
 		}
 
