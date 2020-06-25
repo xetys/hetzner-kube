@@ -19,7 +19,7 @@ var clusterAddExternalWorkerCmd = &cobra.Command{
 	Long: `This lets you add an external server to your cluster.
 
 An external server must meet the following requirements:
-	- ubuntu 16.04
+	- ubuntu 18.04
 	- a unique hostname, that doesn't collide with an existing node name
 	- accessible with the same SSH key as used for the cluster`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -46,34 +46,6 @@ An external server must meet the following requirements:
 
 		if len(cluster.Nodes) == 0 {
 			return errors.New("your cluster has no nodes, no idea how this was possible")
-		}
-
-		externalNode := clustermanager.Node{
-			IPAddress:  ipAddress,
-			SSHKeyName: cluster.Nodes[0].SSHKeyName,
-		}
-
-		// check the host name
-		hostname, err := AppConf.SSHClient.RunCmd(externalNode, "hostname -s")
-		hostname = strings.TrimSpace(hostname)
-		// this also implies the check that SSH is working
-		if err != nil {
-			return err
-		}
-
-		for _, node := range cluster.Nodes {
-			if node.Name == hostname {
-				return fmt.Errorf("there is already a node with the name '%s'", hostname)
-			}
-		}
-
-		// check ubuntu 16.04
-		issue, err := AppConf.SSHClient.RunCmd(externalNode, "cat /etc/issue | xargs")
-		if err != nil {
-			return err
-		}
-		if !strings.Contains(issue, "Ubuntu 16.04") {
-			return errors.New("target server has no Ubuntu 16.04 installed")
 		}
 
 		return nil
@@ -104,10 +76,31 @@ An external server must meet the following requirements:
 			SSHKeyName: sshKeyName,
 		}
 
-		sshClient := AppConf.SSHClient
-		hostname, err := sshClient.RunCmd(externalNode, "hostname -s")
+		// check the host name
+		hostname, err := AppConf.SSHClient.RunCmd(externalNode, "hostname -s")
 		hostname = strings.TrimSpace(hostname)
-		FatalOnError(err)
+		// this also implies the check that SSH is working
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, node := range cluster.Nodes {
+			if node.Name == hostname {
+				log.Fatal(fmt.Errorf("there is already a node with the name '%s'", hostname))
+
+			}
+		}
+
+		// check ubuntu 18.04
+		issue, err := AppConf.SSHClient.RunCmd(externalNode, "cat /etc/issue | xargs")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !strings.Contains(issue, "Ubuntu 18.04") {
+			log.Fatal(errors.New("target server has no Ubuntu 18.04 installed"))
+		}
+
+		sshClient := AppConf.SSHClient
 		externalNode.Name = hostname
 
 		cidrPrefix, err := clustermanager.PrivateIPPrefix(cluster.NodeCIDR)
@@ -116,18 +109,26 @@ An external server must meet the following requirements:
 		}
 
 		// render internal IP address
-		nextNode := 21
-	outer:
-		for {
-			for _, node := range cluster.Nodes {
-				if node.PrivateIPAddress == fmt.Sprintf("%s.%d", cidrPrefix, nextNode) {
-					nextNode++
-					continue outer
+		internalIpAddress, _ := cmd.Flags().GetString("internal-ip")
+		if internalIpAddress > "" {
+			externalNode.PrivateIPAddress = internalIpAddress
+		} else {
+			nextNode := 21
+		outer:
+			for {
+				for _, node := range cluster.Nodes {
+					if node.PrivateIPAddress == fmt.Sprintf("%s.%d", cidrPrefix, nextNode) {
+						nextNode++
+						continue outer
+					}
 				}
+				break
 			}
-			break
+			externalNode.PrivateIPAddress = fmt.Sprintf("%s.%d", cidrPrefix, nextNode)
 		}
-		externalNode.PrivateIPAddress = fmt.Sprintf("%s.%d", cidrPrefix, nextNode)
+
+		// some info before stuff gets serious
+		fmt.Printf("Creating node %s (%s external, %s internal)...\n", hostname, externalNode.IPAddress, externalNode.PrivateIPAddress)
 		coordinator := pkg.NewProgressCoordinator()
 		hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)
 		clusterManager := clustermanager.NewClusterManagerFromCluster(*cluster, hetznerProvider, sshClient, coordinator)
@@ -177,4 +178,5 @@ func init() {
 
 	clusterAddExternalWorkerCmd.Flags().StringP("name", "n", "", "Name of the cluster to add the workers to")
 	clusterAddExternalWorkerCmd.Flags().StringP("ip", "i", "", "The IP address of the external node")
+	clusterAddExternalWorkerCmd.Flags().StringP("internal-ip", "p", "", "The internal IP address of the external node")
 }
