@@ -69,6 +69,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	datacenters, _ := cmd.Flags().GetStringSlice("datacenters")
 	nodeCidr, _ := cmd.Flags().GetString("node-cidr")
 	cloudInit, _ := cmd.Flags().GetString("cloud-init")
+	cni, _ := cmd.Flags().GetString("cni")
 
 	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, clustermanager.Cluster{
 		Name:          clusterName,
@@ -103,7 +104,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 
 	coordinator := pkg.NewProgressCoordinator()
 
-	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit)
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, cni)
 	cluster := clusterManager.Cluster()
 	saveCluster(&cluster)
 	renderProgressBars(&cluster, coordinator)
@@ -194,7 +195,7 @@ func computeMasterSteps(numMaster int, cluster *clustermanager.Cluster) int {
 func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 
 	var (
-		sshKey, masterServerType, workerServerType, cloudInit string
+		sshKey, masterServerType, workerServerType, cloudInit, cni string
 	)
 
 	if sshKey, _ = cmd.Flags().GetString("ssh-key"); sshKey == "" {
@@ -221,6 +222,10 @@ func validateClusterCreateFlags(cmd *cobra.Command, args []string) error {
 		if _, err := os.Stat(cloudInit); os.IsNotExist(err) {
 			return errors.New("cloud-init file not found")
 		}
+	}
+
+	if cni, _ = cmd.Flags().GetString("cni"); cni != "canal" && cni != "calico" {
+		return errors.New("flag --cni only allows canal or calico")
 	}
 
 	if _, err := AppConf.Config.FindSSHKeyByName(sshKey); err != nil {
@@ -271,6 +276,7 @@ func init() {
 	clusterCreateCmd.Flags().IntP("worker-count", "w", 1, "Number of worker nodes for the cluster")
 	clusterCreateCmd.Flags().StringP("cloud-init", "", "", "Cloud-init file for server preconfiguration")
 	clusterCreateCmd.Flags().StringP("node-cidr", "", "10.0.1.0/24", "the CIDR for the nodes wireguard IPs")
+	clusterCreateCmd.Flags().StringP("cni", "", "canal", "The CNI you want to use")
 
 	// get default datacenters
 	dcs := []string{}

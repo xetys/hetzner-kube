@@ -38,3 +38,4 @@ The following custom options are available for the cluster create command:
 - `--worker-count`,`-w`: Number of worker nodes for the cluster , *default: 1*
 - `--cloud-init`: Cloud-init file for server preconfiguration
 - `--datacenters`: Can be used to filter datacenters by their name, *options: fsn-dc8, nbg1-dc3, hel1-dc2, fsn1-dc14*
+- `--cni string`: The CNI you want to use, *default: canal*, *options: canal, calico*
