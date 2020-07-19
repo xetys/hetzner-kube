@@ -172,7 +172,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
 		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/canal.yaml"},
-		// fixes canal restarts, see https://github.com/xetys/hetzner-kube/issues/329#issuecomment-644137538 
+		// fixes canal restarts, see https://github.com/xetys/hetzner-kube/issues/329#issuecomment-644137538
 		{"setting FELIX_IGNORELOOSERPF=true", "kubectl -n kube-system set env daemonset/canal FELIX_IGNORELOOSERPF=true"},
 	}
 
