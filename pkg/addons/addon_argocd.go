@@ -33,7 +33,7 @@ func (addon *ArgoCDAddon) URL() string {
 	return "https://argoproj.github.io/argo-cd/"
 }
 
-// Installs argocd and shows the login-token
+// Install argocd and shows the login-token
 func (addon *ArgoCDAddon) Install(args ...string) {
 	// add namespace
 	_, err := addon.communicator.RunCmd(*addon.masterNode, "kubectl create namespace argocd")
