@@ -204,7 +204,7 @@ func (provisioner *NodeProvisioner) prepareDocker() error {
 	// docker-ce
 	aptPreferencesDocker := `
 Package: docker-ce
-Pin: version 18.09.2~3-0~ubuntu-bionic
+Pin: version 19.03.11~3-0~ubuntu-focal
 Pin-Priority: 1000
 	`
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, AllRead)

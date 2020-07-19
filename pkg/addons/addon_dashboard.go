@@ -45,7 +45,7 @@ func (addon DashboardAddon) URL() string {
 // Install performs all steps to install the addon
 func (addon DashboardAddon) Install(args ...string) {
 	node := *addon.masterNode
-	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml")
+	_, err := addon.communicator.RunCmd(node, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.3/aio/deploy/recommended.yaml")
 	FatalOnError(err)
 
 	serviceAccount := `apiVersion: v1
@@ -82,7 +82,7 @@ subjects:
 // Uninstall performs all steps to remove the addon
 func (addon DashboardAddon) Uninstall() {
 	node := *addon.masterNode
-	_, err := addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml")
+	_, err := addon.communicator.RunCmd(node, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.3/aio/deploy/recommended.yaml")
 	FatalOnError(err)
 
 	_, err = addon.communicator.RunCmd(node, "kubectl delete -f dashboard-service-account.yaml")

@@ -41,11 +41,11 @@ func (addon *HetznerCSIAddon) Install(args ...string) {
 	}
 
 	// add csi driver
-	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csidriver.yaml")
+	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.40/pkg/crd/manifests/csidriver.yaml")
 	if err != nil {
 		FatalOnError(err)
 	}
-	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csinodeinfo.yaml")
+	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl apply -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.40/pkg/crd/manifests/csinodeinfo.yaml")
 	if err != nil {
 		FatalOnError(err)
 	}
@@ -66,11 +66,11 @@ func (addon *HetznerCSIAddon) Uninstall() {
 	}
 
 	// delete csi driver
-	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csidriver.yaml --ignore-not-found")
+	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.40/pkg/crd/manifests/csidriver.yaml --ignore-not-found")
 	if err != nil {
 		FatalOnError(err)
 	}
-	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.13/pkg/crd/manifests/csinodeinfo.yaml --ignore-not-found")
+	_, err = addon.communicator.RunCmd(*addon.masterNode, "kubectl delete -f https://raw.githubusercontent.com/kubernetes/csi-api/release-1.40/pkg/crd/manifests/csinodeinfo.yaml --ignore-not-found")
 	if err != nil {
 		FatalOnError(err)
 	}
