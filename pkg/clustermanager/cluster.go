@@ -74,7 +74,7 @@ func (manager *Manager) Cluster() Cluster {
 		IsolatedEtcd:      manager.isolatedEtcd,
 		CloudInitFile:     manager.cloudInitFile,
 		NodeCIDR:          manager.clusterProvider.GetNodeCidr(),
-		KubernetesVersion: "1.16.4",
+		KubernetesVersion: "1.19.2",
 	}
 }
 
@@ -169,9 +169,10 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 // InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
+		{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
 		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
 		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/canal.yaml"},
+		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.16/manifests/canal.yaml"},
 	}
 
 	// inject custom commands
@@ -357,6 +358,10 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 		return err
 	}
 
+	commands := []NodeCommand{
+		{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
+	}
+
 	// create join command
 	joinCommand, err := manager.nodeCommunicator.RunCmd(*node, "kubeadm token create --print-join-command")
 	if err != nil {
@@ -396,6 +401,15 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 						errChan <- err
 					}
 				}
+
+				for _, command := range commands {
+					manager.eventService.AddEvent(node.Name, command.EventName)
+					_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
+					if err != nil {
+						errChan <- err
+					}
+				}
+
 				manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
 				trueChan <- true
 			}(node)

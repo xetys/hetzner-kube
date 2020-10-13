@@ -177,14 +177,15 @@ func (provisioner *NodeProvisioner) preparePackages() error {
 		return err
 	}
 
-	// wireguard
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "add-apt-repository ppa:wireguard/wireguard -y")
+	// Wireguard (built into Ubuntu 20.04 kernel already, tools are optional)
+	_, err = provisioner.communicator.RunCmd(provisioner.node, "apt install -y wireguard-tools")
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
+
 func (provisioner *NodeProvisioner) prepareKubernetes() error {
 	// kubernetes
 	_, err := provisioner.communicator.RunCmd(provisioner.node, "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -")
@@ -192,6 +193,7 @@ func (provisioner *NodeProvisioner) prepareKubernetes() error {
 		return err
 	}
 
+	// Repository doesn't have Ubuntu 20.04 (focal), but `kubernetes-xenial` works
 	err = provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/sources.list.d/kubernetes.list", `deb http://apt.kubernetes.io/ kubernetes-xenial main`, AllRead)
 	if err != nil {
 		return err
@@ -204,7 +206,7 @@ func (provisioner *NodeProvisioner) prepareDocker() error {
 	// docker-ce
 	aptPreferencesDocker := `
 Package: docker-ce
-Pin: version 18.09.2~3-0~ubuntu-bionic
+Pin: version 19.03.13~3-0~ubuntu-focal
 Pin-Priority: 1000
 	`
 	err := provisioner.communicator.WriteFile(provisioner.node, "/etc/apt/preferences.d/docker-ce", aptPreferencesDocker, AllRead)
@@ -212,7 +214,7 @@ Pin-Priority: 1000
 		return err
 	}
 
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -")
+	_, err = provisioner.communicator.RunCmd(provisioner.node, `curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | apt-key add -`)
 	if err != nil {
 		return err
 	}
@@ -233,7 +235,7 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.7.5-00 wireguard linux-headers-$(uname -r) linux-headers-virtual",
+	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.8.7-00 wireguard linux-headers-generic linux-headers-virtual",
 		provisioner.kubernetesVersion, provisioner.kubernetesVersion, provisioner.kubernetesVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {
