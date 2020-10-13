@@ -19,7 +19,7 @@ var useCmd = &cobra.Command{
 		FatalOnError(err)
 
 		AppConf.Config.WriteCurrentConfig()
-		fmt.Printf("switched to context '%s'", contextName)
+		fmt.Printf("switched to context '%s'\n", contextName)
 	},
 }
 
