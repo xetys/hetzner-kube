@@ -177,12 +177,6 @@ func (provisioner *NodeProvisioner) preparePackages() error {
 		return err
 	}
 
-	// wireguard
-	// _, err = provisioner.communicator.RunCmd(provisioner.node, "add-apt-repository ppa:wireguard/wireguard -y")
-	// if err != nil {
-	//   return err
-	// }
-
 	return nil
 }
 func (provisioner *NodeProvisioner) prepareKubernetes() error {
