@@ -177,12 +177,6 @@ func (provisioner *NodeProvisioner) preparePackages() error {
 		return err
 	}
 
-	// wireguard
-	_, err = provisioner.communicator.RunCmd(provisioner.node, "add-apt-repository ppa:wireguard/wireguard -y")
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 func (provisioner *NodeProvisioner) prepareKubernetes() error {
@@ -233,7 +227,7 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 	}
 
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.7.5-00 wireguard linux-headers-$(uname -r) linux-headers-virtual",
+	command := fmt.Sprintf("apt-get install -y --install-recommends linux-generic-hwe-18.04 && apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.7.5-00 linux-headers-$(uname -r) linux-headers-virtual wireguard-tools wireguard wireguard-dkms && modprobe wireguard",
 		provisioner.kubernetesVersion, provisioner.kubernetesVersion, provisioner.kubernetesVersion)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
 	if err != nil {
