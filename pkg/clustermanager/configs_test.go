@@ -9,7 +9,7 @@ import (
 func TestGenerateMasterConfiguration(t *testing.T) {
 	expectedConf := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.16.4
+kubernetesVersion: v1.19.2
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
@@ -45,7 +45,7 @@ featureGates:
 
 	expectedConfWithEtcd := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.16.4
+kubernetesVersion: v1.19.2
 networking:
   serviceSubnet: "10.96.0.0/12"
   podSubnet: "10.244.0.0/16"
@@ -88,7 +88,7 @@ featureGates:
 		{Name: "node2", IPAddress: "1.1.1.2", PrivateIPAddress: "10.0.0.2"},
 	}
 
-	kubernetesVersion := "1.16.4"
+	kubernetesVersion := "1.19.2"
 
 	noEtcdConf := GenerateMasterConfiguration(nodes[0], nodes, nil, kubernetesVersion)
 
