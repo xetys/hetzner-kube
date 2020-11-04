@@ -1,8 +1,8 @@
-
 [![Build Status](https://travis-ci.org/xetys/hetzner-kube.svg?branch=master)](https://travis-ci.org/xetys/hetzner-kube)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xetys/hetzner-kube)](https://goreportcard.com/report/github.com/xetys/hetzner-kube)
 [![Maintainability](https://api.codeclimate.com/v1/badges/3ef5b31a84811e3b8b02/maintainability)](https://codeclimate.com/github/xetys/hetzner-kube/maintainability)
 [![Gitter chat](https://badges.gitter.im/hetzner-kube.png)](https://gitter.im/hetzner-kube)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fxetys%2Fhetzner-kube.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fxetys%2Fhetzner-kube?ref=badge_shield)
 
 # hetzner-kube: fast and easy setup of kubernetes clusters on Hetzner Cloud
 
@@ -216,3 +216,7 @@ packages:
 ## Full tutorial
 
 [This article](http://stytex.de/blog/2018/01/29/deploy-kubernetes-hetzner-cloud-openebs/) guides through a full cluster setup.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fxetys%2Fhetzner-kube.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fxetys%2Fhetzner-kube?ref=badge_large)
