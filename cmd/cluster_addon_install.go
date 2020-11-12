@@ -30,7 +30,7 @@ var clusterAddonInstallCmd = &cobra.Command{
 		FatalOnError(err)
 
 		addon := addonService.GetAddon(addonName)
-		addon.Install()
+		addon.Install(args...)
 
 		log.Printf("addon %s successfully installed", addonName)
 	},

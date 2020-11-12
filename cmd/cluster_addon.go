@@ -37,8 +37,8 @@ func validateAddonSubCommand(cmd *cobra.Command, args []string) error {
 	if idx == -1 {
 		return fmt.Errorf("cluster '%s' not found", name)
 	}
-	if len(args) != 1 {
-		return errors.New("exactly one argument expected")
+	if len(args) < 1 {
+		return errors.New("please add the addon name argument")
 	}
 	addonName := args[0]
 	provider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, *cluster, AppConf.CurrentContext.Token)

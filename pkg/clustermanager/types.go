@@ -4,6 +4,7 @@ package clustermanager
 type Node struct {
 	Name             string    `json:"name"`
 	Type             string    `json:"type"`
+	Group            string    `json:"group"`
 	IsMaster         bool      `json:"is_master"`
 	IsEtcd           bool      `json:"is_etcd"`
 	IPAddress        string    `json:"ip_address"`
