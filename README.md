@@ -74,6 +74,17 @@ Than rebuild autocomplete function with:
 compinits
 ```
 
+### Docker image
+
+You can use our [Docker image](https://hub.docker.com/r/xetys/hetzner-kube/) to run `hetzner-kube` without any need to install Go, e.g.
+
+```bash
+$ docker run --rm xetys/hetzner-kube
+```
+```bash
+$ docker run --rm xetys/hetzner-kube ./hetzner-kube cluster list
+```
+
 ## Usage
 
 In your [Hetzner Console](https://console.hetzner.cloud) generate an API token and
