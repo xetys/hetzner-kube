@@ -49,10 +49,10 @@ func NewAppConfig(debug bool) AppConfig {
 // WriteCurrentConfig write the configuration to file
 func (config HetznerConfig) WriteCurrentConfig() {
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")
-	configJSON, err := json.Marshal(&config)
+	configJSON, err := json.MarshalIndent(&config, "", "    ")
 
 	if err == nil {
-		err = ioutil.WriteFile(configFileName, configJSON, 0666)
+		err = ioutil.WriteFile(configFileName, configJSON, 0600)
 
 		if err != nil {
 			log.Fatal(err)
@@ -189,7 +189,7 @@ func (app *AppConfig) assertActiveContext() error {
 
 func makeConfigIfNotExists(appConf *AppConfig) {
 	if _, err := os.Stat(DefaultConfigPath); os.IsNotExist(err) {
-		os.MkdirAll(DefaultConfigPath, 0755)
+		os.MkdirAll(DefaultConfigPath, 0700)
 	}
 
 	configFileName := filepath.Join(DefaultConfigPath, "config.json")

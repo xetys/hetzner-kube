@@ -55,7 +55,7 @@ var addCmd = &cobra.Command{
 		AppConf.Config.ActiveContextName = name
 		AppConf.Config.WriteCurrentConfig()
 		AppConf.CurrentContext = context
-		fmt.Printf("added context '%s'", name)
+		fmt.Printf("added context '%s'\n", name)
 	},
 }
 

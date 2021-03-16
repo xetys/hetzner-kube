@@ -19,7 +19,8 @@ var clusterAddExternalWorkerCmd = &cobra.Command{
 	Long: `This lets you add an external server to your cluster.
 
 An external server must meet the following requirements:
-	- ubuntu 18.04
+
+	- ubuntu 20.04
 	- a unique hostname, that doesn't collide with an existing node name
 	- accessible with the same SSH key as used for the cluster`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -46,6 +47,35 @@ An external server must meet the following requirements:
 
 		if len(cluster.Nodes) == 0 {
 			return errors.New("your cluster has no nodes, no idea how this was possible")
+		}
+
+
+		externalNode := clustermanager.Node{
+			IPAddress:  ipAddress,
+			SSHKeyName: cluster.Nodes[0].SSHKeyName,
+		}
+
+		// check the host name
+		hostname, err := AppConf.SSHClient.RunCmd(externalNode, "hostname -s")
+		hostname = strings.TrimSpace(hostname)
+		// this also implies the check that SSH is working
+		if err != nil {
+			return err
+		}
+
+		for _, node := range cluster.Nodes {
+			if node.Name == hostname {
+				return fmt.Errorf("there is already a node with the name '%s'", hostname)
+			}
+		}
+
+		// check ubuntu 20.04
+		issue, err := AppConf.SSHClient.RunCmd(externalNode, "cat /etc/issue | xargs")
+		if err != nil {
+			return err
+		}
+		if !strings.Contains(issue, "Ubuntu 20.04") {
+			return errors.New("target server has no Ubuntu 20.04 installed")
 		}
 
 		return nil
