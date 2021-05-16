@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -29,13 +28,8 @@ type AppSSHClient struct {
 // NewAppConfig creates a new AppConfig struct using the locally saved configuration file. If no local
 // configuration file is found a new config will be created.
 func NewAppConfig(debug bool) AppConfig {
-	usr, err := user.Current()
-	if err != nil {
-		return AppConfig{}
-	}
-	if usr.HomeDir != "" {
-		DefaultConfigPath = filepath.Join(usr.HomeDir, ".hetzner-kube")
-	}
+	dir, _ := os.UserHomeDir()
+	DefaultConfigPath = filepath.Join(dir, ".hetzner-kube")
 
 	appConf := AppConfig{
 		Context: context.Background(),

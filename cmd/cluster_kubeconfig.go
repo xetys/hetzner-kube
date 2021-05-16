@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -52,9 +52,8 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		} else {
 			fmt.Println("create file")
 
-			usr, _ := user.Current()
-			dir := usr.HomeDir
-			path := fmt.Sprintf("%s/.kube", dir)
+			dir, _ := os.UserHomeDir()
+			path := filepath.Join(dir, ".kube")
 
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				os.MkdirAll(path, 0755)
