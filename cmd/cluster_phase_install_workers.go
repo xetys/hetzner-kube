@@ -28,7 +28,7 @@ var installWorkersCommand = &cobra.Command{
 		}
 		coordinator := pkg.NewProgressCoordinator()
 
-		for _, node := range provider.GetAllNodes() {
+		for _, node := range provider.GetWorkerNodes() {
 			steps := 2
 			if cluster.HaEnabled {
 				steps++
@@ -36,6 +36,7 @@ var installWorkersCommand = &cobra.Command{
 			coordinator.StartProgress(node.Name, steps)
 		}
 
+		k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 		clusterManager := clustermanager.NewClusterManager(
 			provider,
 			AppConf.SSHClient,
@@ -44,6 +45,7 @@ var installWorkersCommand = &cobra.Command{
 			cluster.HaEnabled,
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
+			k8sVersion,
 		)
 		phase := phases2.NewInstallWorkersPhase(clusterManager)
 
@@ -54,9 +56,9 @@ var installWorkersCommand = &cobra.Command{
 			}
 		}
 
-		for _, node := range provider.GetAllNodes() {
-			coordinator.AddEvent(node.Name, pkg.CompletedEvent)
-		}
+		//for _, node := range provider.GetAllNodes() {
+		//	coordinator.AddEvent(node.Name, pkg.CompletedEvent)
+		//}
 
 		coordinator.Wait()
 

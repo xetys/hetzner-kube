@@ -38,6 +38,7 @@ var setupHAPhaseCommand = &cobra.Command{
 			coordinator.StartProgress(node.Name, steps)
 		}
 
+		k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 		clusterManager := clustermanager.NewClusterManager(
 			provider,
 			AppConf.SSHClient,
@@ -46,6 +47,7 @@ var setupHAPhaseCommand = &cobra.Command{
 			cluster.HaEnabled,
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
+			k8sVersion,
 		)
 
 		phase := phases.NewSetupHighAvailabilityPhase(clusterManager)

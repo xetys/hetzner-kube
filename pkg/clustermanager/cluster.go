@@ -2,24 +2,23 @@ package clustermanager
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/xetys/hetzner-kube/pkg"
+	"strings"
 )
 
 const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
 
 // Manager is the structure used to mange cluster
 type Manager struct {
-	nodes            []Node
-	clusterName      string
-	cloudInitFile    string
-	eventService     EventService
-	nodeCommunicator NodeCommunicator
-	clusterProvider  ClusterProvider
-	haEnabled        bool
-	isolatedEtcd     bool
+	nodes             []Node
+	clusterName       string
+	cloudInitFile     string
+	eventService      EventService
+	nodeCommunicator  NodeCommunicator
+	clusterProvider   ClusterProvider
+	haEnabled         bool
+	isolatedEtcd      bool
+	kubernetesVersion string
 }
 
 // KeepCerts is an enumeration for existing certificate handling during master install
@@ -36,16 +35,17 @@ const (
 )
 
 // NewClusterManager create a new manager for the cluster
-func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string) *Manager {
+func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicator, eventService EventService, name string, haEnabled bool, isolatedEtcd bool, cloudInitFile string, kubernetesVersion string) *Manager {
 	manager := &Manager{
-		clusterName:      name,
-		haEnabled:        haEnabled,
-		isolatedEtcd:     isolatedEtcd,
-		cloudInitFile:    cloudInitFile,
-		eventService:     eventService,
-		nodeCommunicator: nodeCommunicator,
-		clusterProvider:  provider,
-		nodes:            provider.GetAllNodes(),
+		clusterName:       name,
+		haEnabled:         haEnabled,
+		isolatedEtcd:      isolatedEtcd,
+		cloudInitFile:     cloudInitFile,
+		eventService:      eventService,
+		nodeCommunicator:  nodeCommunicator,
+		clusterProvider:   provider,
+		nodes:             provider.GetAllNodes(),
+		kubernetesVersion: kubernetesVersion,
 	}
 
 	return manager
@@ -74,7 +74,7 @@ func (manager *Manager) Cluster() Cluster {
 		IsolatedEtcd:      manager.isolatedEtcd,
 		CloudInitFile:     manager.cloudInitFile,
 		NodeCIDR:          manager.clusterProvider.GetNodeCidr(),
-		KubernetesVersion: "1.19.2",
+		KubernetesVersion: manager.kubernetesVersion,
 	}
 }
 
@@ -169,10 +169,11 @@ func (manager *Manager) SetupEncryptedNetwork() error {
 // InstallMasters installs the kubernetes control plane to master nodes
 func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	commands := []NodeCommand{
-		{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
-		{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
-		{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
-		{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.16/manifests/canal.yaml"},
+		//{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
+		//{"kubeadm init", "kubectl version > /dev/null &> /dev/null || kubeadm init --ignore-preflight-errors=all --config /root/master-config.yaml"},
+		//{"configure kubectl", "rm -rf $HOME/.kube && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"},
+		//{"install canal", "kubectl apply -f https://docs.projectcalico.org/v3.16/manifests/canal.yaml"},
+		{"start rke2 server", "systemctl start rke2-server.service"},
 	}
 
 	// inject custom commands
@@ -188,24 +189,26 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 	for _, node := range manager.nodes {
 		if node.IsMaster {
 
-			var resetCommand string
+			var _ string
 
+			// todo reset
 			switch keepCerts {
 			case NONE:
-				resetCommand = "kubeadm reset -f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
+				_ = "kubeadm reset -f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
 			case CA:
-				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
+				_ = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
 			case ALL:
-				resetCommand = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/* /etc/kubernetes/pki"
+				_ = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/* /etc/kubernetes/pki"
 			}
 
-			_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
-			if err != nil {
-				return err
-			}
+			//_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
+			//if err != nil {
+			//	return err
+			//}
+			//
 
 			if len(manager.nodes) == 1 {
-				commands = append(commands, NodeCommand{"taint master", "kubectl taint nodes --all node-role.kubernetes.io/master-"})
+				commands = append(commands, NodeCommand{"taint master", "/var/lib/rancher/rke2/bin/kubectl taint nodes --all node-role.kubernetes.io/master-"})
 			}
 
 			if numMaster == 0 {
@@ -235,6 +238,7 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 
 // installs kubernetes control plane to a given node
 func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode Node, commands []NodeCommand, trueChan chan bool, errChan chan error) {
+	/* todo make HA mode working
 	// create master-configuration
 	var etcdNodes []Node
 	if manager.haEnabled {
@@ -275,7 +279,7 @@ func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode N
 			}
 		}
 	}
-
+	*/
 	for i, command := range commands {
 		manager.eventService.AddEvent(node.Name, command.EventName)
 		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
@@ -353,17 +357,18 @@ func (manager *Manager) etcdInstallStep(node Node, nodes []Node, errChan chan er
 
 // InstallWorkers installs kubernetes workers to given nodes
 func (manager *Manager) InstallWorkers(nodes []Node) error {
-	node, err := manager.clusterProvider.GetMasterNode()
+	masterNode, err := manager.clusterProvider.GetMasterNode()
 	if err != nil {
 		return err
 	}
 
 	commands := []NodeCommand{
-		{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
+		//{"sysctl settings", `printf '# Strict RPF mode as required by canal/Calico\nnet.ipv4.conf.default.rp_filter=1\nnet.ipv4.conf.all.rp_filter=1\n' >/etc/sysctl.d/50-canal-calico.conf && sysctl --load=/etc/sysctl.d/50-canal-calico.conf`},
+		{"start rke2 agent", "systemctl start rke2-agent.service"},
 	}
 
 	// create join command
-	joinCommand, err := manager.nodeCommunicator.RunCmd(*node, "kubeadm token create --print-join-command")
+	nodeServerToken, err := manager.nodeCommunicator.RunCmd(*masterNode, "cat /var/lib/rancher/rke2/server/node-token")
 	if err != nil {
 		return err
 	}
@@ -377,30 +382,37 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 			numProcs++
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
+				configContent := GenerateRke2AgentConfiguration(masterNode.IPAddress, nodeServerToken)
 				_, err := manager.nodeCommunicator.RunCmd(
 					node,
-					"for i in ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack_ipv4; do modprobe $i; done"+
-						" && kubeadm reset -f && "+joinCommand)
+					"mkdir -p /etc/rancher/rke2")
 				if err != nil {
 					errChan <- err
 				}
-				if manager.haEnabled {
-					time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
 
-					kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
-
-					manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
-					for _, conf := range kubeConfigs {
-						_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
-						if err != nil {
-							errChan <- err
-						}
-					}
-					_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
-					if err != nil {
-						errChan <- err
-					}
+				err = manager.nodeCommunicator.WriteFile(node, "/etc/rancher/rke2/config.yaml", configContent, AllRead)
+				if err != nil {
+					errChan <- err
 				}
+
+				// todo enable HA
+				//if manager.haEnabled {
+				//	time.Sleep(10 * time.Second) // we need some time until the kubelet.conf appears
+				//
+				//	kubeConfigs := []string{"kubelet.conf", "bootstrap-kubelet.conf"}
+				//
+				//	manager.eventService.AddEvent(node.Name, "rewrite kubeconfigs")
+				//	for _, conf := range kubeConfigs {
+				//		_, err := manager.nodeCommunicator.RunCmd(node, fmt.Sprintf(rewriteTpl, conf, conf))
+				//		if err != nil {
+				//			errChan <- err
+				//		}
+				//	}
+				//	_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart docker && systemctl restart kubelet")
+				//	if err != nil {
+				//		errChan <- err
+				//	}
+				//}
 
 				for _, command := range commands {
 					manager.eventService.AddEvent(node.Name, command.EventName)

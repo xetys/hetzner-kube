@@ -56,7 +56,11 @@ func (provisioner *NodeProvisioner) Provision(node Node, communicator NodeCommun
 }
 
 func (provisioner *NodeProvisioner) packagesAreInstalled(node Node, communicator NodeCommunicator) bool {
-	out, err := communicator.RunCmd(node, "type -p kubeadm > /dev/null &> /dev/null; echo $?")
+	file := "/etc/systemd/system/multi-user.target.wants/rke2-server.service"
+	if !provisioner.node.IsMaster {
+		file = "/etc/systemd/system/multi-user.target.wants/rke2-agent.service"
+	}
+	out, err := communicator.RunCmd(node, fmt.Sprintf("test -f %s; echo $?", file))
 	if err != nil {
 		return false
 	}
@@ -77,10 +81,10 @@ func (provisioner *NodeProvisioner) prepareAndInstall() error {
 	if err != nil {
 		return err
 	}
-	err = provisioner.preparePackages()
-	if err != nil {
-		return err
-	}
+	//err = provisioner.preparePackages()
+	//if err != nil {
+	//	return err
+	//}
 	err = provisioner.updateAndInstall()
 	if err != nil {
 		return err
@@ -155,7 +159,7 @@ func (provisioner *NodeProvisioner) installTransportTools() error {
 	var err error
 	for i := 0; i < 10; i++ {
 		time.Sleep(3 * time.Second)
-		_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common")
+		_, err = provisioner.communicator.RunCmd(provisioner.node, "apt-get update && apt-get install -y apt-transport-https ca-certificates software-properties-common")
 	}
 	if err != nil {
 		return err
@@ -234,10 +238,23 @@ func (provisioner *NodeProvisioner) updateAndInstall() error {
 		return err
 	}
 
+	rke2Type := "server"
+	if !provisioner.node.IsMaster {
+		rke2Type = "agent"
+	}
 	provisioner.eventService.AddEvent(provisioner.node.Name, "installing packages")
-	command := fmt.Sprintf("apt-get install -y docker-ce kubelet=%s-00 kubeadm=%s-00 kubectl=%s-00 kubernetes-cni=0.8.7-00 wireguard linux-headers-generic linux-headers-virtual",
-		provisioner.kubernetesVersion, provisioner.kubernetesVersion, provisioner.kubernetesVersion)
+	command := fmt.Sprintf("curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION=%s INSTALL_RKE2_TYPE=\"%s\" sh -",
+		provisioner.kubernetesVersion, rke2Type)
 	_, err = provisioner.communicator.RunCmd(provisioner.node, command)
+	if err != nil {
+		return err
+	}
+
+	if provisioner.node.IsMaster {
+		_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl enable rke2-server.service")
+	} else {
+		_, err = provisioner.communicator.RunCmd(provisioner.node, "systemctl enable rke2-agent.service")
+	}
 	if err != nil {
 		return err
 	}

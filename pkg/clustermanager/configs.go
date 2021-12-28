@@ -111,3 +111,12 @@ WantedBy=multi-user.target
 
 	return service
 }
+
+func GenerateRke2AgentConfiguration(serverHost, nodeToken string) string {
+	configTpl := `
+server: https://%s:9345
+token: %s
+`
+
+	return fmt.Sprintf(configTpl, serverHost, nodeToken)
+}
