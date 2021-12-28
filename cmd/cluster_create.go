@@ -124,6 +124,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	phaseChain.AddPhase(phases.NewProvisionNodesPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewNetworkSetupPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewEtcdSetupPhase(clusterManager, hetznerProvider, phases.EtcdSetupPhaseOptions{KeepData: false}))
+	phaseChain.AddPhase(phases.NewDeployLoadBalancerPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewInstallMastersPhase(clusterManager, phases.InstallMastersPhaseOptions{KeepCaCerts: false, KeepAllCerts: false}))
 	phaseChain.AddPhase(phases.NewSetupHighAvailabilityPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewInstallWorkersPhase(clusterManager))

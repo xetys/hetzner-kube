@@ -2,10 +2,12 @@ package clustermanager
 
 import (
 	"fmt"
+	"github.com/Pallinder/go-randomdata"
 	"strings"
 )
 
 // GenerateMasterConfiguration generate the kubernetes config for master
+// Deprecated
 func GenerateMasterConfiguration(masterNode Node, masterNodes []Node, etcdNodes []Node, kubernetesVersion string) string {
 	masterConfigTpl := `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
@@ -112,11 +114,40 @@ WantedBy=multi-user.target
 	return service
 }
 
-func GenerateRke2AgentConfiguration(serverHost, nodeToken string) string {
+func GenerateRke2AgentConfiguration(server, nodeToken string) string {
 	configTpl := `
-server: https://%s:9345
+server: %s
 token: %s
 `
 
-	return fmt.Sprintf(configTpl, serverHost, nodeToken)
+	return fmt.Sprintf(configTpl, server, nodeToken)
+}
+
+func GenerateRke2FirstMasterConfiguration(masterNodes []Node) string {
+	configTpl := `
+token: %s
+tls-san:
+`
+	config := fmt.Sprintf(configTpl, randomdata.RandStringRunes(32))
+
+	for _, node := range masterNodes {
+		config += fmt.Sprintf("  - %s\n", node.IPAddress)
+	}
+
+	return config
+}
+
+func GenerateRke2SecondaryMasterConfiguration(nodeToken string, masterNodes []Node) string {
+	configTpl := `
+server: https://localhost:19345
+token: %s
+tls-san:
+`
+	config := fmt.Sprintf(configTpl, nodeToken)
+
+	for _, node := range masterNodes {
+		config += fmt.Sprintf("  - %s\n", node.IPAddress)
+	}
+
+	return config
 }

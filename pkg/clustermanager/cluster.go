@@ -3,7 +3,9 @@ package clustermanager
 import (
 	"fmt"
 	"github.com/xetys/hetzner-kube/pkg"
+	"log"
 	"strings"
+	"time"
 )
 
 const rewriteTpl = `cat /etc/kubernetes/%s | sed -e 's/server: https\(.*\)/server: https:\/\/127.0.0.1:16443/g' > /tmp/cp && mv /tmp/cp /etc/kubernetes/%s`
@@ -16,6 +18,7 @@ type Manager struct {
 	eventService      EventService
 	nodeCommunicator  NodeCommunicator
 	clusterProvider   ClusterProvider
+	WireguardEnabled  bool
 	haEnabled         bool
 	isolatedEtcd      bool
 	kubernetesVersion string
@@ -39,6 +42,7 @@ func NewClusterManager(provider ClusterProvider, nodeCommunicator NodeCommunicat
 	manager := &Manager{
 		clusterName:       name,
 		haEnabled:         haEnabled,
+		WireguardEnabled:  false, // todo bring back wireguard
 		isolatedEtcd:      isolatedEtcd,
 		cloudInitFile:     cloudInitFile,
 		eventService:      eventService,
@@ -92,7 +96,6 @@ func (manager *Manager) ProvisionNodes(nodes []Node) error {
 		numProcs++
 		go func(node Node) {
 			manager.eventService.AddEvent(node.Name, "install packages")
-			//_, err := manager.nodeCommunicator.RunCmd(node, "wget -cO- https://raw.githubusercontent.com/xetys/hetzner-kube/master/install-docker-kubeadm.sh | bash -")
 			provisioner := NewNodeProvisioner(node, manager)
 			err := provisioner.Provision(node, manager.nodeCommunicator, manager.eventService)
 			if err != nil {
@@ -191,24 +194,23 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 
 			var _ string
 
-			// todo reset
+			resetCmd := "systemctl stop rke2-server.service && rke2-killall.sh && rm -rf /etc/rancher/ && rm -rf /var/lib/rancher"
 			switch keepCerts {
-			case NONE:
-				_ = "kubeadm reset -f && rm -rf /etc/kubernetes/pki && mkdir /etc/kubernetes/pki"
 			case CA:
-				_ = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/ca* /etc/kubernetes/pki"
+				resetCmd = fmt.Sprintf(
+					"mkdir -p /root/pki && cp -r /var/lib/rancher/rke2/server/tls/*-ca.* /root/pki && %s && mkdir -p /var/lib/rancher/rke2/server/tls && cp -r /root/pki/* /var/lib/rancher/rke2/server/tls",
+					resetCmd,
+				)
 			case ALL:
-				_ = "mkdir -p /root/pki && cp -r /etc/kubernetes/pki/* /root/pki && kubeadm reset -f && cp -r /root/pki/* /etc/kubernetes/pki"
+				resetCmd = fmt.Sprintf(
+					"mkdir -p /root/pki && cp -r /var/lib/rancher/rke2/server/tls/* /root/pki && %s && mkdir -p /var/lib/rancher/rke2/server/tls && cp -r /root/pki/* /var/lib/rancher/rke2/server/tls",
+					resetCmd,
+				)
 			}
 
-			//_, err := manager.nodeCommunicator.RunCmd(node, resetCommand)
-			//if err != nil {
-			//	return err
-			//}
-			//
-
-			if len(manager.nodes) == 1 {
-				commands = append(commands, NodeCommand{"taint master", "/var/lib/rancher/rke2/bin/kubectl taint nodes --all node-role.kubernetes.io/master-"})
+			_, err := manager.nodeCommunicator.RunCmd(node, resetCmd)
+			if err != nil {
+				return err
 			}
 
 			if numMaster == 0 {
@@ -220,14 +222,14 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 				manager.installMasterStep(node, numMaster, masterNode, commands, trueChan, errChan)
 			}(node)
 
-			// early wait the first time
-			if numMaster == 0 {
-				select {
-				case err := <-errChan:
-					return err
-				case <-trueChan:
-					numProc--
-				}
+			// this was parallel once, but we need it now to happen sequentially
+			select {
+			case err := <-errChan:
+				return err
+			case <-trueChan:
+				numProc--
+				manager.eventService.AddEvent(node.Name, "waiting 60s for next master step")
+				time.Sleep(60 * time.Second)
 			}
 			numMaster++
 		}
@@ -238,53 +240,44 @@ func (manager *Manager) InstallMasters(keepCerts KeepCerts) error {
 
 // installs kubernetes control plane to a given node
 func (manager *Manager) installMasterStep(node Node, numMaster int, masterNode Node, commands []NodeCommand, trueChan chan bool, errChan chan error) {
-	/* todo make HA mode working
-	// create master-configuration
-	var etcdNodes []Node
 	if manager.haEnabled {
-		if manager.isolatedEtcd {
-			etcdNodes = manager.clusterProvider.GetEtcdNodes()
+		var config string
+		if numMaster == 0 {
+			config = GenerateRke2FirstMasterConfiguration(manager.clusterProvider.GetMasterNodes())
 		} else {
-			etcdNodes = manager.clusterProvider.GetMasterNodes()
-		}
-	}
-	masterNodes := manager.clusterProvider.GetMasterNodes()
-	masterConfig := GenerateMasterConfiguration(node, masterNodes, etcdNodes, manager.Cluster().KubernetesVersion)
-	if err := manager.nodeCommunicator.WriteFile(node, "/root/master-config.yaml", masterConfig, AllRead); err != nil {
-		errChan <- err
-	}
-
-	if numMaster > 0 {
-		manager.eventService.AddEvent(node.Name, "copy PKI")
-
-		files := []string{
-			"apiserver-kubelet-client.crt",
-			"apiserver-kubelet-client.key",
-			"apiserver.crt",
-			"apiserver.key",
-			"ca.crt",
-			"ca.key",
-			"front-proxy-ca.crt",
-			"front-proxy-ca.key",
-			"front-proxy-client.crt",
-			"front-proxy-client.key",
-			"sa.key",
-			"sa.pub",
-		}
-
-		for _, file := range files {
-			err := manager.nodeCommunicator.CopyFileOverNode(masterNode, node, "/etc/kubernetes/pki/"+file)
+			nodeServerToken, err := manager.nodeCommunicator.RunCmd(masterNode, "cat /var/lib/rancher/rke2/server/node-token")
 			if err != nil {
 				errChan <- err
 			}
+
+			config = GenerateRke2SecondaryMasterConfiguration(nodeServerToken, manager.clusterProvider.GetMasterNodes())
+		}
+
+		_, err := manager.nodeCommunicator.RunCmd(
+			node,
+			"mkdir -p /etc/rancher/rke2")
+		if err != nil {
+			errChan <- err
+		}
+
+		err = manager.nodeCommunicator.WriteFile(node, "/etc/rancher/rke2/config.yaml", config, AllRead)
+		if err != nil {
+			errChan <- err
 		}
 	}
-	*/
+
 	for i, command := range commands {
 		manager.eventService.AddEvent(node.Name, command.EventName)
 		_, err := manager.nodeCommunicator.RunCmd(node, command.Command)
 		if err != nil {
-			errChan <- err
+			if numMaster == 0 {
+				errChan <- err
+			} else {
+				log.Println("an error occurred, but we will proceed")
+				log.Println(err)
+				errOut, _ := manager.nodeCommunicator.RunCmd(node, "systemctl status rke2-server.service")
+				log.Println(errOut)
+			}
 		}
 
 		if numMaster > 0 && i > 0 {
@@ -382,7 +375,11 @@ func (manager *Manager) InstallWorkers(nodes []Node) error {
 			numProcs++
 			go func(node Node) {
 				manager.eventService.AddEvent(node.Name, "registering node")
-				configContent := GenerateRke2AgentConfiguration(masterNode.IPAddress, nodeServerToken)
+				server := "https://" + masterNode.IPAddress + ":9345"
+				if manager.haEnabled {
+					server = "https://" + masterNode.IPAddress + ":19345"
+				}
+				configContent := GenerateRke2AgentConfiguration(server, nodeServerToken)
 				_, err := manager.nodeCommunicator.RunCmd(
 					node,
 					"mkdir -p /etc/rancher/rke2")
@@ -489,6 +486,33 @@ func (manager *Manager) SetupHA() error {
 			manager.eventService.AddEvent(node.Name, "wait for apiserver")
 			_, err = manager.nodeCommunicator.RunCmd(node, `until $(kubectl get node > /dev/null 2>/dev/null ); do echo "wait.."; sleep 1; done`)
 			manager.eventService.AddEvent(node.Name, pkg.CompletedEvent)
+
+			trueChan <- true
+		}(node)
+	}
+
+	return waitOrError(trueChan, errChan, &numProcs)
+}
+
+func (manager *Manager) SetupHAProxyForAllNodes() error {
+	errChan := make(chan error)
+	trueChan := make(chan bool)
+	numProcs := 0
+
+	masterNodes := manager.clusterProvider.GetMasterNodes()
+
+	for _, node := range manager.nodes {
+		numProcs++
+		go func(node Node) {
+			manager.eventService.AddEvent(node.Name, "deploy load balancer")
+			haProxyCfg := GenerateHaProxyConfiguration(masterNodes)
+
+			err := manager.nodeCommunicator.WriteFile(node, "/etc/haproxy/haproxy.cfg", haProxyCfg, AllRead)
+			if err != nil {
+				errChan <- err
+			}
+
+			_, err = manager.nodeCommunicator.RunCmd(node, "systemctl restart haproxy")
 
 			trueChan <- true
 		}(node)

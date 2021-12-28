@@ -21,5 +21,5 @@ func (phase *SetupHighAvailabilityPhase) ShouldRun() bool {
 
 // Run runs the phase
 func (phase *SetupHighAvailabilityPhase) Run() error {
-	return phase.clusterManager.SetupHA()
+	return nil // todo
 }
