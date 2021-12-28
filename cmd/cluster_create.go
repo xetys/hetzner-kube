@@ -45,6 +45,7 @@ This tool supports these levels of kubernetes HA:
 func RunClusterCreate(cmd *cobra.Command, args []string) {
 	workerCount, _ := cmd.Flags().GetInt("worker-count")
 	masterCount, _ := cmd.Flags().GetInt("master-count")
+	k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 	etcdCount := 0
 	haEnabled, _ := cmd.Flags().GetBool("ha-enabled")
 	if !haEnabled {
@@ -61,7 +62,16 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 		clusterName = name
 	}
 
-	log.Printf("Creating new cluster\n\nNAME:%s\nMASTERS: %d\nWORKERS: %d\nETCD NODES: %d\nHA: %t\nISOLATED ETCD: %t", clusterName, masterCount, workerCount, etcdCount, haEnabled, isolatedEtcd)
+	log.Printf(
+		"Creating new cluster (version: %s)\n\nNAME:%s\nMASTERS: %d\nWORKERS: %d\nETCD NODES: %d\nHA: %t\nISOLATED ETCD: %t",
+		k8sVersion,
+		clusterName,
+		masterCount,
+		workerCount,
+		etcdCount,
+		haEnabled,
+		isolatedEtcd,
+	)
 
 	sshKeyName, _ := cmd.Flags().GetString("ssh-key")
 	masterServerType, _ := cmd.Flags().GetString("master-server-type")
@@ -71,9 +81,10 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	cloudInit, _ := cmd.Flags().GetString("cloud-init")
 
 	hetznerProvider := hetzner.NewHetznerProvider(AppConf.Context, AppConf.Client, clustermanager.Cluster{
-		Name:          clusterName,
-		NodeCIDR:      nodeCidr,
-		CloudInitFile: cloudInit,
+		Name:              clusterName,
+		NodeCIDR:          nodeCidr,
+		CloudInitFile:     cloudInit,
+		KubernetesVersion: k8sVersion,
 	}, AppConf.CurrentContext.Token)
 
 	sshClient := clustermanager.NewSSHCommunicator(AppConf.Config.SSHKeys, debug)
@@ -103,7 +114,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 
 	coordinator := pkg.NewProgressCoordinator()
 
-	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit)
+	clusterManager := clustermanager.NewClusterManager(hetznerProvider, sshClient, coordinator, clusterName, haEnabled, isolatedEtcd, cloudInit, k8sVersion)
 	cluster := clusterManager.Cluster()
 	saveCluster(&cluster)
 	renderProgressBars(&cluster, coordinator)
@@ -113,6 +124,7 @@ func RunClusterCreate(cmd *cobra.Command, args []string) {
 	phaseChain.AddPhase(phases.NewProvisionNodesPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewNetworkSetupPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewEtcdSetupPhase(clusterManager, hetznerProvider, phases.EtcdSetupPhaseOptions{KeepData: false}))
+	phaseChain.AddPhase(phases.NewDeployLoadBalancerPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewInstallMastersPhase(clusterManager, phases.InstallMastersPhaseOptions{KeepCaCerts: false, KeepAllCerts: false}))
 	phaseChain.AddPhase(phases.NewSetupHighAvailabilityPhase(clusterManager))
 	phaseChain.AddPhase(phases.NewInstallWorkersPhase(clusterManager))
@@ -262,8 +274,8 @@ func init() {
 
 	clusterCreateCmd.Flags().StringP("name", "n", "", "Name of the cluster")
 	clusterCreateCmd.Flags().StringP("ssh-key", "k", "", "Name of the SSH key used for provisioning")
-	clusterCreateCmd.Flags().String("master-server-type", "cx11", "Server type used of masters")
-	clusterCreateCmd.Flags().String("worker-server-type", "cx11", "Server type used of workers")
+	clusterCreateCmd.Flags().String("master-server-type", "cx21", "Server type used of masters")
+	clusterCreateCmd.Flags().String("worker-server-type", "cx21", "Server type used of workers")
 	clusterCreateCmd.Flags().Bool("ha-enabled", false, "Install high-available control plane")
 	clusterCreateCmd.Flags().Bool("isolated-etcd", false, "Isolates etcd cluster from master nodes")
 	clusterCreateCmd.Flags().IntP("master-count", "m", 3, "Number of master nodes, works only if -ha-enabled is passed")

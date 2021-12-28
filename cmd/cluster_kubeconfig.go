@@ -38,7 +38,7 @@ Example 4: hetzner-kube cluster kubeconfig -n my-cluster -p > my-conf.yaml # pri
 		err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
 		FatalOnError(err)
 
-		kubeConfigContent, err := AppConf.SSHClient.RunCmd(*masterNode, "cat /etc/kubernetes/admin.conf")
+		kubeConfigContent, err := AppConf.SSHClient.RunCmd(*masterNode, "cat /etc/rancher/rke2/rke2.yaml")
 		// change the IP to public
 		kubeConfigContent = strings.Replace(kubeConfigContent, masterNode.PrivateIPAddress, masterNode.IPAddress, -1)
 

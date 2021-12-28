@@ -16,6 +16,7 @@ var installMastersPhaseCommand = &cobra.Command{
 		clusterName := args[0]
 		keepCa, _ := cmd.Flags().GetBool("keep-ca")
 		keepAll, _ := cmd.Flags().GetBool("keep-all-certs")
+		k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 		phaseOptions := phases.InstallMastersPhaseOptions{
 			KeepCaCerts:  keepCa,
 			KeepAllCerts: keepAll,
@@ -54,6 +55,7 @@ var installMastersPhaseCommand = &cobra.Command{
 			cluster.HaEnabled,
 			cluster.IsolatedEtcd,
 			cluster.CloudInitFile,
+			k8sVersion,
 		)
 		phase := phases.NewInstallMastersPhase(clusterManager, phaseOptions)
 

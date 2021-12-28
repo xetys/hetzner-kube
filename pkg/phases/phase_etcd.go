@@ -25,7 +25,7 @@ func NewEtcdSetupPhase(manager *clustermanager.Manager, provider clustermanager.
 
 // ShouldRun returns if this phase should run
 func (phase *EtcdSetupPhase) ShouldRun() bool {
-	return phase.clusterManager.Cluster().HaEnabled
+	return false //phase.clusterManager.Cluster().HaEnabled
 }
 
 // Run runs the phase

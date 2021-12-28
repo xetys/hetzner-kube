@@ -39,6 +39,7 @@ func getCommonPhaseDependencies(steps int, cmd *cobra.Command, args []string) (c
 	err = AppConf.SSHClient.(*clustermanager.SSHCommunicator).CapturePassphrase(masterNode.SSHKeyName)
 	FatalOnError(err)
 	coordinator := pkg.NewProgressCoordinator()
+	k8sVersion, _ := cmd.Flags().GetString("k8s-version")
 
 	for _, node := range provider.GetAllNodes() {
 		coordinator.StartProgress(node.Name, steps)
@@ -52,6 +53,7 @@ func getCommonPhaseDependencies(steps int, cmd *cobra.Command, args []string) (c
 		cluster.HaEnabled,
 		cluster.IsolatedEtcd,
 		cluster.CloudInitFile,
+		k8sVersion,
 	)
 
 	return provider, clusterManager, coordinator

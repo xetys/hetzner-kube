@@ -16,7 +16,7 @@ func NewNetworkSetupPhase(manager *clustermanager.Manager) Phase {
 
 // ShouldRun returns if this phase should run
 func (phase *NetworkSetupPhase) ShouldRun() bool {
-	return true
+	return phase.clusterManager.WireguardEnabled
 }
 
 // Run runs the phase

@@ -21,6 +21,7 @@ are hopefully coming soon.'`,
 }
 
 func init() {
+	clusterCmd.PersistentFlags().StringP("k8s-version", "v", "v1.22.4+rke2r2", "the version of Kubernetes to be installed")
 	rootCmd.AddCommand(clusterCmd)
 }
 
